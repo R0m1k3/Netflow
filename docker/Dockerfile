@@ -30,6 +30,8 @@ RUN npm run build
 # =============================================================================
 FROM node:20-slim AS production
 
+LABEL org.opencontainers.image.source=https://github.com/R0m1k3/Netflow
+
 # Install nginx and supervisord
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
