@@ -20,5 +20,22 @@
         "login_plex": "Se connecter avec Plex",
         "login_server_manual": "Connexion Manuelle",
         "subtitle": "Connectez votre compte Plex pour accéder à vos médiathèques"
+    },
+    "trakt": {
+        "title": "Trakt",
+        "connected_title": "Compte Trakt Connecté",
+        "connect_title": "Connexion à Trakt",
+        "description": "Connectez votre compte Trakt pour synchroniser votre historique, suivre votre progression et obtenir des recommandations personnalisées.",
+        "step_1": "1. Visitez cette URL :",
+        "step_2": "2. Entrez ce code :",
+        "copy": "Copier",
+        "waiting": "En attente d'autorisation...",
+        "cancel": "Annuler",
+        "disconnect": "Déconnecter",
+        "connect_btn": "Connecter le compte Trakt",
+        "vip": "Membre VIP",
+        "error_timeout": "Délai d'authentification dépassé. Veuillez réessayer.",
+        "error_expired": "Le code a expiré. Veuillez réessayer.",
+        "error_generic": "Échec de l'authentification"
     }
 }

@@ -90,6 +90,18 @@ export interface TraktEpisode {
   };
 }
 
+// Helper to handle 401s globally
+async function traktFetch(url: string, options?: RequestInit): Promise<Response> {
+  const response = await fetch(url, options);
+
+  if (response.status === 401) {
+    console.warn('Trakt request 401 Unauthorized - clearing tokens');
+    saveTraktTokens(null);
+  }
+
+  return response;
+}
+
 // Authentication
 export async function traktRequestDeviceCode(): Promise<TraktDeviceCode> {
   const response = await fetch(`${TRAKT}/oauth/device/code`, {
@@ -205,7 +217,7 @@ export async function traktRevokeToken(accessToken: string): Promise<void> {
 // User
 export async function traktGetUserProfile(_accessToken: string): Promise<TraktUser> {
   // Use backend + session cookie
-  const response = await fetch(`${TRAKT}/users/me`, { credentials: 'include' });
+  const response = await traktFetch(`${TRAKT}/users/me`, { credentials: 'include' });
 
   if (!response.ok) {
     throw new Error(`Failed to get user profile: ${response.status}`);
@@ -216,11 +228,11 @@ export async function traktGetUserProfile(_accessToken: string): Promise<TraktUs
 
 export async function traktGetUserSettings(accessToken: string): Promise<any> {
   const response = await fetch(`${TRAKT}/users/me`, { credentials: 'include' });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to get user settings: ${response.status}`);
   }
-  
+
   return response.json();
 }
 
@@ -236,7 +248,7 @@ export async function traktGetHistory(accessToken: string, type?: 'movies' | 'sh
   let url = `${TRAKT}/users/me/history`;
   if (type) url += `/${type}`;
   if (limit) url += `?limit=${limit}`;
-  const response = await fetch(url, { credentials: 'include' });
+  const response = await traktFetch(url, { credentials: 'include' });
 
   if (!response.ok) throw new Error(`Failed to get history: ${response.status}`);
   return response.json();
@@ -282,7 +294,7 @@ export async function traktRemoveFromHistory(accessToken: string, items: any[]):
 export async function traktGetWatchlist(accessToken: string, type?: 'movies' | 'shows'): Promise<any[]> {
   let url = `${TRAKT}/users/me/watchlist`;
   if (type) url += `/${type}`;
-  const response = await fetch(url, { credentials: 'include' });
+  const response = await traktFetch(url, { credentials: 'include' });
 
   if (!response.ok) throw new Error(`Failed to get watchlist: ${response.status}`);
   return response.json();
@@ -316,7 +328,7 @@ export async function traktRemoveFromWatchlist(accessToken: string, items: any[]
 export async function traktGetProgress(accessToken: string, type: 'shows', sort?: string): Promise<any[]> {
   let url = `${TRAKT}/users/me/watched/${type}/progress`;
   if (sort) url += `?sort=${sort}`;
-  const response = await fetch(url, { credentials: 'include' });
+  const response = await traktFetch(url, { credentials: 'include' });
 
   if (!response.ok) throw new Error(`Failed to get progress: ${response.status}`);
   return response.json();
@@ -326,7 +338,7 @@ export async function traktGetProgress(accessToken: string, type: 'shows', sort?
 export async function traktGetRecommendations(accessToken: string, type: 'movies' | 'shows', limit?: number): Promise<any[]> {
   let url = `${TRAKT}/recommendations/${type}`;
   if (limit) url += `?limit=${limit}`;
-  const response = await fetch(url, { credentials: 'include' });
+  const response = await traktFetch(url, { credentials: 'include' });
 
   if (!response.ok) throw new Error(`Failed to get recommendations: ${response.status}`);
   return response.json();
@@ -344,7 +356,7 @@ export async function traktSearch(query: string, type?: 'movie' | 'show' | 'epis
 }
 
 // Trending (existing, updated)
-export async function traktTrending(type: 'movies'|'shows' = 'movies', limit?: number): Promise<any[]> {
+export async function traktTrending(type: 'movies' | 'shows' = 'movies', limit?: number): Promise<any[]> {
   let url = `${TRAKT}/trending/${type}`;
   if (limit) url += `?limit=${limit}`;
   const response = await fetch(url, { credentials: 'include' });
@@ -364,11 +376,11 @@ export async function traktPopular(type: 'movies' | 'shows', limit?: number): Pr
 }
 
 // Most Watched (charts) with period: daily | weekly | monthly | yearly | all
-export async function traktMostWatched(type: 'movies'|'shows', period: 'daily'|'weekly'|'monthly'|'yearly'|'all' = 'weekly', limit?: number): Promise<any[]> {
+export async function traktMostWatched(type: 'movies' | 'shows', period: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all' = 'weekly', limit?: number): Promise<any[]> {
   const urlBase = `${TRAKT}/${type}/watched/${period}`;
   const url = limit ? `${urlBase}?limit=${limit}` : urlBase;
   // 30m TTL
-  return cached(`trakt:mostwatched:${type}:${period}:${limit||'all'}`, 30 * 60 * 1000, async () => {
+  return cached(`trakt:mostwatched:${type}:${period}:${limit || 'all'}`, 30 * 60 * 1000, async () => {
     const res = await fetch(url, {
       headers: { 'trakt-api-version': '2', 'trakt-api-key': CLIENT_ID }
     });
@@ -378,11 +390,11 @@ export async function traktMostWatched(type: 'movies'|'shows', period: 'daily'|'
 }
 
 // Anticipated (most lists)
-export async function traktAnticipated(type: 'movies'|'shows', limit?: number): Promise<any[]> {
+export async function traktAnticipated(type: 'movies' | 'shows', limit?: number): Promise<any[]> {
   // Web-only
   const urlBase = `${TRAKT}/${type}/anticipated`;
   const url = limit ? `${urlBase}?limit=${limit}` : urlBase;
-  return cached(`trakt:anticipated:${type}:${limit||'all'}`, 30 * 60 * 1000, async () => {
+  return cached(`trakt:anticipated:${type}:${limit || 'all'}`, 30 * 60 * 1000, async () => {
     const res = await fetch(url, {
       headers: { 'trakt-api-version': '2', 'trakt-api-key': CLIENT_ID }
     });

@@ -1,27 +1,23 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Switch, Dimensions, Linking, Pressable, Animated, Platform } from 'react-native';
+import React, { useRef, useCallback, useMemo, useState } from 'react';
+import { View, Text, ScrollView, Animated, Linking, Switch, StyleSheet, Platform, Pressable, Dimensions } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useNetflow } from '../core/NetflowContext';
-import {
-  getTraktProfile,
-  getPlexUser,
-  getConnectedServerInfo,
-  getAppVersion,
-} from '../core/SettingsData';
+import { getTraktProfile, getPlexUser, getConnectedServerInfo, getAppVersion } from '../core/SettingsData';
 import { useAppSettings } from '../hooks/useAppSettings';
 import SettingsCard from '../components/settings/SettingsCard';
 import SettingItem from '../components/settings/SettingItem';
 import SettingsHeader from '../components/settings/SettingsHeader';
-import MDBListIcon from '../components/icons/MDBListIcon';
-import TMDBIcon from '../components/icons/TMDBIcon';
-import TraktIcon from '../components/icons/TraktIcon';
 import PlexIcon from '../components/icons/PlexIcon';
+import TMDBIcon from '../components/icons/TMDBIcon';
+import MDBListIcon from '../components/icons/MDBListIcon';
+import TraktIcon from '../components/icons/TraktIcon';
 import OverseerrIcon from '../components/icons/OverseerrIcon';
 
 const { width } = Dimensions.get('window');
-const isTablet = width >= 768;
+const isTablet = Platform.OS === 'ios' ? Platform.isPad : width >= 768;
 
 const ABOUT_LINKS = {
   privacy: 'https://netflow.xyz/privacy',
@@ -40,14 +36,25 @@ type CategoryId =
   | 'playback'
   | 'about';
 
-const CATEGORIES: Array<{ id: CategoryId; title: string; icon: keyof typeof Ionicons.glyphMap; androidOnly?: boolean }> = [
-  { id: 'account', title: 'Account', icon: 'person-circle-outline' },
-  { id: 'content', title: 'Content & Discovery', icon: 'compass-outline' },
-  { id: 'appearance', title: 'Appearance', icon: 'color-palette-outline' },
-  { id: 'androidPerformance', title: 'Android Performance', icon: 'speedometer-outline', androidOnly: true },
-  { id: 'integrations', title: 'Integrations', icon: 'layers-outline' },
-  { id: 'playback', title: 'Playback', icon: 'play-circle-outline' },
-  { id: 'about', title: 'About', icon: 'information-circle-outline' },
+// Keep icons mapping, titles will be resolved via i18n
+const CATEGORY_ICONS: Record<CategoryId, keyof typeof Ionicons.glyphMap> = {
+  account: 'person-circle-outline',
+  content: 'compass-outline',
+  appearance: 'color-palette-outline',
+  androidPerformance: 'speedometer-outline',
+  integrations: 'layers-outline',
+  playback: 'play-circle-outline',
+  about: 'information-circle-outline',
+};
+
+const CATEGORIES: Array<{ id: CategoryId; androidOnly?: boolean }> = [
+  { id: 'account' },
+  { id: 'content' },
+  { id: 'appearance' },
+  { id: 'androidPerformance', androidOnly: true },
+  { id: 'integrations' },
+  { id: 'playback' },
+  { id: 'about' },
 ];
 
 interface SettingsProps {
@@ -56,11 +63,27 @@ interface SettingsProps {
 }
 
 export default function Settings({ onBack }: SettingsProps) {
+  const { t } = useTranslation();
   const nav: any = useNavigation();
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 52;
   const scrollY = useRef(new Animated.Value(0)).current;
   const { isLoading: netflowLoading, isConnected } = useNetflow();
+
+  // Resolve Category Titles
+  const getCategoryTitle = (id: CategoryId) => {
+    switch (id) {
+      case 'account': return t('settings.account');
+      case 'content': return t('settings.content_discovery');
+      case 'appearance': return t('settings.appearance');
+      case 'androidPerformance': return t('settings.android_performance');
+      case 'integrations': return t('settings.integrations');
+      case 'playback': return t('settings.playback');
+      case 'about': return t('settings.about');
+      default: return '';
+    }
+  };
+
   const { settings, updateSetting } = useAppSettings();
   const [traktProfile, setTraktProfile] = useState<any | null>(null);
   const [plexUser, setPlexUser] = useState<any | null>(null);
@@ -88,15 +111,16 @@ export default function Settings({ onBack }: SettingsProps) {
   );
 
   const plexDescription = useMemo(() => {
-    if (!plexUser) return 'Not connected';
-    if (serverInfo) return `${plexUser?.username || plexUser?.title || 'Connected'} · ${serverInfo.name}`;
-    return plexUser?.username || plexUser?.title || 'Connected';
-  }, [plexUser, serverInfo]);
+    if (!plexUser) return t('settings.not_connected');
+    const connectedText = t('settings.connected');
+    if (serverInfo) return `${plexUser?.username || plexUser?.title || connectedText} · ${serverInfo.name}`;
+    return plexUser?.username || plexUser?.title || connectedText;
+  }, [plexUser, serverInfo, t]);
 
   const renderAccount = () => (
-    <SettingsCard title="ACCOUNT">
+    <SettingsCard title={t('settings.account')}>
       <SettingItem
-        title="Plex"
+        title={t('settings.plex')}
         description={plexDescription}
         renderIcon={() => <PlexIcon size={18} color="#e5e7eb" />}
         renderRight={renderRightChevron}
@@ -107,34 +131,34 @@ export default function Settings({ onBack }: SettingsProps) {
   );
 
   const renderContent = () => (
-    <SettingsCard title="CONTENT & DISCOVERY">
+    <SettingsCard title={t('settings.content_discovery')}>
       <SettingItem
-        title="Catalogs"
-        description="Choose which libraries appear"
+        title={t('settings.catalogs')}
+        description={t('settings.catalogs_desc')}
         icon="albums-outline"
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('CatalogSettings')}
         isLast={false}
       />
       <SettingItem
-        title="Home Screen"
-        description="Hero and row visibility"
+        title={t('settings.home_screen')}
+        description={t('settings.home_screen_desc')}
         icon="home-outline"
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('HomeScreenSettings')}
         isLast={false}
       />
       <SettingItem
-        title="Details Screen"
-        description="Ratings and badges display"
+        title={t('settings.details_screen')}
+        description={t('settings.details_screen_desc')}
         icon="information-circle-outline"
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('DetailsScreenSettings')}
         isLast={false}
       />
       <SettingItem
-        title="Continue Watching"
-        description="Playback and cache behavior"
+        title={t('settings.continue_watching')}
+        description={t('settings.continue_watching_desc')}
         icon="play-outline"
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('ContinueWatchingSettings')}
@@ -144,10 +168,10 @@ export default function Settings({ onBack }: SettingsProps) {
   );
 
   const renderAppearance = () => (
-    <SettingsCard title="APPEARANCE">
+    <SettingsCard title={t('settings.appearance')}>
       <SettingItem
-        title="Episode Layout"
-        description={settings.episodeLayoutStyle === 'horizontal' ? 'Horizontal' : 'Vertical'}
+        title={t('settings.episode_layout')}
+        description={settings.episodeLayoutStyle === 'horizontal' ? t('settings.horizontal') : t('settings.vertical')}
         icon="grid-outline"
         renderRight={() => (
           <Switch
@@ -160,8 +184,8 @@ export default function Settings({ onBack }: SettingsProps) {
         isLast={false}
       />
       <SettingItem
-        title="Streams Backdrop"
-        description="Show dimmed backdrop behind player settings"
+        title={t('settings.streams_backdrop')}
+        description={t('settings.streams_backdrop_desc')}
         icon="image-outline"
         renderRight={() => (
           <Switch
@@ -175,10 +199,10 @@ export default function Settings({ onBack }: SettingsProps) {
   );
 
   const renderAndroidPerformance = () => (
-    <SettingsCard title="ANDROID PERFORMANCE">
+    <SettingsCard title={t('settings.android_performance')}>
       <SettingItem
-        title="Enable Blur Effects"
-        description="Enable blur view effects. May impact performance on some devices."
+        title={t('settings.enable_blur')}
+        description={t('settings.enable_blur_desc')}
         icon="sparkles-outline"
         renderRight={() => (
           <Switch
@@ -192,34 +216,34 @@ export default function Settings({ onBack }: SettingsProps) {
   );
 
   const renderIntegrations = () => (
-    <SettingsCard title="INTEGRATIONS">
+    <SettingsCard title={t('settings.integrations')}>
       <SettingItem
         title="TMDB"
-        description="Metadata and language (always enabled)"
+        description={t('settings.tmdb_desc')}
         renderIcon={() => <TMDBIcon size={18} color="#e5e7eb" />}
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('TMDBSettings')}
         isLast={false}
       />
       <SettingItem
-        title="MDBList (Multi-source)"
-        description={settings.mdblistEnabled ? 'Enabled' : 'Disabled'}
+        title={t('settings.mdblist')}
+        description={settings.mdblistEnabled ? t('settings.enabled') : t('settings.disabled')}
         renderIcon={() => <MDBListIcon size={18} color="#e5e7eb" />}
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('MDBListSettings')}
         isLast={false}
       />
       <SettingItem
-        title="Trakt"
-        description={traktProfile ? `@${traktProfile?.username || traktProfile?.ids?.slug}` : 'Sign in to sync'}
+        title={t('settings.trakt')}
+        description={traktProfile ? `@${traktProfile?.username || traktProfile?.ids?.slug}` : t('settings.trakt_signin_desc')}
         renderIcon={() => <TraktIcon size={18} color="#e5e7eb" />}
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('TraktSettings')}
         isLast={false}
       />
       <SettingItem
-        title="Overseerr"
-        description={settings.overseerrEnabled ? 'Enabled' : 'Disabled'}
+        title={t('settings.overseerr')}
+        description={settings.overseerrEnabled ? t('settings.enabled') : t('settings.disabled')}
         renderIcon={() => <OverseerrIcon size={18} color="#e5e7eb" />}
         renderRight={renderRightChevron}
         onPress={() => nav.navigate('OverseerrSettings')}
@@ -229,26 +253,26 @@ export default function Settings({ onBack }: SettingsProps) {
   );
 
   const renderPlayback = () => (
-    <SettingsCard title="PLAYBACK">
+    <SettingsCard title={t('settings.playback')}>
       <SettingItem
-        title="Video Player"
-        description="Coming soon"
+        title={t('settings.video_player')}
+        description={t('settings.coming_soon')}
         icon="play-circle-outline"
-        renderRight={() => <Text style={styles.comingSoon}>Soon</Text>}
+        renderRight={() => <Text style={styles.comingSoon}>{t('settings.coming_soon')}</Text>}
         disabled
         isLast={false}
       />
       <SettingItem
-        title="Auto-play Best Stream"
-        description="Coming soon"
+        title={t('settings.autoplay_best')}
+        description={t('settings.coming_soon')}
         icon="flash-outline"
         renderRight={() => <Switch value={false} onValueChange={() => { }} disabled />}
         disabled
         isLast={false}
       />
       <SettingItem
-        title="Always Resume"
-        description="Coming soon"
+        title={t('settings.always_resume')}
+        description={t('settings.coming_soon')}
         icon="refresh-outline"
         renderRight={() => <Switch value={false} onValueChange={() => { }} disabled />}
         disabled
@@ -258,48 +282,48 @@ export default function Settings({ onBack }: SettingsProps) {
   );
 
   const renderAbout = () => (
-    <SettingsCard title="ABOUT">
+    <SettingsCard title={t('settings.about')}>
       <SettingItem
-        title="Privacy Policy"
-        description="Review how data is handled"
+        title={t('settings.privacy_policy')}
+        description={t('settings.privacy_desc')}
         icon="shield-outline"
         renderRight={renderRightChevron}
         onPress={() => Linking.openURL(ABOUT_LINKS.privacy)}
         isLast={false}
       />
       <SettingItem
-        title="Report Issue"
-        description="Open a GitHub issue"
+        title={t('settings.report_issue')}
+        description={t('settings.report_issue_desc')}
         icon="bug-outline"
         renderRight={renderRightChevron}
         onPress={() => Linking.openURL(ABOUT_LINKS.reportIssue)}
         isLast={false}
       />
       <SettingItem
-        title="Contributors"
-        description="Project contributors"
+        title={t('settings.contributors')}
+        description={t('settings.contributors_desc')}
         icon="people-outline"
         renderRight={renderRightChevron}
         onPress={() => Linking.openURL(ABOUT_LINKS.contributors)}
         isLast={false}
       />
       <SettingItem
-        title="Version"
+        title={t('settings.version')}
         description={`v${getAppVersion()}`}
         icon="information-circle-outline"
         isLast={false}
       />
       <SettingItem
-        title="Discord"
-        description="Join the community"
+        title={t('settings.discord')}
+        description={t('settings.discord_desc')}
         icon="chatbubbles-outline"
         renderRight={renderRightChevron}
         onPress={() => Linking.openURL(ABOUT_LINKS.discord)}
         isLast={false}
       />
       <SettingItem
-        title="Reddit"
-        description="Follow updates"
+        title={t('settings.reddit')}
+        description={t('settings.reddit_desc')}
         icon="chatbox-ellipses-outline"
         renderRight={renderRightChevron}
         onPress={() => Linking.openURL(ABOUT_LINKS.reddit)}
@@ -338,7 +362,7 @@ export default function Settings({ onBack }: SettingsProps) {
   if (isTablet) {
     return (
       <View style={styles.container}>
-        <SettingsHeader title="Settings" onBack={goBack} scrollY={scrollY} />
+        <SettingsHeader title={t('settings.title')} onBack={goBack} scrollY={scrollY} />
         <View style={[styles.tabletLayout, { paddingTop: headerHeight }]}>
           <View style={styles.sidebar}>
             {visibleCategories.map((cat) => (
@@ -351,7 +375,7 @@ export default function Settings({ onBack }: SettingsProps) {
                 ]}
               >
                 <Ionicons
-                  name={cat.icon}
+                  name={CATEGORY_ICONS[cat.id]}
                   size={18}
                   color={selectedCategory === cat.id ? '#fff' : '#9ca3af'}
                 />
@@ -361,7 +385,7 @@ export default function Settings({ onBack }: SettingsProps) {
                     selectedCategory === cat.id && styles.sidebarTextActive,
                   ]}
                 >
-                  {cat.title}
+                  {getCategoryTitle(cat.id)}
                 </Text>
               </Pressable>
             ))}
@@ -386,7 +410,7 @@ export default function Settings({ onBack }: SettingsProps) {
 
   return (
     <View style={styles.container}>
-      <SettingsHeader title="Settings" onBack={goBack} scrollY={scrollY} />
+      <SettingsHeader title={t('settings.title')} onBack={goBack} scrollY={scrollY} />
       <Animated.ScrollView
         contentContainerStyle={[
           styles.content,

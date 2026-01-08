@@ -47,6 +47,7 @@ import {
 } from '../core/DetailsData';
 
 import FastImage from '@d11/react-native-fast-image';
+import { useTranslation } from 'react-i18next';
 
 type DetailsParams = {
   type: 'plex' | 'tmdb';
@@ -62,6 +63,7 @@ type RouteParams = {
 export default function Details({ route }: RouteParams) {
   const params: Partial<DetailsParams> = route?.params || {};
   const { isLoading: flixorLoading, isConnected } = useNetflow();
+  const { t } = useTranslation();
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
 
@@ -76,8 +78,8 @@ export default function Details({ route }: RouteParams) {
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
   const [seasonKey, setSeasonKey] = useState<string | null>(null);
-  const [seasonSource, setSeasonSource] = useState<'plex'|'tmdb'|null>(null);
-  const [tab, setTab] = useState<'episodes'|'suggested'|'details'>('suggested');
+  const [seasonSource, setSeasonSource] = useState<'plex' | 'tmdb' | null>(null);
+  const [tab, setTab] = useState<'episodes' | 'suggested' | 'details'>('suggested');
   const [tmdbCast, setTmdbCast] = useState<Array<{ id: number; name: string; profile_path?: string }>>([]);
   const [tmdbCrew, setTmdbCrew] = useState<Array<{ name: string; job?: string }>>([]);
   const [matchedPlex, setMatchedPlex] = useState<boolean>(false);
@@ -92,7 +94,7 @@ export default function Details({ route }: RouteParams) {
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const [watchlistIds, setWatchlistIds] = useState<WatchlistIds | null>(null);
   const [trailers, setTrailers] = useState<TrailerInfo[]>([]);
-  const [productionInfo, setProductionInfo] = useState<Array<{id: number; name: string; logo?: string}>>([]);
+  const [productionInfo, setProductionInfo] = useState<Array<{ id: number; name: string; logo?: string }>>([]);
   const [tmdbExtraInfo, setTmdbExtraInfo] = useState<{
     runtime?: number;
     status?: string;
@@ -474,7 +476,7 @@ export default function Details({ route }: RouteParams) {
                 : await (await import('../core/DetailsData')).fetchTmdbDetails('tv', Number(params.id));
               imdbIdTmdb = details?.external_ids?.imdb_id || details?.imdb_id;
               if (imdbIdTmdb) setImdbId(imdbIdTmdb);
-            } catch {}
+            } catch { }
 
             const idsTmdb: WatchlistIds = {
               tmdbId: Number(params.id),
@@ -485,7 +487,7 @@ export default function Details({ route }: RouteParams) {
             setWatchlistIds(idsTmdb);
             checkWatchlistStatus(idsTmdb).then(setInWatchlist);
           }
-        } catch {}
+        } catch { }
       }
       setLoading(false);
     })();
@@ -535,7 +537,7 @@ export default function Details({ route }: RouteParams) {
 
   if (flixorLoading || !isConnected || loading) {
     return (
-      <View style={{ flex:1, backgroundColor:'#0b0b0b', alignItems:'center', justifyContent:'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#0b0b0b', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#fff" />
       </View>
     );
@@ -543,8 +545,8 @@ export default function Details({ route }: RouteParams) {
 
   if (!meta) {
     return (
-      <View style={{ flex:1, backgroundColor:'#0b0b0b', alignItems:'center', justifyContent:'center' }}>
-        <Text style={{ color:'#fff' }}>No metadata available</Text>
+      <View style={{ flex: 1, backgroundColor: '#0b0b0b', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ color: '#fff' }}>{t('details.no_metadata')}</Text>
       </View>
     );
   }
@@ -577,8 +579,8 @@ export default function Details({ route }: RouteParams) {
     const profile = String(s?.displayTitle || '').toLowerCase();
     const colorTrc = String(s?.colorTrc || '').toLowerCase();
     return /dolby.?vision|dovi/i.test(profile) ||
-           profile.includes('dv') ||
-           /smpte2084|pq/i.test(colorTrc);
+      profile.includes('dv') ||
+      /smpte2084|pq/i.test(colorTrc);
   });
 
   // Dolby Atmos detection from audio streams (like macOS)
@@ -587,10 +589,10 @@ export default function Details({ route }: RouteParams) {
     const codec = String(s?.codec || '').toLowerCase();
     const profile = String(s?.audioProfile || '').toLowerCase();
     return displayTitle.includes('atmos') ||
-           displayTitle.includes('truehd') ||
-           codec.includes('atmos') ||
-           codec.includes('truehd') ||
-           profile.includes('atmos');
+      displayTitle.includes('truehd') ||
+      codec.includes('atmos') ||
+      codec.includes('truehd') ||
+      profile.includes('atmos');
   });
 
   // CC badge - show if any subtitles exist (like macOS)
@@ -621,7 +623,7 @@ export default function Details({ route }: RouteParams) {
       if (img.includes('rottentomatoes://image.rating.ripe') || img.includes('rottentomatoes://image.rating.rotten')) rtCriticRating = val ? Math.round(val * 10) : undefined;
       if (img.includes('rottentomatoes://image.rating.upright') || img.includes('rottentomatoes://image.rating.spilled')) rtAudienceRating = val ? Math.round(val * 10) : undefined;
     });
-  } catch {}
+  } catch { }
   // Fallbacks from top-level fields
   if (!imdbRating && typeof meta?.rating === 'number') imdbRating = meta.rating;
   if (!rtAudienceRating && typeof meta?.audienceRating === 'number') rtAudienceRating = Math.round(meta.audienceRating * 10);
@@ -631,292 +633,292 @@ export default function Details({ route }: RouteParams) {
 
   return (
     <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: 'transparent' }}>
-      <Animated.View style={{ flex:1, transform:[{ translateY: panY }] }} {...panResponder.panHandlers}>
+      <Animated.View style={{ flex: 1, transform: [{ translateY: panY }] }} {...panResponder.panHandlers}>
         {/* Dim + blur backdrop under the modal so swiping reveals content behind, not black */}
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { opacity: backdropOpacity, borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' }]}>
           <BlurOverlay />
         </Animated.View>
 
         {/* Shadow under the sheet so any reveal looks natural, not a black jump */}
-        <View style={{ position:'absolute', top:0, left:0, right:0, height:16, backgroundColor:'transparent', shadowColor:'#000', shadowOpacity:0.35, shadowRadius:14, shadowOffset:{ width:0, height:6 }, zIndex:1 }} />
-        <View style={{ flex:1, backgroundColor:'#0d0d0f', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' }}>
-      <ScrollView ref={ref => { scrollRef.current = ref; }}
-        scrollEventThrottle={16}
-        onScroll={(e:any) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
-        scrollEnabled={!closing}
-        bounces={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
-      >
-        {/* Hero backdrop with rounded bottom corners */}
-        <View style={{
-          marginBottom: 12,
-          borderBottomLeftRadius: 28,
-          borderBottomRightRadius: 28,
-          overflow: 'hidden',
-        }}>
-          <View style={{ width:'100%', aspectRatio: 16/9, backgroundColor:'#111' }}>
-            {backdrop() && FastImage ? (
-              <FastImage source={{ uri: backdrop() }} style={{ width:'100%', height:'100%' }} resizeMode="cover" />
-            ) : null}
-            {/* Top-right actions over image */}
-            <View style={{ position:'absolute', right: 12, top: 12, flexDirection:'row' }}>
-              {/* <Feather name="cast" size={25} color="#fff" style={{ marginHorizontal: 20 }} /> */}
-              <Pressable onPress={() => { nav.goBack(); }} style={{ width: 32, height: 32, borderRadius: 16, overflow: 'hidden', marginRight: 8 }}>
-                <ConditionalBlurView intensity={60} tint="dark" style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="close" color="#fff" size={18} />
-                </ConditionalBlurView>
-                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }} pointerEvents="none" />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 16, backgroundColor: 'transparent', shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, zIndex: 1 }} />
+        <View style={{ flex: 1, backgroundColor: '#0d0d0f', borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' }}>
+          <ScrollView ref={ref => { scrollRef.current = ref; }}
+            scrollEventThrottle={16}
+            onScroll={(e: any) => { scrollYRef.current = e.nativeEvent.contentOffset.y; }}
+            scrollEnabled={!closing}
+            bounces={false}
+            contentContainerStyle={{ paddingBottom: 32 }}
+          >
+            {/* Hero backdrop with rounded bottom corners */}
+            <View style={{
+              marginBottom: 12,
+              borderBottomLeftRadius: 28,
+              borderBottomRightRadius: 28,
+              overflow: 'hidden',
+            }}>
+              <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#111' }}>
+                {backdrop() && FastImage ? (
+                  <FastImage source={{ uri: backdrop() }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                ) : null}
+                {/* Top-right actions over image */}
+                <View style={{ position: 'absolute', right: 12, top: 12, flexDirection: 'row' }}>
+                  {/* <Feather name="cast" size={25} color="#fff" style={{ marginHorizontal: 20 }} /> */}
+                  <Pressable onPress={() => { nav.goBack(); }} style={{ width: 32, height: 32, borderRadius: 16, overflow: 'hidden', marginRight: 8 }}>
+                    <ConditionalBlurView intensity={60} tint="dark" style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="close" color="#fff" size={18} />
+                    </ConditionalBlurView>
+                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' }} pointerEvents="none" />
+                  </Pressable>
+                </View>
+                {/* Gradient from image into content */}
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.0)', 'rgba(13,13,15,0.85)', '#0d0d0f']}
+                  start={{ x: 0.5, y: 0.4 }} end={{ x: 0.5, y: 1.0 }}
+                  style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '55%' }}
+                />
+                {/* TMDB logo overlay (center) if available */}
+                {meta?.logoUrl && FastImage ? (
+                  <FastImage source={{ uri: meta.logoUrl }} style={{ position: 'absolute', bottom: 24, left: '10%', right: '10%', height: 48 }} resizeMode="contain" />
+                ) : null}
+              </View>
+            </View>
+
+            {/* Title - hide when logo is displayed */}
+            {!meta?.logoUrl && (
+              <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', marginHorizontal: 16 }}>{title}</Text>
+            )}
+
+            {/* Badges & Ratings */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12, marginHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}>
+              {/* Content Rating Badge */}
+              <ContentRatingBadge rating={contentRating} size={20} />
+              {/* Tech Badges */}
+              {is4K ? <TechBadge type="4k" size={10} /> : null}
+              {isHD ? <TechBadge type="hd" size={10} /> : null}
+              {hasDV ? <TechBadge type="dolby-vision" size={10} /> : null}
+              {hasAtmos ? <TechBadge type="dolby-atmos" size={10} /> : null}
+              {hasCC ? <TechBadge type="cc" size={10} /> : null}
+              {hasSDH ? <TechBadge type="sdh" size={10} /> : null}
+              {hasAD ? <TechBadge type="ad" size={10} /> : null}
+              {matchedPlex ? <BadgePill label="Plex" /> : null}
+              {!matchedPlex && params.type === 'tmdb' ? <BadgePill label="No local source" /> : null}
+              {/* Ratings - controlled by settings */}
+              {detailsSettings.showIMDbRating && typeof imdbRating === 'number' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                  <Image source={RATING_IMAGES.imdb} style={{ width: 20, height: 10 }} resizeMode="contain" />
+                  <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 4, fontSize: 12 }}>{imdbRating.toFixed(1)}</Text>
+                </View>
+              ) : null}
+              {detailsSettings.showRottenTomatoesCritic && typeof rtCriticRating === 'number' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                  <Image source={rtCriticRating >= 60 ? RATING_IMAGES.tomatoFresh : RATING_IMAGES.tomatoRotten} style={{ width: 10, height: 10 }} resizeMode="contain" />
+                  <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 4, fontSize: 12 }}>{rtCriticRating}%</Text>
+                </View>
+              ) : null}
+              {detailsSettings.showRottenTomatoesAudience && typeof rtAudienceRating === 'number' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                  <Image source={rtAudienceRating >= 60 ? RATING_IMAGES.popcornFull : RATING_IMAGES.popcornFallen} style={{ width: 10, height: 10 }} resizeMode="contain" />
+                  <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 4, fontSize: 12 }}>{rtAudienceRating}%</Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* Meta line */}
+            <Text style={{ color: '#bbb', marginHorizontal: 16, marginTop: 8 }}>
+              {/* Episode: Show S#E# first */}
+              {meta?.type === 'episode' && meta?.parentIndex && meta?.index ? `S${meta.parentIndex} E${meta.index} • ` : ''}
+              {meta?.year ? `${meta.year} • ` : ''}
+              {meta?.type === 'show' ? `${meta?.leafCount || 0} ${t('details.episodes_count')}` : (meta?.duration ? `${Math.round(meta.duration / 60000)}m` : '')}
+              {meta?.Genre?.length ? ` • ${meta.Genre.map((g: any) => g.tag).slice(0, 3).join(', ')}` : ''}
+            </Text>
+
+            {/* View Show button for episodes */}
+            {meta?.type === 'episode' && meta?.grandparentRatingKey && (
+              <Pressable
+                onPress={() => {
+                  console.log('[Details] Navigating to parent show:', meta.grandparentRatingKey);
+                  nav.push('Details', { type: 'plex', ratingKey: String(meta.grandparentRatingKey) });
+                }}
+                style={{
+                  marginHorizontal: 16,
+                  marginTop: 12,
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Ionicons name="tv-outline" size={18} color="#fff" />
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
+                  {t('details.view_show')}
+                </Text>
               </Pressable>
-            </View>
-            {/* Gradient from image into content */}
-            <LinearGradient
-              colors={[ 'rgba(0,0,0,0.0)', 'rgba(13,13,15,0.85)', '#0d0d0f' ]}
-              start={{ x: 0.5, y: 0.4 }} end={{ x: 0.5, y: 1.0 }}
-              style={{ position:'absolute', left:0, right:0, bottom:0, height:'55%' }}
-            />
-            {/* TMDB logo overlay (center) if available */}
-            {meta?.logoUrl && FastImage ? (
-              <FastImage source={{ uri: meta.logoUrl }} style={{ position:'absolute', bottom: 24, left:'10%', right:'10%', height: 48 }} resizeMode="contain" />
-            ) : null}
-          </View>
-        </View>
+            )}
 
-        {/* Title - hide when logo is displayed */}
-        {!meta?.logoUrl && (
-          <Text style={{ color:'#fff', fontSize:28, fontWeight:'800', marginHorizontal:16 }}>{title}</Text>
-        )}
-
-        {/* Badges & Ratings */}
-        <View style={{ flexDirection:'row', flexWrap:'wrap', gap:8, marginTop:12, marginHorizontal:16, alignItems:'center', justifyContent:'center' }}>
-          {/* Content Rating Badge */}
-          <ContentRatingBadge rating={contentRating} size={20} />
-          {/* Tech Badges */}
-          {is4K ? <TechBadge type="4k" size={10} /> : null}
-          {isHD ? <TechBadge type="hd" size={10} /> : null}
-          {hasDV ? <TechBadge type="dolby-vision" size={10} /> : null}
-          {hasAtmos ? <TechBadge type="dolby-atmos" size={10} /> : null}
-          {hasCC ? <TechBadge type="cc" size={10} /> : null}
-          {hasSDH ? <TechBadge type="sdh" size={10} /> : null}
-          {hasAD ? <TechBadge type="ad" size={10} /> : null}
-          {matchedPlex ? <BadgePill label="Plex" /> : null}
-          {!matchedPlex && params.type === 'tmdb' ? <BadgePill label="No local source" /> : null}
-          {/* Ratings - controlled by settings */}
-          {detailsSettings.showIMDbRating && typeof imdbRating === 'number' ? (
-            <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:'rgba(255,255,255,0.1)', paddingHorizontal:8, paddingVertical:4, borderRadius:6 }}>
-              <Image source={RATING_IMAGES.imdb} style={{ width: 20, height: 10 }} resizeMode="contain" />
-              <Text style={{ color:'#fff', fontWeight:'700', marginLeft:4, fontSize: 12 }}>{imdbRating.toFixed(1)}</Text>
-            </View>
-          ) : null}
-          {detailsSettings.showRottenTomatoesCritic && typeof rtCriticRating === 'number' ? (
-            <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:'rgba(255,255,255,0.1)', paddingHorizontal:8, paddingVertical:4, borderRadius:6 }}>
-              <Image source={rtCriticRating >= 60 ? RATING_IMAGES.tomatoFresh : RATING_IMAGES.tomatoRotten} style={{ width: 10, height: 10 }} resizeMode="contain" />
-              <Text style={{ color:'#fff', fontWeight:'700', marginLeft:4, fontSize: 12 }}>{rtCriticRating}%</Text>
-            </View>
-          ) : null}
-          {detailsSettings.showRottenTomatoesAudience && typeof rtAudienceRating === 'number' ? (
-            <View style={{ flexDirection:'row', alignItems:'center', backgroundColor:'rgba(255,255,255,0.1)', paddingHorizontal:8, paddingVertical:4, borderRadius:6 }}>
-              <Image source={rtAudienceRating >= 60 ? RATING_IMAGES.popcornFull : RATING_IMAGES.popcornFallen} style={{ width: 10, height: 10 }} resizeMode="contain" />
-              <Text style={{ color:'#fff', fontWeight:'700', marginLeft:4, fontSize: 12 }}>{rtAudienceRating}%</Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Meta line */}
-        <Text style={{ color:'#bbb', marginHorizontal:16, marginTop:8 }}>
-          {/* Episode: Show S#E# first */}
-          {meta?.type === 'episode' && meta?.parentIndex && meta?.index ? `S${meta.parentIndex} E${meta.index} • ` : ''}
-          {meta?.year ? `${meta.year} • ` : ''}
-          {meta?.type === 'show' ? `${meta?.leafCount || 0} Episodes` : (meta?.duration ? `${Math.round(meta.duration/60000)}m` : '')}
-          {meta?.Genre?.length ? ` • ${meta.Genre.map((g:any)=>g.tag).slice(0,3).join(', ')}` : ''}
-        </Text>
-
-        {/* View Show button for episodes */}
-        {meta?.type === 'episode' && meta?.grandparentRatingKey && (
-          <Pressable
-            onPress={() => {
-              console.log('[Details] Navigating to parent show:', meta.grandparentRatingKey);
-              nav.push('Details', { type: 'plex', ratingKey: String(meta.grandparentRatingKey) });
-            }}
-            style={{
-              marginHorizontal: 16,
-              marginTop: 12,
-              backgroundColor: 'rgba(255,255,255,0.1)',
-              paddingVertical: 10,
-              borderRadius: 10,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-          >
-            <Ionicons name="tv-outline" size={18} color="#fff" />
-            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
-              View Show
-            </Text>
-          </Pressable>
-        )}
-
-        {/* Play / Continue */}
-        <Pressable
-          disabled={!matchedPlex}
-          onPress={() => {
-            if (matchedPlex || params.type === 'plex') {
-              // For TV shows with nextUp, play that episode
-              if (meta?.type === 'show' && nextUp) {
-                console.log('[Details] Playing next up episode:', nextUp.ratingKey, `S${nextUp.seasonNumber}E${nextUp.episodeNumber}`);
-                nav.navigate('Player', { type: 'plex', ratingKey: nextUp.ratingKey });
-              } else {
-                // For movies or shows without nextUp data, play the main content
-                const rk = mappedRk || params.ratingKey;
-                if (rk) {
-                  console.log('[Details] Playing ratingKey:', rk);
-                  nav.navigate('Player', { type: 'plex', ratingKey: rk });
-                }
-              }
-            }
-          }}
-          style={{
-            marginHorizontal:16,
-            marginTop:12,
-            backgroundColor: matchedPlex ? '#fff' : '#333',
-            paddingVertical:12,
-            borderRadius:12,
-            alignItems:'center'
-          }}
-        >
-          {matchedPlex ? (
-            meta?.type === 'show' && nextUp ? (
-              <Text style={{ color:'#000', fontWeight:'900', letterSpacing:1 }}>
-                {nextUp.status === 'in-progress' ? '▶  CONTINUE' : nextUp.status === 'all-watched' ? '▶  REWATCH' : '▶  PLAY'}
-                {' · '}S{nextUp.seasonNumber} E{nextUp.episodeNumber}
-              </Text>
-            ) : (
-              <Text style={{ color:'#000', fontWeight:'900', letterSpacing:2 }}>▶  PLAY</Text>
-            )
-          ) : (
-            <Text style={{ color:'#888', fontWeight:'700', fontSize:13, textAlign:'center' }}>
-              You don't own this content{'\n'}No local source found
-            </Text>
-          )}
-        </Pressable>
-
-        {/* Actions */}
-        <View style={{ flexDirection:'row', justifyContent:'space-around', marginTop:14 }}>
-          <Pressable
-            disabled={trailers.length === 0}
-            onPress={() => {
-              if (trailers.length > 0) {
-                const trailer = trailers[0];
-                const url = getYouTubeUrl(trailer.key);
-                console.log('[Details] Opening trailer:', trailer.name, url);
-                Linking.openURL(url).catch((err) => {
-                  Alert.alert('Error', 'Could not open trailer');
-                  console.log('[Details] Failed to open URL:', err);
-                });
-              }
-            }}
-            style={{ alignItems: 'center', opacity: trailers.length > 0 ? 1 : 0.4 }}
-          >
-            <Ionicons name="play-circle-outline" size={22} color="#fff" />
-            <Text style={{ color: '#fff', marginTop: 4, fontWeight: '600' }}>
-              {trailers.length > 0 ? 'TRAILER' : 'NO TRAILER'}
-            </Text>
-          </Pressable>
-          <WatchlistButton
-            inWatchlist={inWatchlist}
-            loading={watchlistLoading}
-            onPress={async () => {
-              if (!watchlistIds || watchlistLoading) return;
-              setWatchlistLoading(true);
-              try {
-                const result = await toggleWatchlist(watchlistIds, 'both');
-                if (result.success) {
-                  setInWatchlist(result.inWatchlist);
-                }
-              } finally {
-                setWatchlistLoading(false);
-              }
-            }}
-          />
-          {noLocalSource && (
-            <RequestButton
-              tmdbId={watchlistIds?.tmdbId}
-              mediaType={meta?.type === 'movie' ? 'movie' : 'tv'}
-              title={meta?.title || 'this title'}
-              compact
-            />
-          )}
-        </View>
-
-        {/* Synopsis */}
-        {meta?.summary ? (
-          <Text style={{ color:'#ddd', marginHorizontal:16, marginTop:16, lineHeight:20 }}>{meta.summary}</Text>
-        ) : null}
-
-        {/* Trailers & Videos Row */}
-        {trailers.length > 0 && (
-          <TrailersRow
-            trailers={trailers}
-            contentTitle={meta?.title}
-          />
-        )}
-
-        {/* Tabs (TV shows include Episodes; Movies omit Episodes) */}
-        <Tabs tab={tab} setTab={setTab} showEpisodes={meta?.type === 'show' && (seasons.length > 0)} />
-
-        {/* Content area */}
-        <View style={{ marginTop:20 }}>
-          {meta?.type === 'show' && tab === 'episodes' ? (
-            <>
-              <SeasonSelector seasons={seasons} seasonKey={seasonKey} onChange={async (key)=> {
-                setSeasonKey(key);
-                setEpisodesLoading(true);
-                try {
-                  if (seasonSource === 'plex') {
-                    setEpisodes(await fetchPlexSeasonEpisodes(key));
-                  } else if (seasonSource === 'tmdb') {
-                    const tvId = route?.params?.id ? String(route?.params?.id) : undefined;
-                    if (tvId) setEpisodes(await fetchTmdbSeasonEpisodes(Number(tvId), Number(key)));
+            {/* Play / Continue */}
+            <Pressable
+              disabled={!matchedPlex}
+              onPress={() => {
+                if (matchedPlex || params.type === 'plex') {
+                  // For TV shows with nextUp, play that episode
+                  if (meta?.type === 'show' && nextUp) {
+                    console.log('[Details] Playing next up episode:', nextUp.ratingKey, `S${nextUp.seasonNumber}E${nextUp.episodeNumber}`);
+                    nav.navigate('Player', { type: 'plex', ratingKey: nextUp.ratingKey });
+                  } else {
+                    // For movies or shows without nextUp data, play the main content
+                    const rk = mappedRk || params.ratingKey;
+                    if (rk) {
+                      console.log('[Details] Playing ratingKey:', rk);
+                      nav.navigate('Player', { type: 'plex', ratingKey: rk });
+                    }
                   }
-                } finally {
-                  setEpisodesLoading(false);
                 }
-              }} />
-              <EpisodeList 
-                season={(() => {
-                  const idx = seasons.findIndex((s: any, i: number) => String(s.ratingKey || s.key || i) === seasonKey);
-                  if (idx !== -1) {
-                    return String(seasons[idx].index || (idx + 1));
-                  }
-                  return seasonKey;
-                })()}
-                episodes={episodes} 
-                tmdbMode={seasonSource==='tmdb'} 
-                tmdbId={route?.params?.id ? String(route?.params?.id) : undefined} 
-                loading={episodesLoading} 
-              />
-            </>
-          ) : null}
-          {tab === 'suggested' ? (
-            <SuggestedRows meta={meta} routeParams={route?.params} parentShowMeta={parentShowMeta} />
-          ) : null}
-          {tab === 'details' ? (
-            <DetailsTab
-              meta={meta}
-              tmdbCast={tmdbCast}
-              tmdbCrew={tmdbCrew}
-              productionInfo={productionInfo}
-              tmdbExtraInfo={tmdbExtraInfo}
-              mdblistRatings={mdblistRating.ratings}
-              onPersonPress={(id, name) => {
-                setSelectedPersonId(id);
-                setSelectedPersonName(name);
-                setPersonModalVisible(true);
               }}
-            />
-          ) : null}
-        </View>
-      </ScrollView>
+              style={{
+                marginHorizontal: 16,
+                marginTop: 12,
+                backgroundColor: matchedPlex ? '#fff' : '#333',
+                paddingVertical: 12,
+                borderRadius: 12,
+                alignItems: 'center'
+              }}
+            >
+              {matchedPlex ? (
+                meta?.type === 'show' && nextUp ? (
+                  <Text style={{ color: '#000', fontWeight: '900', letterSpacing: 1 }}>
+                    {nextUp.status === 'in-progress' ? `▶  ${t('details.continue')}` : nextUp.status === 'all-watched' ? `▶  ${t('details.rewatch')}` : `▶  ${t('details.play')}`}
+                    {' · '}S{nextUp.seasonNumber} E{nextUp.episodeNumber}
+                  </Text>
+                ) : (
+                  <Text style={{ color: '#000', fontWeight: '900', letterSpacing: 2 }}>▶  {t('details.play')}</Text>
+                )
+              ) : (
+                <Text style={{ color: '#888', fontWeight: '700', fontSize: 13, textAlign: 'center' }}>
+                  {t('details.no_source_msg')}
+                </Text>
+              )}
+            </Pressable>
+
+            {/* Actions */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 14 }}>
+              <Pressable
+                disabled={trailers.length === 0}
+                onPress={() => {
+                  if (trailers.length > 0) {
+                    const trailer = trailers[0];
+                    const url = getYouTubeUrl(trailer.key);
+                    console.log('[Details] Opening trailer:', trailer.name, url);
+                    Linking.openURL(url).catch((err) => {
+                      Alert.alert('Error', 'Could not open trailer');
+                      console.log('[Details] Failed to open URL:', err);
+                    });
+                  }
+                }}
+                style={{ alignItems: 'center', opacity: trailers.length > 0 ? 1 : 0.4 }}
+              >
+                <Ionicons name="play-circle-outline" size={22} color="#fff" />
+                <Text style={{ color: '#fff', marginTop: 4, fontWeight: '600' }}>
+                  {trailers.length > 0 ? t('details.trailer') : t('details.no_trailer')}
+                </Text>
+              </Pressable>
+              <WatchlistButton
+                inWatchlist={inWatchlist}
+                loading={watchlistLoading}
+                onPress={async () => {
+                  if (!watchlistIds || watchlistLoading) return;
+                  setWatchlistLoading(true);
+                  try {
+                    const result = await toggleWatchlist(watchlistIds, 'both');
+                    if (result.success) {
+                      setInWatchlist(result.inWatchlist);
+                    }
+                  } finally {
+                    setWatchlistLoading(false);
+                  }
+                }}
+              />
+              {noLocalSource && (
+                <RequestButton
+                  tmdbId={watchlistIds?.tmdbId}
+                  mediaType={meta?.type === 'movie' ? 'movie' : 'tv'}
+                  title={meta?.title || 'this title'}
+                  compact
+                />
+              )}
+            </View>
+
+            {/* Synopsis */}
+            {meta?.summary ? (
+              <Text style={{ color: '#ddd', marginHorizontal: 16, marginTop: 16, lineHeight: 20 }}>{meta.summary}</Text>
+            ) : null}
+
+            {/* Trailers & Videos Row */}
+            {trailers.length > 0 && (
+              <TrailersRow
+                trailers={trailers}
+                contentTitle={meta?.title}
+              />
+            )}
+
+            {/* Tabs (TV shows include Episodes; Movies omit Episodes) */}
+            <Tabs tab={tab} setTab={setTab} showEpisodes={meta?.type === 'show' && (seasons.length > 0)} />
+
+            {/* Content area */}
+            <View style={{ marginTop: 20 }}>
+              {meta?.type === 'show' && tab === 'episodes' ? (
+                <>
+                  <SeasonSelector seasons={seasons} seasonKey={seasonKey} onChange={async (key) => {
+                    setSeasonKey(key);
+                    setEpisodesLoading(true);
+                    try {
+                      if (seasonSource === 'plex') {
+                        setEpisodes(await fetchPlexSeasonEpisodes(key));
+                      } else if (seasonSource === 'tmdb') {
+                        const tvId = route?.params?.id ? String(route?.params?.id) : undefined;
+                        if (tvId) setEpisodes(await fetchTmdbSeasonEpisodes(Number(tvId), Number(key)));
+                      }
+                    } finally {
+                      setEpisodesLoading(false);
+                    }
+                  }} />
+                  <EpisodeList
+                    season={(() => {
+                      const idx = seasons.findIndex((s: any, i: number) => String(s.ratingKey || s.key || i) === seasonKey);
+                      if (idx !== -1) {
+                        return String(seasons[idx].index || (idx + 1));
+                      }
+                      return seasonKey;
+                    })()}
+                    episodes={episodes}
+                    tmdbMode={seasonSource === 'tmdb'}
+                    tmdbId={route?.params?.id ? String(route?.params?.id) : undefined}
+                    loading={episodesLoading}
+                  />
+                </>
+              ) : null}
+              {tab === 'suggested' ? (
+                <SuggestedRows meta={meta} routeParams={route?.params} parentShowMeta={parentShowMeta} />
+              ) : null}
+              {tab === 'details' ? (
+                <DetailsTab
+                  meta={meta}
+                  tmdbCast={tmdbCast}
+                  tmdbCrew={tmdbCrew}
+                  productionInfo={productionInfo}
+                  tmdbExtraInfo={tmdbExtraInfo}
+                  mdblistRatings={mdblistRating.ratings}
+                  onPersonPress={(id, name) => {
+                    setSelectedPersonId(id);
+                    setSelectedPersonName(name);
+                    setPersonModalVisible(true);
+                  }}
+                />
+              ) : null}
+            </View>
+          </ScrollView>
         </View>
       </Animated.View>
 
@@ -949,7 +951,7 @@ function BlurOverlay() {
     <View style={StyleSheet.absoluteFillObject}>
       <ConditionalBlurView intensity={60} tint="dark" style={StyleSheet.absoluteFillObject} />
       <LinearGradient
-        colors={[ 'rgba(10,10,10,0.22)', 'rgba(10,10,10,0.10)' ]}
+        colors={['rgba(10,10,10,0.22)', 'rgba(10,10,10,0.10)']}
         start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
@@ -959,31 +961,32 @@ function BlurOverlay() {
 
 function Badge({ label }: { label: string }) {
   return (
-    <View style={{ backgroundColor:'#262626', paddingHorizontal:10, paddingVertical:6, borderRadius:8 }}>
-      <Text style={{ color:'#fff', fontWeight:'700' }}>{label}</Text>
+    <View style={{ backgroundColor: '#262626', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
+      <Text style={{ color: '#fff', fontWeight: '700' }}>{label}</Text>
     </View>
   );
 }
 
 function ActionIcon({ icon, label }: { icon: any; label: string }) {
   return (
-    <View style={{ alignItems:'center' }}>
+    <View style={{ alignItems: 'center' }}>
       <Ionicons name={icon} size={22} color="#fff" />
-      <Text style={{ color:'#fff', marginTop:4, fontWeight:'600' }}>{label}</Text>
+      <Text style={{ color: '#fff', marginTop: 4, fontWeight: '600' }}>{label}</Text>
     </View>
   );
 }
 
 function WatchlistButton({ inWatchlist, loading, onPress }: { inWatchlist: boolean; loading: boolean; onPress: () => void }) {
+  const { t } = useTranslation();
   return (
-    <Pressable onPress={onPress} disabled={loading} style={{ alignItems:'center', opacity: loading ? 0.5 : 1 }}>
+    <Pressable onPress={onPress} disabled={loading} style={{ alignItems: 'center', opacity: loading ? 0.5 : 1 }}>
       {loading ? (
         <ActivityIndicator size="small" color="#fff" />
       ) : (
         <Ionicons name={inWatchlist ? 'checkmark' : 'add'} size={22} color="#fff" />
       )}
-      <Text style={{ color:'#fff', marginTop:4, fontWeight:'600' }}>
-        {inWatchlist ? 'IN LIST' : 'WATCHLIST'}
+      <Text style={{ color: '#fff', marginTop: 4, fontWeight: '600' }}>
+        {inWatchlist ? t('details.in_list') : t('details.watchlist')}
       </Text>
     </Pressable>
   );
@@ -991,6 +994,7 @@ function WatchlistButton({ inWatchlist, loading, onPress }: { inWatchlist: boole
 
 function EpisodeList({ season, episodes, tmdbMode, tmdbId, loading }: { season: string | null; episodes: any[]; tmdbMode?: boolean; tmdbId?: string; loading?: boolean }) {
   const nav: any = useNavigation();
+  const { t } = useTranslation();
   const { settings } = useAppSettings();
   const useHorizontalLayout = settings.episodeLayoutStyle === 'horizontal';
   const screenW = Dimensions.get('window').width;
@@ -1015,7 +1019,7 @@ function EpisodeList({ season, episodes, tmdbMode, tmdbId, loading }: { season: 
       if (vc > 0) return 100;
       if (dur > 0 && vo / dur >= 0.95) return 100;
       if (dur > 0) return Math.round((vo / dur) * 100);
-    } catch {}
+    } catch { }
     return undefined;
   };
 
@@ -1074,11 +1078,11 @@ function EpisodeList({ season, episodes, tmdbMode, tmdbId, loading }: { season: 
           <View style={{ padding: 12 }}>
             <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.5)' }}>
               <Text style={{ color: '#e5e7eb', fontSize: 10, fontWeight: '700', letterSpacing: 0.8 }}>
-                EPISODE {index + 1}
+                {t('details.episode').toUpperCase()} {index + 1}
               </Text>
             </View>
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15, marginTop: 6 }} numberOfLines={2}>
-              {ep.title || ep.name || 'Episode'}
+              {ep.title || ep.name || t('details.episode')}
             </Text>
             {overview ? (
               <Text style={{ color: 'rgba(255,255,255,0.82)', fontSize: 12, marginTop: 6 }} numberOfLines={3}>
@@ -1114,7 +1118,7 @@ function EpisodeList({ season, episodes, tmdbMode, tmdbId, loading }: { season: 
 
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ color:'#fff', fontSize:18, fontWeight:'800', marginHorizontal:16, marginBottom:8 }}>Season {season}</Text>
+      <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', marginHorizontal: 16, marginBottom: 8 }}>{t('details.season')} {season}</Text>
       {useHorizontalLayout ? (
         <FlatList
           data={episodes}
@@ -1132,7 +1136,7 @@ function EpisodeList({ season, episodes, tmdbMode, tmdbId, loading }: { season: 
           }}
         />
       ) : (
-        episodes.map((ep:any, idx:number) => {
+        episodes.map((ep: any, idx: number) => {
           const img = resolveEpisodeImage(ep);
           const progress = resolveEpisodeProgress(ep);
           const durationLabel = resolveDurationLabel(ep);
@@ -1175,17 +1179,18 @@ function EpisodeList({ season, episodes, tmdbMode, tmdbId, loading }: { season: 
   );
 }
 
-function Tabs({ tab, setTab, showEpisodes }: { tab: 'episodes'|'suggested'|'details'; setTab: (t:any)=>void; showEpisodes: boolean }) {
+function Tabs({ tab, setTab, showEpisodes }: { tab: 'episodes' | 'suggested' | 'details'; setTab: (t: any) => void; showEpisodes: boolean }) {
+  const { t } = useTranslation();
   const tabs: Array<{ key: any; label: string }> = showEpisodes
-    ? [ { key:'episodes', label:'EPISODES' }, { key:'suggested', label:'SUGGESTED' }, { key:'details', label:'DETAILS' } ]
-    : [ { key:'suggested', label:'SUGGESTED' }, { key:'details', label:'DETAILS' } ];
+    ? [{ key: 'episodes', label: t('details.episodes') }, { key: 'suggested', label: t('details.suggested') }, { key: 'details', label: t('details.details') }]
+    : [{ key: 'suggested', label: t('details.suggested') }, { key: 'details', label: t('details.details') }];
   return (
-    <View style={{ marginTop:18 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal:16 }}>
+    <View style={{ marginTop: 18 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
         {tabs.map(t => (
-          <Pressable key={t.key} onPress={()=> setTab(t.key)} style={{ marginRight:28 }}>
-            <Text style={{ color:'#fff', fontWeight:'900', letterSpacing:1.2, fontSize:14 }}>{t.label}</Text>
-            {tab===t.key ? <View style={{ height:4, backgroundColor:'#fff', marginTop:6, borderRadius:2 }} /> : <View style={{ height:4, backgroundColor:'transparent', marginTop:6 }} />}
+          <Pressable key={t.key} onPress={() => setTab(t.key)} style={{ marginRight: 28 }}>
+            <Text style={{ color: '#fff', fontWeight: '900', letterSpacing: 1.2, fontSize: 14 }}>{t.label}</Text>
+            {tab === t.key ? <View style={{ height: 4, backgroundColor: '#fff', marginTop: 6, borderRadius: 2 }} /> : <View style={{ height: 4, backgroundColor: 'transparent', marginTop: 6 }} />}
           </Pressable>
         ))}
       </ScrollView>
@@ -1194,6 +1199,7 @@ function Tabs({ tab, setTab, showEpisodes }: { tab: 'episodes'|'suggested'|'deta
 }
 
 function SuggestedRows({ meta, routeParams, parentShowMeta }: { meta: any; routeParams?: any; parentShowMeta?: any }) {
+  const { t } = useTranslation();
   const [recs, setRecs] = React.useState<RowItem[]>([]);
   const [similar, setSimilar] = React.useState<RowItem[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -1205,15 +1211,15 @@ function SuggestedRows({ meta, routeParams, parentShowMeta }: { meta: any; route
   const tmdbId = React.useMemo(() => {
     try {
       // Prefer Plex GUID (meta) if available
-      const guids: string[] = Array.isArray(effectiveMeta?.Guid) ? effectiveMeta.Guid.map((g:any)=> String(g.id||'')) : [];
-      const tmdbGuid = guids.find(g=> g.includes('tmdb://') || g.includes('themoviedb://'));
+      const guids: string[] = Array.isArray(effectiveMeta?.Guid) ? effectiveMeta.Guid.map((g: any) => String(g.id || '')) : [];
+      const tmdbGuid = guids.find(g => g.includes('tmdb://') || g.includes('themoviedb://'));
       if (tmdbGuid) return tmdbGuid.split('://')[1];
       // Fallback to route param for TMDB-only details
       const pid = routeParams?.id; return pid ? String(pid) : null;
     } catch { return null; }
   }, [effectiveMeta, routeParams]);
 
-  const mediaType: 'movie'|'tv' = React.useMemo(() => {
+  const mediaType: 'movie' | 'tv' = React.useMemo(() => {
     // Episodes are always TV
     if (isEpisode) return 'tv';
     if (effectiveMeta?.type === 'movie' || effectiveMeta?.type === 'show') return (effectiveMeta.type === 'movie') ? 'movie' : 'tv';
@@ -1243,26 +1249,26 @@ function SuggestedRows({ meta, routeParams, parentShowMeta }: { meta: any; route
     if (!it?.id) return;
     if (it.id.startsWith('plex:')) {
       const rk = it.id.split(':')[1];
-      nav.push('Details', { type:'plex', ratingKey: rk });
+      nav.push('Details', { type: 'plex', ratingKey: rk });
     } else if (it.id.startsWith('tmdb:')) {
       const [, media, id] = it.id.split(':');
-      nav.push('Details', { type:'tmdb', mediaType: media === 'movie' ? 'movie' : 'tv', id });
+      nav.push('Details', { type: 'tmdb', mediaType: media === 'movie' ? 'movie' : 'tv', id });
     }
   };
 
-  if (loading) return <Text style={{ color:'#888', marginHorizontal:16 }}>Loading…</Text>;
-  if (!recs.length && !similar.length) return <Text style={{ color:'#888', marginHorizontal:16 }}>No suggestions</Text>;
+  if (loading) return <Text style={{ color: '#888', marginHorizontal: 16 }}>{t('details.loading')}</Text>;
+  if (!recs.length && !similar.length) return <Text style={{ color: '#888', marginHorizontal: 16 }}>{t('details.no_suggestions')}</Text>;
   return (
     <View>
       {recs.length > 0 && (
-        <Row title="Recommended" items={recs}
+        <Row title={t('details.recommended')} items={recs}
           getImageUri={getUri} getTitle={getTitle}
           onItemPress={onPress}
           onTitlePress={() => recs[0] && onPress(recs[0])}
         />
       )}
       {similar.length > 0 && (
-        <Row title="More Like This" items={similar}
+        <Row title={t('details.more_like_this')} items={similar}
           getImageUri={getUri} getTitle={getTitle}
           onItemPress={onPress}
           onTitlePress={() => similar[0] && onPress(similar[0])}
@@ -1274,16 +1280,16 @@ function SuggestedRows({ meta, routeParams, parentShowMeta }: { meta: any; route
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Text style={{ color:'#fff', fontSize:18, fontWeight:'800', marginHorizontal:16, marginTop:18 }}>{title}</Text>
+    <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', marginHorizontal: 16, marginTop: 18 }}>{title}</Text>
   );
 }
 
 function KeyValue({ k, v }: { k: string; v?: string }) {
   if (!v) return null;
   return (
-    <View style={{ flexDirection:'row', justifyContent:'space-between', paddingHorizontal:16, paddingVertical:8 }}>
-      <Text style={{ color:'#aaa' }}>{k}</Text>
-      <Text style={{ color:'#eee', marginLeft:12, flexShrink:1, textAlign:'right' }}>{v}</Text>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 }}>
+      <Text style={{ color: '#aaa' }}>{k}</Text>
+      <Text style={{ color: '#eee', marginLeft: 12, flexShrink: 1, textAlign: 'right' }}>{v}</Text>
     </View>
   );
 }
@@ -1320,14 +1326,14 @@ function RatingsRow({ meta, tmdbRating, mdblistRatings }: {
   let plexRtCritic: number | undefined;
   let plexRtAudience: number | undefined;
   try {
-    plexRatings.forEach((r:any) => {
+    plexRatings.forEach((r: any) => {
       const img = String(r?.image || '').toLowerCase();
       const val = typeof r?.value === 'number' ? r.value : Number(r?.value);
       if (img.includes('imdb://image.rating')) plexImdb = val;
       if (img.includes('rottentomatoes://image.rating.ripe') || img.includes('rottentomatoes://image.rating.rotten')) plexRtCritic = val ? Math.round(val * 10) : undefined;
       if (img.includes('rottentomatoes://image.rating.upright') || img.includes('rottentomatoes://image.rating.spilled')) plexRtAudience = val ? Math.round(val * 10) : undefined;
     });
-  } catch {}
+  } catch { }
 
   // Fallbacks from Plex top-level fields
   if (!plexImdb && typeof meta?.rating === 'number') plexImdb = meta.rating;
@@ -1372,47 +1378,47 @@ function RatingsRow({ meta, tmdbRating, mdblistRatings }: {
   const popcornImage = rtAudience !== undefined && rtAudience >= 60 ? RATING_IMAGES.popcornFull : RATING_IMAGES.popcornFallen;
 
   return (
-    <View style={{ flexDirection:'row', alignItems:'center', marginTop:8, marginHorizontal:16, flexWrap:'wrap', gap: 16 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginHorizontal: 16, flexWrap: 'wrap', gap: 16 }}>
       {typeof imdb === 'number' ? (
-        <View style={{ flexDirection:'row', alignItems:'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image source={RATING_IMAGES.imdb} style={{ width: 32, height: 16 }} resizeMode="contain" />
-          <Text style={{ color:'#fff', fontWeight:'700', marginLeft:6, fontSize: 14 }}>{imdb.toFixed(1)}</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>{imdb.toFixed(1)}</Text>
         </View>
       ) : null}
       {typeof tmdb === 'number' ? (
-        <View style={{ flexDirection:'row', alignItems:'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image source={RATING_SVGS.tmdb} style={{ width: 18, height: 18 }} resizeMode="contain" />
-          <Text style={{ color:'#fff', fontWeight:'700', marginLeft:6, fontSize: 14 }}>{tmdb.toFixed(1)}</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>{tmdb.toFixed(1)}</Text>
         </View>
       ) : null}
       {typeof rtCritic === 'number' ? (
-        <View style={{ flexDirection:'row', alignItems:'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image source={tomatoImage} style={{ width: 18, height: 18 }} resizeMode="contain" />
-          <Text style={{ color:'#fff', fontWeight:'700', marginLeft:6, fontSize: 14 }}>{rtCritic}%</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>{rtCritic}%</Text>
         </View>
       ) : null}
       {typeof rtAudience === 'number' ? (
-        <View style={{ flexDirection:'row', alignItems:'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image source={popcornImage} style={{ width: 18, height: 18 }} resizeMode="contain" />
-          <Text style={{ color:'#fff', fontWeight:'700', marginLeft:6, fontSize: 14 }}>{rtAudience}%</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>{rtAudience}%</Text>
         </View>
       ) : null}
       {typeof metacritic === 'number' ? (
-        <View style={{ flexDirection:'row', alignItems:'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image source={RATING_IMAGES.metacritic} style={{ width: 18, height: 18 }} resizeMode="contain" />
-          <Text style={{ color:'#fff', fontWeight:'700', marginLeft:6, fontSize: 14 }}>{metacritic}</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>{metacritic}</Text>
         </View>
       ) : null}
       {typeof trakt === 'number' ? (
-        <View style={{ flexDirection:'row', alignItems:'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image source={RATING_SVGS.trakt} style={{ width: 18, height: 18 }} resizeMode="contain" />
-          <Text style={{ color:'#fff', fontWeight:'700', marginLeft:6, fontSize: 14 }}>{trakt.toFixed(0)}</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>{trakt.toFixed(0)}</Text>
         </View>
       ) : null}
       {typeof letterboxd === 'number' ? (
-        <View style={{ flexDirection:'row', alignItems:'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image source={RATING_SVGS.letterboxd} style={{ width: 18, height: 18 }} resizeMode="contain" />
-          <Text style={{ color:'#fff', fontWeight:'700', marginLeft:6, fontSize: 14 }}>{letterboxd.toFixed(1)}</Text>
+          <Text style={{ color: '#fff', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>{letterboxd.toFixed(1)}</Text>
         </View>
       ) : null}
     </View>
@@ -1442,9 +1448,9 @@ function CastScroller({ meta, tmdbCast, onPersonPress }: {
   if (!plexRoles.length && !useTmdbOnly) return null;
 
   return (
-    <View style={{ marginTop:8 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal:12 }}>
-        {(useTmdbOnly ? tmdbCast! : plexRoles).map((r:any, idx:number) => {
+    <View style={{ marginTop: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
+        {(useTmdbOnly ? tmdbCast! : plexRoles).map((r: any, idx: number) => {
           const src = useTmdbOnly
             ? (r.profile_path ? getTmdbProfileUrl(r.profile_path) : undefined)
             : (r.thumb ? getPlexImageUrl(r.thumb, 200) : undefined);
@@ -1462,7 +1468,7 @@ function CastScroller({ meta, tmdbCast, onPersonPress }: {
           return (
             <Pressable
               key={idx}
-              style={{ width:96, marginHorizontal:4, alignItems:'center' }}
+              style={{ width: 96, marginHorizontal: 4, alignItems: 'center' }}
               onPress={() => {
                 if (personId && onPersonPress) {
                   onPersonPress(personId, name);
@@ -1470,10 +1476,10 @@ function CastScroller({ meta, tmdbCast, onPersonPress }: {
               }}
               disabled={!personId}
             >
-              <View style={{ width:72, height:72, borderRadius:36, overflow:'hidden', backgroundColor:'#1a1a1a' }}>
-                {src && FastImage ? <FastImage source={{ uri: src }} style={{ width:'100%', height:'100%' }} resizeMode="cover" /> : null}
+              <View style={{ width: 72, height: 72, borderRadius: 36, overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
+                {src && FastImage ? <FastImage source={{ uri: src }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : null}
               </View>
-              <Text style={{ color:'#eee', marginTop:6 }} numberOfLines={1}>{name}</Text>
+              <Text style={{ color: '#eee', marginTop: 6 }} numberOfLines={1}>{name}</Text>
             </Pressable>
           );
         })}
@@ -1482,42 +1488,44 @@ function CastScroller({ meta, tmdbCast, onPersonPress }: {
   );
 }
 
-function CrewList({ meta, tmdbCrew, creators, isShow }: { meta:any; tmdbCrew?: Array<{ name: string; job?: string }>; creators?: string[]; isShow?: boolean }) {
+function CrewList({ meta, tmdbCrew, creators, isShow }: { meta: any; tmdbCrew?: Array<{ name: string; job?: string }>; creators?: string[]; isShow?: boolean }) {
+  const { t } = useTranslation();
   const directors: any[] = Array.isArray(meta?.Director) ? meta.Director : [];
   const writers: any[] = Array.isArray(meta?.Writer) ? meta.Writer : [];
-  let dirNames: string[] = directors.map((d:any)=> d.tag || d.title);
-  let writerNames: string[] = writers.map((w:any)=> w.tag || w.title);
-  if (!dirNames.length && Array.isArray(tmdbCrew)) dirNames = tmdbCrew.filter(c=> /director/i.test(String(c.job||''))).map(c=> c.name);
-  if (!writerNames.length && Array.isArray(tmdbCrew)) writerNames = tmdbCrew.filter(c=> /(writer|screenplay)/i.test(String(c.job||''))).map(c=> c.name);
+  let dirNames: string[] = directors.map((d: any) => d.tag || d.title);
+  let writerNames: string[] = writers.map((w: any) => w.tag || w.title);
+  if (!dirNames.length && Array.isArray(tmdbCrew)) dirNames = tmdbCrew.filter(c => /director/i.test(String(c.job || ''))).map(c => c.name);
+  if (!writerNames.length && Array.isArray(tmdbCrew)) writerNames = tmdbCrew.filter(c => /(writer|screenplay)/i.test(String(c.job || ''))).map(c => c.name);
 
   const hasCreators = isShow && creators && creators.length > 0;
   if (!dirNames.length && !writerNames.length && !hasCreators) return null;
 
   return (
-    <View style={{ marginTop:4, paddingHorizontal:16 }}>
+    <View style={{ marginTop: 4, paddingHorizontal: 16 }}>
       {hasCreators ? (
-        <View style={{ marginBottom:8 }}>
-          <Text style={{ color:'#aaa', marginBottom:6 }}>Created By</Text>
-          <Text style={{ color:'#eee' }}>{creators!.join(', ')}</Text>
+        <View style={{ marginBottom: 8 }}>
+          <Text style={{ color: '#aaa', marginBottom: 6 }}>{t('details.created_by')}</Text>
+          <Text style={{ color: '#eee' }}>{creators!.join(', ')}</Text>
         </View>
       ) : null}
       {dirNames.length ? (
-        <View style={{ marginBottom:8 }}>
-          <Text style={{ color:'#aaa', marginBottom:6 }}>Directors</Text>
-          <Text style={{ color:'#eee' }}>{dirNames.join(', ')}</Text>
+        <View style={{ marginBottom: 8 }}>
+          <Text style={{ color: '#aaa', marginBottom: 6 }}>{t('details.directors')}</Text>
+          <Text style={{ color: '#eee' }}>{dirNames.join(', ')}</Text>
         </View>
       ) : null}
       {writerNames.length ? (
-        <View style={{ marginBottom:8 }}>
-          <Text style={{ color:'#aaa', marginBottom:6 }}>Writers</Text>
-          <Text style={{ color:'#eee' }}>{writerNames.join(', ')}</Text>
+        <View style={{ marginBottom: 8 }}>
+          <Text style={{ color: '#aaa', marginBottom: 6 }}>{t('details.writers')}</Text>
+          <Text style={{ color: '#eee' }}>{writerNames.join(', ')}</Text>
         </View>
       ) : null}
     </View>
   );
 }
 
-function TechSpecs({ meta }: { meta:any }) {
+function TechSpecs({ meta }: { meta: any }) {
+  const { t } = useTranslation();
   const m = (meta?.Media || [])[0] || {};
   const container = m?.container;
   const vCodec = m?.videoCodec || (m as any)?.videoCodecTag;
@@ -1527,9 +1535,9 @@ function TechSpecs({ meta }: { meta:any }) {
   const hdr = (() => {
     if (!Array.isArray(m?.Part)) return undefined;
     const streams = (m.Part[0]?.Stream || []) as any[];
-    const s = streams.find(s => /dolby.?vision|dovi/i.test(String(s?.displayTitle||'')) || /smpte2084|pq|hdr10/i.test(String(s?.colorTrc||'')));
+    const s = streams.find(s => /dolby.?vision|dovi/i.test(String(s?.displayTitle || '')) || /smpte2084|pq|hdr10/i.test(String(s?.colorTrc || '')));
     if (!s) return undefined;
-    if (/dolby.?vision|dovi/i.test(String(s?.displayTitle||''))) return 'Dolby Vision';
+    if (/dolby.?vision|dovi/i.test(String(s?.displayTitle || ''))) return 'Dolby Vision';
     return 'HDR10';
   })();
 
@@ -1538,29 +1546,30 @@ function TechSpecs({ meta }: { meta:any }) {
 
   return (
     <View>
-      <SectionHeader title="Technical" />
-      <View style={{ marginTop:8 }}>
-        <KeyValue k="Resolution" v={res} />
-        <KeyValue k="Video" v={vCodec} />
-        <KeyValue k="Audio" v={aCodec} />
-        <KeyValue k="Container" v={container} />
-        <KeyValue k="Bitrate" v={bitrate} />
-        <KeyValue k="HDR" v={hdr} />
+      <SectionHeader title={t('details.technical')} />
+      <View style={{ marginTop: 8 }}>
+        <KeyValue k={t('details.resolution')} v={res} />
+        <KeyValue k={t('details.video')} v={vCodec} />
+        <KeyValue k={t('details.audio')} v={aCodec} />
+        <KeyValue k={t('details.container')} v={container} />
+        <KeyValue k={t('details.bitrate')} v={bitrate} />
+        <KeyValue k={t('details.hdr')} v={hdr} />
       </View>
     </View>
   );
 }
 
-function Collections({ meta }: { meta:any }) {
+function Collections({ meta }: { meta: any }) {
+  const { t } = useTranslation();
   const cols: any[] = Array.isArray(meta?.Collection) ? meta.Collection : [];
   if (!cols.length) return null;
   return (
     <View>
-      <SectionHeader title="Collections" />
-      <View style={{ flexDirection:'row', flexWrap:'wrap', paddingHorizontal:12, marginTop:8 }}>
-        {cols.map((c:any, idx:number) => (
-          <View key={idx} style={{ margin:4, paddingHorizontal:10, paddingVertical:6, borderRadius:999, backgroundColor:'#1a1b20', borderWidth:1, borderColor:'#2a2b30' }}>
-            <Text style={{ color:'#fff', fontWeight:'700' }}>{c.tag || c.title}</Text>
+      <SectionHeader title={t('details.collections')} />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, marginTop: 8 }}>
+        {cols.map((c: any, idx: number) => (
+          <View key={idx} style={{ margin: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: '#1a1b20', borderWidth: 1, borderColor: '#2a2b30' }}>
+            <Text style={{ color: '#fff', fontWeight: '700' }}>{c.tag || c.title}</Text>
           </View>
         ))}
       </View>
@@ -1568,12 +1577,13 @@ function Collections({ meta }: { meta:any }) {
   );
 }
 
-function ProductionRow({ items, isMovie }: { items: Array<{id: number; name: string; logo?: string}>; isMovie: boolean }) {
+function ProductionRow({ items, isMovie }: { items: Array<{ id: number; name: string; logo?: string }>; isMovie: boolean }) {
+  const { t } = useTranslation();
   if (!items?.length) return null;
 
   return (
     <View>
-      <SectionHeader title={isMovie ? "Production" : "Network"} />
+      <SectionHeader title={isMovie ? t('details.production') : t('details.network')} />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -1650,7 +1660,7 @@ function DetailsTab({ meta, tmdbCast, tmdbCrew, productionInfo, tmdbExtraInfo, m
   meta: any;
   tmdbCast?: Array<{ id: number; name: string; profile_path?: string }>;
   tmdbCrew?: Array<{ name: string; job?: string }>;
-  productionInfo?: Array<{id: number; name: string; logo?: string}>;
+  productionInfo?: Array<{ id: number; name: string; logo?: string }>;
   tmdbExtraInfo?: {
     runtime?: number;
     status?: string;
@@ -1671,9 +1681,10 @@ function DetailsTab({ meta, tmdbCast, tmdbCrew, productionInfo, tmdbExtraInfo, m
   mdblistRatings?: MDBListRatings | null;
   onPersonPress?: (id: number, name: string) => void;
 }) {
-  const guids: string[] = Array.isArray(meta?.Guid) ? meta.Guid.map((g:any)=> String(g.id||'')) : [];
-  const imdbId = guids.find(x=> x.startsWith('imdb://'))?.split('://')[1];
-  const tmdbId = guids.find(x=> x.includes('tmdb://') || x.includes('themoviedb://'))?.split('://')[1];
+  const guids: string[] = Array.isArray(meta?.Guid) ? meta.Guid.map((g: any) => String(g.id || '')) : [];
+  const { t } = useTranslation();
+  const imdbId = guids.find(x => x.startsWith('imdb://'))?.split('://')[1];
+  const tmdbId = guids.find(x => x.includes('tmdb://') || x.includes('themoviedb://'))?.split('://')[1];
   const isMovie = meta?.type === 'movie';
   const isShow = meta?.type === 'show';
 
@@ -1681,15 +1692,15 @@ function DetailsTab({ meta, tmdbCast, tmdbCrew, productionInfo, tmdbExtraInfo, m
     <View>
       {/* Tagline */}
       {tmdbExtraInfo?.tagline ? (
-        <Text style={{ color:'rgba(255,255,255,0.7)', fontSize:15, fontStyle:'italic', marginHorizontal:16, marginTop:8, marginBottom:12 }}>
+        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, fontStyle: 'italic', marginHorizontal: 16, marginTop: 8, marginBottom: 12 }}>
           "{tmdbExtraInfo.tagline}"
         </Text>
       ) : null}
 
-      <SectionHeader title="Cast" />
+      <SectionHeader title={t('details.cast')} />
       <CastScroller meta={meta} tmdbCast={tmdbCast} onPersonPress={onPersonPress} />
 
-      <SectionHeader title="Crew" />
+      <SectionHeader title={t('details.crew')} />
       <CrewList meta={meta} tmdbCrew={tmdbCrew} creators={tmdbExtraInfo?.creators} isShow={isShow} />
 
       {productionInfo && productionInfo.length > 0 && (
@@ -1700,46 +1711,47 @@ function DetailsTab({ meta, tmdbCast, tmdbCrew, productionInfo, tmdbExtraInfo, m
 
       <Collections meta={meta} />
 
-      <SectionHeader title="Info" />
-      <KeyValue k="Runtime" v={formatRuntime(tmdbExtraInfo?.runtime) || (meta?.duration ? formatRuntime(Math.floor(meta.duration / 60000)) : undefined)} />
-      <KeyValue k="Status" v={tmdbExtraInfo?.status} />
-      {isMovie && <KeyValue k="Release Date" v={formatDate(tmdbExtraInfo?.releaseDate)} />}
-      {isShow && <KeyValue k="First Aired" v={formatDate(tmdbExtraInfo?.firstAirDate)} />}
-      {isShow && tmdbExtraInfo?.lastAirDate && tmdbExtraInfo?.status === 'Ended' && <KeyValue k="Last Aired" v={formatDate(tmdbExtraInfo?.lastAirDate)} />}
-      {isShow && <KeyValue k="Seasons" v={tmdbExtraInfo?.numberOfSeasons ? String(tmdbExtraInfo.numberOfSeasons) : undefined} />}
-      {isShow && <KeyValue k="Episodes" v={tmdbExtraInfo?.numberOfEpisodes ? String(tmdbExtraInfo.numberOfEpisodes) : undefined} />}
-      <KeyValue k="Original Language" v={formatLanguage(tmdbExtraInfo?.originalLanguage)} />
-      {isMovie && <KeyValue k="Budget" v={formatCurrency(tmdbExtraInfo?.budget)} />}
-      {isMovie && <KeyValue k="Revenue" v={formatCurrency(tmdbExtraInfo?.revenue)} />}
-      <KeyValue k="Studio" v={meta?.studio} />
-      <KeyValue k="Year" v={meta?.year ? String(meta.year) : undefined} />
-      <KeyValue k="Content Rating" v={meta?.contentRating} />
+      <SectionHeader title={t('details.info')} />
+      <KeyValue k={t('details.runtime')} v={formatRuntime(tmdbExtraInfo?.runtime) || (meta?.duration ? formatRuntime(Math.floor(meta.duration / 60000)) : undefined)} />
+      <KeyValue k={t('details.status')} v={tmdbExtraInfo?.status} />
+      {isMovie && <KeyValue k={t('details.release_date')} v={formatDate(tmdbExtraInfo?.releaseDate)} />}
+      {isShow && <KeyValue k={t('details.first_aired')} v={formatDate(tmdbExtraInfo?.firstAirDate)} />}
+      {isShow && tmdbExtraInfo?.lastAirDate && tmdbExtraInfo?.status === 'Ended' && <KeyValue k={t('details.last_aired')} v={formatDate(tmdbExtraInfo?.lastAirDate)} />}
+      {isShow && <KeyValue k={t('details.seasons')} v={tmdbExtraInfo?.numberOfSeasons ? String(tmdbExtraInfo.numberOfSeasons) : undefined} />}
+      {isShow && <KeyValue k={t('details.episodes_count')} v={tmdbExtraInfo?.numberOfEpisodes ? String(tmdbExtraInfo.numberOfEpisodes) : undefined} />}
+      <KeyValue k={t('details.original_language')} v={formatLanguage(tmdbExtraInfo?.originalLanguage)} />
+      {isMovie && <KeyValue k={t('details.budget')} v={formatCurrency(tmdbExtraInfo?.budget)} />}
+      {isMovie && <KeyValue k={t('details.revenue')} v={formatCurrency(tmdbExtraInfo?.revenue)} />}
+      <KeyValue k={t('details.studio')} v={meta?.studio} />
+      <KeyValue k={t('details.year')} v={meta?.year ? String(meta.year) : undefined} />
+      <KeyValue k={t('details.content_rating')} v={meta?.contentRating} />
       <KeyValue k="IMDb" v={imdbId ? `https://www.imdb.com/title/${imdbId}` : undefined} />
-      <KeyValue k="TMDB" v={tmdbId ? `https://www.themoviedb.org/${meta?.type==='movie'?'movie':'tv'}/${tmdbId}` : undefined} />
+      <KeyValue k="TMDB" v={tmdbId ? `https://www.themoviedb.org/${meta?.type === 'movie' ? 'movie' : 'tv'}/${tmdbId}` : undefined} />
 
-      <SectionHeader title="Ratings" />
+      <SectionHeader title={t('details.ratings')} />
       <RatingsRow meta={meta} tmdbRating={tmdbExtraInfo?.voteAverage} mdblistRatings={mdblistRatings} />
-      <View style={{ height:12 }} />
+      <View style={{ height: 12 }} />
     </View>
   );
 }
 
-function SeasonSelector({ seasons, seasonKey, onChange }: { seasons:any[]; seasonKey:string|null; onChange:(key:string)=>void }) {
+function SeasonSelector({ seasons, seasonKey, onChange }: { seasons: any[]; seasonKey: string | null; onChange: (key: string) => void }) {
+  const { t } = useTranslation();
   if (!seasons?.length) return null;
   return (
-    <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', paddingHorizontal:16, marginBottom:8 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8 }}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {seasons.map((s:any, idx:number) => {
+        {seasons.map((s: any, idx: number) => {
           const key = String(s.ratingKey || s.key || idx);
           const active = key === seasonKey;
           return (
-            <Pressable key={key} onPress={()=> onChange(key)} style={{ marginRight:10, paddingHorizontal:12, paddingVertical:8, borderRadius:999, backgroundColor: active? '#ffffff22' : '#1a1b20', borderWidth:1, borderColor: active? '#ffffff' : '#2a2b30' }}>
-              <Text style={{ color:'#fff', fontWeight:'700' }}>{s.title || `Season ${s.index || (idx+1)}`}</Text>
+            <Pressable key={key} onPress={() => onChange(key)} style={{ marginRight: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: active ? '#ffffff22' : '#1a1b20', borderWidth: 1, borderColor: active ? '#ffffff' : '#2a2b30' }}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>{s.title || `${t('details.season')} ${s.index || (idx + 1)}`}</Text>
             </Pressable>
           );
         })}
       </ScrollView>
-      
+
     </View>
   );
 }

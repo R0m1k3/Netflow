@@ -16,7 +16,12 @@ import {
   signOutTrakt,
 } from '../../core/SettingsData';
 
+import { useTranslation } from 'react-i18next';
+
+// ... (imports)
+
 export default function TraktSettings() {
+  const { t } = useTranslation();
   const nav: any = useNavigation();
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 52;
@@ -62,7 +67,7 @@ export default function TraktSettings() {
           setPolling(false);
           setProfile(await getTraktProfile());
         }
-      } catch {}
+      } catch { }
     }, Math.max(5, Number(dc.interval || 5)) * 1000);
   };
 
@@ -73,7 +78,7 @@ export default function TraktSettings() {
 
   return (
     <View style={styles.container}>
-      <SettingsHeader title="Trakt" onBack={() => nav.goBack()} />
+      <SettingsHeader title={t('settings.trakt')} onBack={() => nav.goBack()} />
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: headerHeight + 12, paddingBottom: insets.bottom + 100 }]}>
         {/* Header with Trakt logo */}
         <View style={styles.logoHeader}>
@@ -81,41 +86,41 @@ export default function TraktSettings() {
             <TraktIcon size={32} color="#ed1c24" />
           </View>
           <Text style={styles.logoTitle}>Trakt</Text>
-          <Text style={styles.logoSubtitle}>Track your watch history</Text>
+          <Text style={styles.logoSubtitle}>{t('trakt.track_history')}</Text>
         </View>
 
-        <SettingsCard title="ACCOUNT">
+        <SettingsCard title={t('trakt.account')}>
           {profile ? (
             <View style={styles.statusRow}>
               <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
-              <Text style={styles.statusText}>Connected as @{profile?.username || profile?.ids?.slug}</Text>
+              <Text style={styles.statusText}>{t('trakt.connected_as')} @{profile?.username || profile?.ids?.slug}</Text>
               <Pressable style={styles.secondaryButton} onPress={handleSignOut}>
-                <Text style={styles.secondaryButtonText}>Sign out</Text>
+                <Text style={styles.secondaryButtonText}>{t('trakt.sign_out')}</Text>
               </Pressable>
             </View>
           ) : (
             <View style={styles.statusRow}>
               <Ionicons name="close-circle" size={18} color="#ef4444" />
-              <Text style={styles.statusText}>Not connected</Text>
+              <Text style={styles.statusText}>{t('trakt.not_connected')}</Text>
               <Pressable style={styles.primaryButton} onPress={startAuth}>
-                <Text style={styles.primaryButtonText}>Connect Trakt</Text>
+                <Text style={styles.primaryButtonText}>{t('trakt.connect')}</Text>
               </Pressable>
             </View>
           )}
         </SettingsCard>
 
         {deviceCode && (
-          <SettingsCard title="DEVICE CODE">
+          <SettingsCard title={t('trakt.device_code')}>
             <View style={styles.deviceCodeWrap}>
               {/* Polling indicator */}
               <View style={styles.pollingRow}>
                 <ActivityIndicator size="small" color="#ed1c24" />
-                <Text style={styles.pollingText}>Waiting for authorization...</Text>
+                <Text style={styles.pollingText}>{t('trakt.waiting_auth')}</Text>
               </View>
 
               {/* Code display */}
               <View style={styles.codeBox}>
-                <Text style={styles.codeLabel}>Enter this code on Trakt</Text>
+                <Text style={styles.codeLabel}>{t('trakt.enter_code')}</Text>
                 <Text style={styles.userCode}>{deviceCode.user_code}</Text>
                 <Pressable
                   style={[styles.copyButton, copied && styles.copyButtonCopied]}
@@ -127,14 +132,14 @@ export default function TraktSettings() {
                     color={copied ? '#22c55e' : '#fff'}
                   />
                   <Text style={[styles.copyButtonText, copied && styles.copyButtonTextCopied]}>
-                    {copied ? 'Copied!' : 'Copy Code'}
+                    {copied ? t('trakt.copied') : t('trakt.copy_code')}
                   </Text>
                 </Pressable>
               </View>
 
               {/* URL */}
               <View style={styles.urlRow}>
-                <Text style={styles.urlLabel}>Visit:</Text>
+                <Text style={styles.urlLabel}>{t('trakt.visit')}</Text>
                 <Pressable onPress={() => Linking.openURL(deviceCode.verification_url)}>
                   <Text style={styles.urlValue}>{deviceCode.verification_url}</Text>
                 </Pressable>

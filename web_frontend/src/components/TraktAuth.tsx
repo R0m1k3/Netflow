@@ -10,12 +10,16 @@ import {
   TraktUser
 } from '@/services/trakt';
 
+import { useTranslation } from 'react-i18next';
+// ... imports
+
 interface TraktAuthProps {
   onAuthComplete?: () => void;
   onAuthError?: (error: string) => void;
 }
 
 export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
+  const { t } = useTranslation();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [deviceCode, setDeviceCode] = useState<{
     user_code: string;
@@ -46,8 +50,13 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
         const profile = await traktGetUserProfile(token);
         setUserProfile(profile);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to check existing auth:', err);
+      // If unauthorized, clear local state to prevent loop
+      if (err.message && err.message.includes('401')) {
+        saveTraktTokens(null);
+        setUserProfile(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +109,7 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
           if (err.message?.includes('expired')) {
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
             if (countdownRef.current) clearInterval(countdownRef.current);
-            setError('Device code expired. Please try again.');
+            setError(t('trakt.error_expired'));
             setIsAuthenticating(false);
             setDeviceCode(null);
           }
@@ -112,13 +121,13 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
           clearInterval(countdownRef.current!);
-          setError('Authentication timed out. Please try again.');
+          setError(t('trakt.error_timeout'));
           setIsAuthenticating(false);
           setDeviceCode(null);
         }
       }, code.expires_in * 1000);
     } catch (err: any) {
-      setError(err.message || 'Failed to start authentication');
+      setError(err.message || t('trakt.error_generic'));
       setIsAuthenticating(false);
       if (onAuthError) onAuthError(err.message);
     }
@@ -146,9 +155,18 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
     }
   };
 
-  const copyCode = () => {
+  const copyCode = async () => {
     if (deviceCode) {
-      navigator.clipboard.writeText(deviceCode.user_code);
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(deviceCode.user_code);
+        } else {
+          // Fallback for non-secure contexts or older browsers
+          console.warn('Clipboard API not available');
+        }
+      } catch (err) {
+        console.error('Failed to copy to clipboard', err);
+      }
     }
   };
 
@@ -171,12 +189,12 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
     return (
       <div className="bg-gray-800 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold">Trakt Connected</h3>
+          <h3 className="text-xl font-semibold">{t('trakt.connected_title')}</h3>
           <button
             onClick={logout}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
           >
-            Disconnect
+            {t('trakt.disconnect')}
           </button>
         </div>
         <div className="flex items-center space-x-4">
@@ -192,7 +210,7 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
             <p className="text-gray-400">@{userProfile.username}</p>
             {userProfile.vip && (
               <span className="inline-block mt-1 px-2 py-1 bg-yellow-600 text-xs rounded">
-                VIP Member
+                {t('trakt.vip')}
               </span>
             )}
           </div>
@@ -204,11 +222,11 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
   if (isAuthenticating && deviceCode) {
     return (
       <div className="bg-gray-800 rounded-lg p-6">
-        <h3 className="text-xl font-semibold mb-4">Connect to Trakt</h3>
+        <h3 className="text-xl font-semibold mb-4">{t('trakt.connect_title')}</h3>
 
         <div className="space-y-4">
           <div>
-            <p className="text-gray-300 mb-2">1. Visit this URL:</p>
+            <p className="text-gray-300 mb-2">{t('trakt.step_1')}</p>
             <button
               onClick={openVerificationUrl}
               className="w-full px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-center font-medium"
@@ -218,7 +236,7 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
           </div>
 
           <div>
-            <p className="text-gray-300 mb-2">2. Enter this code:</p>
+            <p className="text-gray-300 mb-2">{t('trakt.step_2')}</p>
             <div className="flex space-x-2">
               <div className="flex-1 px-4 py-3 bg-gray-900 rounded text-center text-2xl font-mono font-bold tracking-widest">
                 {deviceCode.user_code}
@@ -227,14 +245,14 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
                 onClick={copyCode}
                 className="px-4 py-3 bg-gray-700 text-white rounded hover:bg-gray-600 transition"
               >
-                Copy
+                {t('trakt.copy')}
               </button>
             </div>
           </div>
 
           <div className="text-center">
             <p className="text-gray-400">
-              Waiting for authorization... ({pollCountdown}s remaining)
+              {t('trakt.waiting')} ({pollCountdown}s)
             </p>
             <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
               <div
@@ -250,7 +268,7 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
             onClick={cancelAuth}
             className="w-full px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition"
           >
-            Cancel
+            {t('trakt.cancel')}
           </button>
         </div>
       </div>
@@ -259,21 +277,21 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">
-      <h3 className="text-xl font-semibold mb-4">Connect to Trakt</h3>
+      <h3 className="text-xl font-semibold mb-4">{t('trakt.connect_title')}</h3>
       {error && (
         <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-300">
           {error}
         </div>
       )}
       <p className="text-gray-300 mb-4">
-        Connect your Trakt account to sync your watch history, track progress, and get personalized recommendations.
+        {t('trakt.description')}
       </p>
       <button
         onClick={startAuth}
         disabled={isAuthenticating}
         className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50"
       >
-        Connect Trakt Account
+        {t('trakt.connect_btn')}
       </button>
     </div>
   );
