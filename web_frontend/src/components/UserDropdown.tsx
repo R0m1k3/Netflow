@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { PlexUserProfile, PlexUser, loadSettings, saveSettings } from '@/state/settings';
 import { apiClient, getCurrentUser } from '@/services/api';
 import { forget } from '@/services/cache';
+import { useTranslation } from 'react-i18next';
 
 export default function UserDropdown() {
   const nav = useNavigate();
@@ -94,6 +95,8 @@ export default function UserDropdown() {
   const displayName = profile?.username || profile?.title || 'User';
   const displayInitial = displayName.charAt(0).toUpperCase();
 
+  const { t } = useTranslation();
+
   return (
     <div
       className="relative"
@@ -135,9 +138,8 @@ export default function UserDropdown() {
 
       {/* Dropdown menu */}
       <div
-        className={`absolute right-0 mt-3 w-64 bg-black/95 backdrop-blur-sm rounded-md shadow-xl transition-all duration-200 ${
-          isOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'
-        }`}
+        className={`absolute right-0 mt-3 w-64 bg-black/95 backdrop-blur-sm rounded-md shadow-xl transition-all duration-200 ${isOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'
+          }`}
         style={{
           border: '1px solid rgba(255,255,255,0.1)',
           boxShadow: '0 10px 40px rgba(0,0,0,0.8)'
@@ -204,10 +206,10 @@ export default function UserDropdown() {
             >
               <div className="w-8 h-8 rounded bg-gray-700 flex items-center justify-center">
                 <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z"/>
+                  <path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />
                 </svg>
               </div>
-              <span className="text-sm text-gray-300">Add Profile</span>
+              <span className="text-sm text-gray-300">{t('user.add_profile')}</span>
             </button>
           </div>
         )}
@@ -219,7 +221,7 @@ export default function UserDropdown() {
             className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
             onClick={() => setIsOpen(false)}
           >
-            Edit Profiles
+            {t('user.edit_profiles')}
           </Link>
 
           <Link
@@ -227,7 +229,7 @@ export default function UserDropdown() {
             className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
             onClick={() => setIsOpen(false)}
           >
-            App Settings
+            {t('user.app_settings')}
           </Link>
 
           <a
@@ -236,7 +238,7 @@ export default function UserDropdown() {
             rel="noopener noreferrer"
             className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
           >
-            Account
+            {t('user.account')}
           </a>
 
           <a
@@ -245,7 +247,7 @@ export default function UserDropdown() {
             rel="noopener noreferrer"
             className="block px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
           >
-            Help
+            {t('user.help')}
           </a>
         </div>
 
@@ -255,7 +257,7 @@ export default function UserDropdown() {
             onClick={handleSignOut}
             className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded transition-colors"
           >
-            Sign Out
+            {t('user.sign_out')}
           </button>
         </div>
       </div>

@@ -74,5 +74,45 @@
         "playback": "Lecture",
         "mpv_profile": "Profil MPV",
         "hdr_tone_map": "Tone-mapping HDR vers SDR"
+    },
+    "home": {
+        "popular_plex": "Populaire sur Plex",
+        "trending_now": "Tendances Actuelles",
+        "continue_watching": "Reprendre la lecture",
+        "watchlist": "Ma Liste",
+        "connect_plex_msg": "Connectez votre compte Plex pour voir vos films et séries en cours ici.",
+        "open_settings": "Ouvrir les paramètres",
+        "genre_shows_children": "Séries TV - Enfants",
+        "genre_movies_music": "Films - Musique",
+        "genre_movies_documentary": "Films - Documentaire",
+        "genre_movies_history": "Films - Histoire",
+        "genre_shows_reality": "Séries TV - Téléréalité",
+        "genre_movies_drama": "Films - Drame",
+        "genre_shows_suspense": "Séries TV - Suspense",
+        "genre_movies_animation": "Films - Animation"
+    },
+    "user": {
+        "add_profile": "Ajouter un profil",
+        "edit_profiles": "Gérer les profils",
+        "app_settings": "Paramètres de l'application",
+        "account": "Compte",
+        "help": "Aide",
+        "sign_out": "Déconnexion"
+    },
+    "trakt_section": {
+        "trending_movies": "Films Tendances sur Trakt",
+        "trending_shows": "Séries Tendances sur Trakt",
+        "popular_movies": "Films Populaires sur Trakt",
+        "popular_shows": "Séries Populaires sur Trakt",
+        "watchlist": "Votre Liste Trakt",
+        "recommendations": "Recommandé pour vous",
+        "history": "Récemment regardé",
+        "default_movies": "Films Trakt",
+        "default_shows": "Séries Trakt",
+        "connect_msg": "Connectez votre compte Trakt pour voir ce contenu",
+        "connect_btn": "Connecter le compte Trakt",
+        "failed": "Échec du chargement du contenu",
+        "no_items": "Aucun élément trouvé",
+        "not_auth": "Non authentifié avec Trakt"
     }
 }

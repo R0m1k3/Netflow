@@ -7,6 +7,7 @@ import { tmdbBestBackdropUrl } from '@/services/tmdb';
 import { plexFindByGuid, plexImage } from '@/services/plex';
 import { apiClient } from '@/services/api';
 import SkeletonRow from '@/components/SkeletonRow';
+import { useTranslation } from 'react-i18next';
 
 interface TraktSectionProps {
   type?: 'trending' | 'popular' | 'watchlist' | 'recommendations' | 'history';
@@ -20,6 +21,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const nav = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadContent();
@@ -49,7 +51,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
       } else if (authenticated) {
         const token = await ensureValidToken();
         if (!token) {
-          setError('Not authenticated with Trakt');
+          setError(t('trakt_section.not_auth'));
           return;
         }
 
@@ -76,32 +78,30 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
   const getSectionTitle = () => {
     if (title) return title;
 
-    const mediaLabel = mediaType === 'movies' ? 'Movies' : 'TV Shows';
-
     switch (type) {
       case 'trending':
-        return `Trending ${mediaLabel} on Trakt`;
+        return mediaType === 'movies' ? t('trakt_section.trending_movies') : t('trakt_section.trending_shows');
       case 'popular':
-        return `Popular ${mediaLabel} on Trakt`;
+        return mediaType === 'movies' ? t('trakt_section.popular_movies') : t('trakt_section.popular_shows');
       case 'watchlist':
-        return `Your Trakt Watchlist`;
+        return t('trakt_section.watchlist');
       case 'recommendations':
-        return `Recommended for You`;
+        return t('trakt_section.recommendations');
       case 'history':
-        return `Recently Watched`;
+        return t('trakt_section.history');
       default:
-        return `Trakt ${mediaLabel}`;
+        return mediaType === 'movies' ? t('trakt_section.default_movies') : t('trakt_section.default_shows');
     }
   };
 
   // Convert Trakt payloads to Row items with best-effort ID mapping
-  async function mapTraktToRowItems(list: any[], mediaType: 'movies'|'shows') {
+  async function mapTraktToRowItems(list: any[], mediaType: 'movies' | 'shows') {
     const s = loadSettings();
     const typeNum = mediaType === 'movies' ? 1 : 2;
     const out: Array<{ id: string; title: string; image: string }> = [];
 
     // Helper: best-effort Plex GUID lookup by TMDB id
-    async function plexByTmdb(tmdbId: number, mTypeNum: 1|2) {
+    async function plexByTmdb(tmdbId: number, mTypeNum: 1 | 2) {
       if (!s.plexBaseUrl || !s.plexToken) return undefined;
       try {
         // Try both common GUID prefixes
@@ -127,7 +127,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
 
       // Prefer Plex mapping when server available and TMDB id present
       if (tmdbId) {
-        const hit = await plexByTmdb(tmdbId, typeNum as 1|2);
+        const hit = await plexByTmdb(tmdbId, typeNum as 1 | 2);
         if (hit) {
           const rk = String(hit.ratingKey);
           const p = hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb;
@@ -141,7 +141,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
       if (tmdbId && s.tmdbBearer) {
         const mediaKey = mediaType === 'movies' ? 'movie' : 'tv';
         let img = '';
-        try { img = (await tmdbBestBackdropUrl(s.tmdbBearer!, mediaKey as any, tmdbId, 'en')) || ''; } catch {}
+        try { img = (await tmdbBestBackdropUrl(s.tmdbBearer!, mediaKey as any, tmdbId, 'en')) || ''; } catch { }
         out.push({ id: `tmdb:${mediaKey}:${tmdbId}`, title, image: img || placeholderImg() });
         continue;
       }
@@ -152,7 +152,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
         const tvdb = ids?.tvdb as (number | undefined);
         if (imdb) {
           try {
-            const byImdb: any = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `imdb://${imdb}`, typeNum as 1|2);
+            const byImdb: any = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `imdb://${imdb}`, typeNum as 1 | 2);
             const hit = (byImdb?.MediaContainer?.Metadata || [])[0];
             if (hit) {
               const rk = String(hit.ratingKey);
@@ -161,11 +161,11 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
               out.push({ id: `plex:${rk}`, title, image: img });
               continue;
             }
-          } catch {}
+          } catch { }
         }
         if (tvdb) {
           try {
-            const byTvdb: any = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `tvdb://${tvdb}`, typeNum as 1|2);
+            const byTvdb: any = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `tvdb://${tvdb}`, typeNum as 1 | 2);
             const hit = (byTvdb?.MediaContainer?.Metadata || [])[0];
             if (hit) {
               const rk = String(hit.ratingKey);
@@ -173,7 +173,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
               out.push({ id: `plex:${rk}`, title, image: img });
               continue;
             }
-          } catch {}
+          } catch { }
         }
       }
 
@@ -201,12 +201,12 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">{getSectionTitle()}</h2>
         <div className="bg-gray-800 rounded-lg p-8 text-center">
-          <p className="text-gray-400 mb-4">Connect your Trakt account to see this content</p>
+          <p className="text-gray-400 mb-4">{t('trakt_section.connect_msg')}</p>
           <button
             onClick={() => window.location.href = '/settings'}
             className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
           >
-            Connect Trakt Account
+            {t('trakt_section.connect_btn')}
           </button>
         </div>
       </div>
@@ -220,7 +220,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">{getSectionTitle()}</h2>
         <div className="bg-red-900/20 border border-red-700 rounded-lg p-4">
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400">{t('trakt_section.failed')}: {error}</p>
         </div>
       </div>
     );
@@ -231,7 +231,7 @@ export function TraktSection({ type = 'trending', mediaType = 'movies', title }:
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">{getSectionTitle()}</h2>
         <div className="bg-gray-800 rounded-lg p-8 text-center">
-          <p className="text-gray-400">No items found</p>
+          <p className="text-gray-400">{t('trakt_section.no_items')}</p>
         </div>
       </div>
     );
