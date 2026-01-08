@@ -1,10 +1,10 @@
 /**
- * Player screen data fetchers using FlixorCore
+ * Player screen data fetchers using NetflowCore
  * Replaces the old api/client.ts functions for Player screen
  */
 
-import { getFlixorCore } from './index';
-import type { PlexMediaItem, PlexMarker } from '@flixor/core';
+import { getNetflowCore } from './index';
+import type { PlexMediaItem, PlexMarker } from '@netflow/core';
 
 export type NextEpisodeInfo = {
   ratingKey: string;
@@ -27,7 +27,7 @@ export type PlaybackInfo = {
 
 export async function fetchPlayerMetadata(ratingKey: string): Promise<PlexMediaItem | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getMetadata(ratingKey);
   } catch (e) {
     console.log('[PlayerData] fetchPlayerMetadata error:', e);
@@ -41,7 +41,7 @@ export async function fetchPlayerMetadata(ratingKey: string): Promise<PlexMediaI
 
 export async function fetchMarkers(ratingKey: string): Promise<PlexMarker[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getMarkers(ratingKey);
   } catch (e) {
     console.log('[PlayerData] fetchMarkers error:', e);
@@ -58,7 +58,7 @@ export async function fetchNextEpisode(
   parentRatingKey: string
 ): Promise<NextEpisodeInfo | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const episodes = await core.plexServer.getChildren(parentRatingKey);
 
     const currentIndex = episodes.findIndex(
@@ -92,7 +92,7 @@ export async function fetchNextEpisode(
 
 export async function getDirectStreamUrl(ratingKey: string): Promise<string> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getStreamUrl(ratingKey);
   } catch (e) {
     console.log('[PlayerData] getDirectStreamUrl error:', e);
@@ -114,7 +114,7 @@ export function getTranscodeStreamUrl(
   }
 ): { url: string; startUrl: string; sessionUrl: string; sessionId: string } {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.plexServer.getTranscodeUrl(ratingKey, options);
   } catch (e) {
     console.log('[PlayerData] getTranscodeStreamUrl error:', e);
@@ -124,7 +124,7 @@ export function getTranscodeStreamUrl(
 
 export async function startTranscodeSession(startUrl: string): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.plexServer.startTranscodeSession(startUrl);
   } catch (e) {
     console.log('[PlayerData] startTranscodeSession error:', e);
@@ -140,7 +140,7 @@ export async function makeTranscodeDecision(
   }
 ): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.plexServer.makeTranscodeDecision(ratingKey, options);
   } catch (e) {
     console.log('[PlayerData] makeTranscodeDecision error:', e);
@@ -156,7 +156,7 @@ export async function setStreamSelection(
   }
 ): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.plexServer.setStreamSelection(partId, options);
   } catch (e) {
     console.log('[PlayerData] setStreamSelection error:', e);
@@ -175,7 +175,7 @@ export async function updatePlaybackTimeline(
   durationMs: number
 ): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.plexServer.updateTimeline(ratingKey, state, timeMs, durationMs);
   } catch (e) {
     console.log('[PlayerData] updatePlaybackTimeline error:', e);
@@ -188,7 +188,7 @@ export async function updatePlaybackTimeline(
 
 export async function stopTranscodeSession(sessionId: string): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.plexServer.stopTranscode(sessionId);
   } catch (e) {
     console.log('[PlayerData] stopTranscodeSession error:', e);
@@ -202,7 +202,7 @@ export async function stopTranscodeSession(sessionId: string): Promise<void> {
 export function getPlayerImageUrl(path: string | undefined, width: number = 300): string {
   if (!path) return '';
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.plexServer.getImageUrl(path, width);
   } catch {
     return '';
@@ -215,7 +215,7 @@ export function getPlayerImageUrl(path: string | undefined, width: number = 300)
 
 export function getPlexHeaders(): Record<string, string> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return {
       'X-Plex-Token': core.getPlexToken() || '',
       'X-Plex-Client-Identifier': core.getClientId(),
@@ -279,7 +279,7 @@ export type TraktEpisodeInfo = {
  */
 export function isTraktAuthenticated(): boolean {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.isTraktAuthenticated;
   } catch {
     return false;
@@ -317,7 +317,7 @@ export async function startTraktScrobble(
   if (!metadata || !isTraktAuthenticated()) return;
 
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const ids = extractTraktIds(metadata);
 
     if (!ids.tmdbId && !ids.imdbId) {
@@ -358,7 +358,7 @@ export async function pauseTraktScrobble(
   if (!metadata || !isTraktAuthenticated()) return;
 
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const ids = extractTraktIds(metadata);
 
     if (!ids.tmdbId && !ids.imdbId) return;
@@ -393,7 +393,7 @@ export async function stopTraktScrobble(
   if (!metadata || !isTraktAuthenticated()) return;
 
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const ids = extractTraktIds(metadata);
 
     if (!ids.tmdbId && !ids.imdbId) return;

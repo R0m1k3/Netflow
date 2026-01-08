@@ -1,11 +1,11 @@
 /**
- * Library screen data fetchers using FlixorCore
+ * Library screen data fetchers using NetflowCore
  * Replaces the old api/data.ts functions for Library screen
  */
 
-import { getFlixorCore } from './index';
+import { getNetflowCore } from './index';
 import { loadAppSettings } from './SettingsData';
-import type { PlexLibrary, PlexMediaItem } from '@flixor/core';
+import type { PlexLibrary, PlexMediaItem } from '@netflow/core';
 
 export type LibraryItem = {
   ratingKey: string;
@@ -41,7 +41,7 @@ export const LIBRARY_SORT_OPTIONS: LibrarySortOption[] = [
 
 export async function fetchLibrarySections(): Promise<LibrarySections> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const libraries = await core.plexServer.getLibraries();
 
     const settings = await loadAppSettings();
@@ -78,7 +78,7 @@ export async function fetchLibraryItems(
   }
 ): Promise<{ items: LibraryItem[]; hasMore: boolean }> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const { type = 'all', offset = 0, limit = 40, sort = 'addedAt:desc', genreKey } = options || {};
 
     // Type filter: 1 = movie, 2 = show
@@ -132,7 +132,7 @@ export async function fetchLibraryItems(
 export function getLibraryImageUrl(thumb: string | undefined, width: number = 300): string {
   if (!thumb) return '';
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.plexServer.getImageUrl(thumb, width);
   } catch {
     return '';
@@ -145,7 +145,7 @@ export function getLibraryImageUrl(thumb: string | undefined, width: number = 30
 
 export async function getLibraryUsername(): Promise<string> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const token = (core as any).plexToken;
     if (token) {
       const user = await core.plexAuth.getUser(token);

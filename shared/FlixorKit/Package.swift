@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "FlixorKit",
+    name: "NetflowKit",
     platforms: [
         .iOS(.v16),
         .tvOS(.v16),
         .macOS(.v13)
     ],
     products: [
-        .library(name: "FlixorKit", targets: ["FlixorKit"])    
+        .library(name: "NetflowKit", targets: ["NetflowKit"])    
     ],
     targets: [
-        .target(name: "FlixorKit", path: "Sources/FlixorKit")
+        .target(name: "NetflowKit", path: "Sources/FlixorKit")
     ]
 )
 

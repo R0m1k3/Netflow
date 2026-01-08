@@ -1,12 +1,12 @@
 /**
- * FlixorMobile - Mobile API wrapper around FlixorCore
+ * NetflowMobile - Mobile API wrapper around NetflowCore
  *
  * This provides a similar interface to the old MobileApi class for easier migration,
- * while using the new standalone FlixorCore under the hood.
+ * while using the new standalone NetflowCore under the hood.
  */
 
-import { FlixorCore, type PlexMediaItem, type TMDBMedia } from '@flixor/core';
-import { getFlixorCore, initializeFlixorCore } from './index';
+import { NetflowCore, type PlexMediaItem, type TMDBMedia } from '@netflow/core';
+import { getNetflowCore, initializeNetflowCore } from './index';
 
 export interface MobileHomeData {
   continueWatching: PlexMediaItem[];
@@ -24,18 +24,18 @@ export interface LibraryItemsResult {
 
 /**
  * Compatibility layer for the mobile app
- * Wraps FlixorCore to provide similar API to the old backend-based MobileApi
+ * Wraps NetflowCore to provide similar API to the old backend-based MobileApi
  */
-export class FlixorMobile {
-  private core: FlixorCore;
+export class NetflowMobile {
+  private core: NetflowCore;
 
-  constructor(core: FlixorCore) {
+  constructor(core: NetflowCore) {
     this.core = core;
   }
 
-  static async initialize(): Promise<FlixorMobile> {
-    const core = await initializeFlixorCore();
-    return new FlixorMobile(core);
+  static async initialize(): Promise<NetflowMobile> {
+    const core = await initializeNetflowCore();
+    return new NetflowMobile(core);
   }
 
   // ============================================
@@ -116,7 +116,7 @@ export class FlixorMobile {
 
     // Use internal core method to set up the connection
     // We need to directly manipulate the core state
-    const PlexServerService = (await import('@flixor/core')).PlexServerService;
+    const PlexServerService = (await import('@netflow/core')).PlexServerService;
 
     // Store state
     (this.core as any).currentServer = server;
@@ -441,18 +441,18 @@ export class FlixorMobile {
 }
 
 // Singleton instance
-let flixorMobileInstance: FlixorMobile | null = null;
+let NetflowMobileInstance: NetflowMobile | null = null;
 
-export async function initializeFlixorMobile(): Promise<FlixorMobile> {
-  if (!flixorMobileInstance) {
-    flixorMobileInstance = await FlixorMobile.initialize();
+export async function initializeNetflowMobile(): Promise<NetflowMobile> {
+  if (!NetflowMobileInstance) {
+    NetflowMobileInstance = await NetflowMobile.initialize();
   }
-  return flixorMobileInstance;
+  return NetflowMobileInstance;
 }
 
-export function getFlixorMobile(): FlixorMobile {
-  if (!flixorMobileInstance) {
-    throw new Error('FlixorMobile not initialized. Call initializeFlixorMobile first.');
+export function getNetflowMobile(): NetflowMobile {
+  if (!NetflowMobileInstance) {
+    throw new Error('NetflowMobile not initialized. Call initializeNetflowMobile first.');
   }
-  return flixorMobileInstance;
+  return NetflowMobileInstance;
 }

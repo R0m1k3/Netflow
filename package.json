@@ -1,5 +1,5 @@
 {
-  "name": "flixor",
+  "name": "netflow",
   "private": true,
   "workspaces": [
     "packages/*",

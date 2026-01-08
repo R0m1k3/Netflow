@@ -15,9 +15,9 @@ import { TOP_BAR_EXPANDED_CONTENT_HEIGHT } from '../components/topBarMetrics';
 import HeroCard from '../components/HeroCard';
 import HeroCarousel from '../components/HeroCarousel';
 import BrowseModal from '../components/BrowseModal';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import { useAppSettings } from '../hooks/useAppSettings';
-import type { PlexMediaItem, BrowseContext, BrowseItem } from '@flixor/core';
+import type { PlexMediaItem, BrowseContext, BrowseItem } from '@netflow/core';
 import {
   fetchTmdbTrendingTVWeek,
   fetchTmdbTrendingMoviesWeek,
@@ -77,7 +77,7 @@ const ITEM_LIMITS = {
 type HeroPick = { title: string; image?: string; subtitle?: string; tmdbId?: number; mediaType?: 'movie' | 'tv' };
 
 export default function Home({ onLogout }: HomeProps) {
-  const { flixor, isLoading: flixorLoading, isConnected } = useFlixor();
+  const { flixor, isLoading: flixorLoading, isConnected } = useNetflow();
   const nav: any = useNavigation();
   const insets = useSafeAreaInsets();
   const { settings } = useAppSettings();
@@ -187,9 +187,9 @@ export default function Home({ onLogout }: HomeProps) {
     // Invalidate API caches
     if (flixor) {
       await Promise.all([
-        flixor.clearPlexCache(),
-        flixor.clearTraktCache(),
-        flixor.clearTmdbCache(),
+        netflow.clearPlexCache(),
+        netflow.clearTraktCache(),
+        netflow.clearTmdbCache(),
       ]);
     }
 
@@ -918,7 +918,7 @@ export default function Home({ onLogout }: HomeProps) {
     }
   }, [nav, settings.useCachedStreams, settings.openMetadataScreenWhenCacheDisabled]);
 
-  // Show loading while FlixorCore is initializing or not connected
+  // Show loading while NetflowCore is initializing or not connected
   if (flixorLoading || !isConnected) {
     return (
       <View style={{ flex: 1, backgroundColor: '#1b0a10', alignItems: 'center', justifyContent: 'center' }}>

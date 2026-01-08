@@ -13,7 +13,7 @@ import PersonModal from '../components/PersonModal';
 import RequestButton from '../components/RequestButton';
 import { useNavigation } from '@react-navigation/native';
 import { TopBarStore } from '../components/TopBarStore';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { useMDBListRatings } from '../hooks/useMDBListRatings';
 import { MDBListRatings } from '../core/MDBListService';
@@ -61,7 +61,7 @@ type RouteParams = {
 
 export default function Details({ route }: RouteParams) {
   const params: Partial<DetailsParams> = route?.params || {};
-  const { isLoading: flixorLoading, isConnected } = useFlixor();
+  const { isLoading: flixorLoading, isConnected } = useNetflow();
   const { settings } = useAppSettings();
   const insets = useSafeAreaInsets();
 

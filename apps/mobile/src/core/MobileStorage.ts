@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { IStorage } from '@flixor/core';
+import type { IStorage } from '@netflow/core';
 
 const STORAGE_PREFIX = 'flixor:';
 

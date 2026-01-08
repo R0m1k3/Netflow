@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBarStore } from '../components/TopBarStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation, useIsFocused, useFocusEffect } from '@react-navigation/native';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import { useAppSettings } from '../hooks/useAppSettings';
 import {
   fetchLibrarySections,
@@ -41,7 +41,7 @@ if (Platform.OS === 'ios') {
 export default function Library() {
   const route = useRoute();
   const nav: any = useNavigation();
-  const { flixor, isLoading: flixorLoading, isConnected } = useFlixor();
+  const { flixor, isLoading: flixorLoading, isConnected } = useNetflow();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
 
@@ -76,7 +76,7 @@ export default function Library() {
     // Invalidate library cache
     if (flixor) {
       console.log('[Library] Clearing Plex cache...');
-      await flixor.clearPlexCache();
+      await netflow.clearPlexCache();
       console.log('[Library] Cache cleared');
     }
 
@@ -301,7 +301,7 @@ export default function Library() {
     loadingMoreRef.current = false;
   };
 
-  // Show loading while FlixorCore is initializing
+  // Show loading while NetflowCore is initializing
   if (flixorLoading || !isConnected) {
     return (
       <View style={styles.center}>

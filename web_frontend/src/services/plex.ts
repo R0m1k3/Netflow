@@ -14,7 +14,7 @@ export async function plexLibs(cfg: PlexConfig) {
       if (json && json.MediaContainer && Array.isArray(json.MediaContainer.Directory)) {
         json.MediaContainer.Directory = json.MediaContainer.Directory.filter((d: any) => d.type === 'movie' || d.type === 'show');
       }
-    } catch {}
+    } catch { }
     return json;
   });
 }
@@ -73,7 +73,7 @@ export async function plexLibrarySecondary(cfg: PlexConfig, sectionKey: string, 
 // Generic directory fetch: GET a Plex path under /library (or /library/metadata/.../similar etc.)
 export async function plexDir(cfg: PlexConfig, path: string, qs?: string) {
   const p = path.startsWith('/') ? path : `/${path}`;
-  const url = `${cfg.baseUrl}${p}${p.includes('?') ? '&' : (qs ? (qs.startsWith('?') ? '' : '?') : '?')}X-Plex-Token=${cfg.token}${qs ? `${p.includes('?')?'&':''}${qs.replace(/^\?/, '')}` : ''}`;
+  const url = `${cfg.baseUrl}${p}${p.includes('?') ? '&' : (qs ? (qs.startsWith('?') ? '' : '?') : '?')}X-Plex-Token=${cfg.token}${qs ? `${p.includes('?') ? '&' : ''}${qs.replace(/^\?/, '')}` : ''}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:dir:${p}:${qs || ''}`, 10 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) throw new Error(`Plex error ${res.status}`);
@@ -119,7 +119,7 @@ export async function plexCollections(cfg: PlexConfig, libraryKey: string) {
   });
 }
 
-export async function plexSearch(cfg: PlexConfig, query: string, typeNum: 1|2 = 1) {
+export async function plexSearch(cfg: PlexConfig, query: string, typeNum: 1 | 2 = 1) {
   const url = `${cfg.baseUrl}/search?type=${typeNum}&query=${encodeURIComponent(query)}&X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:search:${typeNum}:${query}`, 10 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -138,7 +138,7 @@ export async function plexChildren(cfg: PlexConfig, ratingKey: string) {
 }
 
 // Comprehensive search that searches by multiple GUIDs
-export async function plexComprehensiveGuidSearch(cfg: PlexConfig, guids: string[], typeNum?: 1|2) {
+export async function plexComprehensiveGuidSearch(cfg: PlexConfig, guids: string[], typeNum?: 1 | 2) {
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:guidsearch:${guids.join(',')}:${typeNum ?? 0}`, 30 * 60 * 1000, async () => {
     const allMatches: any[] = [];
     const seenKeys = new Set<string>();
@@ -156,14 +156,14 @@ export async function plexComprehensiveGuidSearch(cfg: PlexConfig, guids: string
             allMatches.push(item);
           }
         }
-      } catch {}
+      } catch { }
     }
 
     return { MediaContainer: { Metadata: allMatches } };
   });
 }
 
-export async function plexFindByGuid(cfg: PlexConfig, guid: string, typeNum?: 1|2) {
+export async function plexFindByGuid(cfg: PlexConfig, guid: string, typeNum?: 1 | 2) {
   return plexBackendFindByGuid(guid, typeNum);
 }
 
@@ -219,7 +219,7 @@ function getClientProfile(): string {
 
 export function getXPlexHeaders(token: string) {
   return {
-    'X-Plex-Product': 'Flixor',
+    'X-Plex-Product': 'Netflow',
     'X-Plex-Version': '1.0.0',
     'X-Plex-Client-Identifier': getClientId(),
     'X-Plex-Platform': 'Web',
@@ -325,7 +325,7 @@ export async function plexUniversalDecision(cfg: PlexConfig, itemId: string, opt
   }
 }
 
-export function plexStreamUrl(cfg: PlexConfig, itemId: string, options?: { maxVideoBitrate?: number; protocol?: 'dash'|'hls'; autoAdjustQuality?: boolean; directPlay?: boolean; directStream?: boolean; audioStreamID?: string; subtitleStreamID?: string; forceReload?: boolean; }) {
+export function plexStreamUrl(cfg: PlexConfig, itemId: string, options?: { maxVideoBitrate?: number; protocol?: 'dash' | 'hls'; autoAdjustQuality?: boolean; directPlay?: boolean; directStream?: boolean; audioStreamID?: string; subtitleStreamID?: string; forceReload?: boolean; }) {
   const props = getStreamProps(itemId, { ...options, protocol: options?.protocol || 'hls' });
   const headers = getXPlexHeaders(cfg.token);
   const params = new URLSearchParams();
@@ -336,7 +336,7 @@ export function plexStreamUrl(cfg: PlexConfig, itemId: string, options?: { maxVi
   return `${cfg.baseUrl}/video/:/transcode/universal/start.${ext}?${params}`;
 }
 
-export async function plexTimelineUpdate(cfg: PlexConfig, itemId: string, time: number, duration: number, state: 'playing'|'paused'|'stopped'|'buffering') {
+export async function plexTimelineUpdate(cfg: PlexConfig, itemId: string, time: number, duration: number, state: 'playing' | 'paused' | 'stopped' | 'buffering') {
   const headers = getXPlexHeaders(cfg.token);
   const params = new URLSearchParams({
     ratingKey: itemId,
@@ -462,10 +462,10 @@ export async function plexRecentlyAdded(days: number = 7, limitPerLib: number = 
           const added = (m.addedAt ? (Number(m.addedAt) * 1000) : 0);
           if (!added || added >= since) all.push(m);
         }
-      } catch {}
+      } catch { }
     }
     // Sort globally by addedAt desc and cap
-    all.sort((a:any,b:any)=> (b.addedAt||0) - (a.addedAt||0));
+    all.sort((a: any, b: any) => (b.addedAt || 0) - (a.addedAt || 0));
     return all.slice(0, 100);
   } catch {
     return [];
@@ -487,22 +487,22 @@ export async function plexPopular(limitPerLib: number = 50): Promise<any[]> {
       // Try lastViewedAt first, then viewCount
       try {
         res = await plexBackendLibraryAll(String(d.key), { type: d.type === 'movie' ? 1 : 2, sort: 'lastViewedAt:desc', offset: 0, limit: limitPerLib });
-      } catch {}
+      } catch { }
       if (!res) {
         try {
           res = await plexBackendLibraryAll(String(d.key), { type: d.type === 'movie' ? 1 : 2, sort: 'viewCount:desc', offset: 0, limit: limitPerLib });
-        } catch {}
+        } catch { }
       }
       const meta: any[] = res?.MediaContainer?.Metadata || [];
       all.push(...meta);
     }
     // Prefer items with lastViewedAt/viewCount and recent activity
-    const score = (m:any) => {
-      const lv = (m.lastViewedAt||0);
-      const vc = (m.viewCount||0);
+    const score = (m: any) => {
+      const lv = (m.lastViewedAt || 0);
+      const vc = (m.viewCount || 0);
       return (lv * 10) + vc;
     };
-    all.sort((a:any,b:any)=> score(b) - score(a));
+    all.sort((a: any, b: any) => score(b) - score(a));
     return all.slice(0, 100);
   } catch {
     return [];

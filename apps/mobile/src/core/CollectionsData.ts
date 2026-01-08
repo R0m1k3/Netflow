@@ -1,10 +1,10 @@
 /**
- * Collections data fetchers using FlixorCore
+ * Collections data fetchers using NetflowCore
  * Fetches Plex collections for library browsing
  */
 
-import { getFlixorCore } from './index';
-import type { PlexMediaItem } from '@flixor/core';
+import { getNetflowCore } from './index';
+import type { PlexMediaItem } from '@netflow/core';
 
 export type CollectionItem = {
   ratingKey: string;
@@ -31,7 +31,7 @@ export async function fetchCollections(
   libraryType?: 'movie' | 'show'
 ): Promise<CollectionItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const collections = await core.plexServer.getAllCollections(libraryType);
 
     return collections.map((c: PlexMediaItem) => ({
@@ -60,7 +60,7 @@ export async function fetchCollectionItems(
   }
 ): Promise<{ items: CollectionMediaItem[]; hasMore: boolean }> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const { offset = 0, limit = 40 } = options || {};
 
     const items = await core.plexServer.getCollectionItems(collectionRatingKey, {
@@ -96,7 +96,7 @@ export function getCollectionImageUrl(
 ): string {
   if (!thumb) return '';
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.plexServer.getImageUrl(thumb, width);
   } catch {
     return '';

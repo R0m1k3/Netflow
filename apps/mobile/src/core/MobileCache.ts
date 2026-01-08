@@ -1,5 +1,5 @@
 import { createMMKV, type MMKV } from 'react-native-mmkv';
-import type { ICache } from '@flixor/core';
+import type { ICache } from '@netflow/core';
 
 const CACHE_PREFIX = 'cache:';
 const CACHE_INDEX_KEY = 'cache_index';

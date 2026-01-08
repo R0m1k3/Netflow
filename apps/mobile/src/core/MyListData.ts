@@ -1,10 +1,10 @@
 /**
- * My List screen data fetchers using FlixorCore
+ * My List screen data fetchers using NetflowCore
  * Fetches watchlist from both Trakt and Plex, merges and dedupes
  */
 
-import { getFlixorCore } from './index';
-import type { TraktWatchlistItem, PlexMediaItem } from '@flixor/core';
+import { getNetflowCore } from './index';
+import type { TraktWatchlistItem, PlexMediaItem } from '@netflow/core';
 
 export type MyListItem = {
   id: string;
@@ -35,7 +35,7 @@ export async function fetchMyList(options?: {
   const { filter = 'all', sort = 'added', sortDirection = 'desc' } = options || {};
 
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const items: MyListItem[] = [];
     const seen = new Set<string>();
 
@@ -166,7 +166,7 @@ export async function fetchMyList(options?: {
 
 export function getMyListPosterUrl(item: MyListItem, width: number = 300): string {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
 
     // If we have a Plex poster path, use Plex image service
     if (item.poster) {
@@ -187,7 +187,7 @@ export async function fetchTmdbPoster(item: MyListItem): Promise<string | undefi
   if (!item.tmdbId) return undefined;
 
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const mediaType = item.type === 'movie' ? 'movie' : 'tv';
 
     const details = mediaType === 'movie'
@@ -210,7 +210,7 @@ export async function fetchTmdbPoster(item: MyListItem): Promise<string | undefi
 
 export async function removeFromMyList(item: MyListItem): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     let success = false;
 
     // Remove from Trakt if it was added there
@@ -251,7 +251,7 @@ export async function removeFromMyList(item: MyListItem): Promise<boolean> {
 
 export function hasWatchlistSource(): boolean {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     // User can always use Plex watchlist, Trakt is optional
     return true;
   } catch {
@@ -261,7 +261,7 @@ export function hasWatchlistSource(): boolean {
 
 export function isTraktConnected(): boolean {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.isTraktAuthenticated;
   } catch {
     return false;

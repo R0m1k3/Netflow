@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import type { BrowseContext, BrowseItem } from '@flixor/core';
+import type { BrowseContext, BrowseItem } from '@netflow/core';
 import { fetchBrowseItems } from '../core/BrowseData';
 import { TopBarStore } from '../components/TopBarStore';
 import { useAppSettings } from '../hooks/useAppSettings';

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FlixorCore } from '@flixor/core';
+import { NetflowCore } from '@netflow/core';
 import { MobileStorage } from './MobileStorage';
 import { MobileSecureStorage } from './MobileSecureStorage';
 import { MobileCache } from './MobileCache';
@@ -11,7 +11,7 @@ const TRAKT_CLIENT_ID = '4ab0ead6d5510bf39180a5e1dd7b452f5ad700b7794564befdd6bca
 const TRAKT_CLIENT_SECRET = ''; // Add your Trakt client secret
 
 // Generate or retrieve a persistent client ID
-const CLIENT_ID_KEY = 'flixor_client_id';
+const CLIENT_ID_KEY = 'netflow_client_id';
 
 async function getOrCreateClientId(): Promise<string> {
   let clientId = await AsyncStorage.getItem(CLIENT_ID_KEY);
@@ -29,14 +29,14 @@ async function getOrCreateClientId(): Promise<string> {
 }
 
 // Singleton instance
-let flixorCoreInstance: FlixorCore | null = null;
+let netflowCoreInstance: NetflowCore | null = null;
 
 /**
- * Initialize and get the FlixorCore instance
+ * Initialize and get the NetflowCore instance
  */
-export async function initializeFlixorCore(): Promise<FlixorCore> {
-  if (flixorCoreInstance) {
-    return flixorCoreInstance;
+export async function initializeNetflowCore(): Promise<NetflowCore> {
+  if (netflowCoreInstance) {
+    return netflowCoreInstance;
   }
 
   const clientId = await getOrCreateClientId();
@@ -54,15 +54,15 @@ export async function initializeFlixorCore(): Promise<FlixorCore> {
   const secureStorage = new MobileSecureStorage(AsyncStorage);
   const cache = new MobileCache();
 
-  flixorCoreInstance = new FlixorCore({
+  netflowCoreInstance = new NetflowCore({
     storage,
     secureStorage,
     cache,
     clientId,
-    productName: 'Flixor',
+    productName: 'Netflow',
     productVersion: '1.0.0',
     platform: 'iOS', // or detect dynamically
-    deviceName: 'Flixor Mobile',
+    deviceName: 'Netflow Mobile',
     tmdbApiKey: tmdbApiKey,
     traktClientId: TRAKT_CLIENT_ID,
     traktClientSecret: TRAKT_CLIENT_SECRET,
@@ -70,28 +70,28 @@ export async function initializeFlixorCore(): Promise<FlixorCore> {
   });
 
   // Initialize (restore sessions)
-  await flixorCoreInstance.initialize();
+  await netflowCoreInstance.initialize();
 
-  return flixorCoreInstance;
+  return netflowCoreInstance;
 }
 
 /**
- * Reinitialize FlixorCore with updated settings (e.g., new TMDB API key)
+ * Reinitialize NetflowCore with updated settings (e.g., new TMDB API key)
  * This clears the existing instance and creates a new one
  */
-export async function reinitializeFlixorCore(): Promise<FlixorCore> {
-  flixorCoreInstance = null;
-  return initializeFlixorCore();
+export async function reinitializeNetflowCore(): Promise<NetflowCore> {
+  netflowCoreInstance = null;
+  return initializeNetflowCore();
 }
 
 /**
- * Get the FlixorCore instance (must be initialized first)
+ * Get the NetflowCore instance (must be initialized first)
  */
-export function getFlixorCore(): FlixorCore {
-  if (!flixorCoreInstance) {
-    throw new Error('FlixorCore not initialized. Call initializeFlixorCore first.');
+export function getNetflowCore(): NetflowCore {
+  if (!netflowCoreInstance) {
+    throw new Error('NetflowCore not initialized. Call initializeNetflowCore first.');
   }
-  return flixorCoreInstance;
+  return netflowCoreInstance;
 }
 
 // Re-export for convenience
@@ -101,12 +101,13 @@ export { MobileCache } from './MobileCache';
 
 // High-level mobile API
 export {
-  FlixorMobile,
-  initializeFlixorMobile,
-  getFlixorMobile,
+  NetflowMobile,
+  initializeNetflowMobile,
+  getNetflowMobile,
   type MobileHomeData,
   type LibraryItemsResult,
-} from './FlixorMobile';
+} from './NetflowMobile';
 
 // React Context and Hooks
-export { FlixorProvider, useFlixor, useRequireFlixor } from './FlixorContext';
+// React Context and Hooks
+export { NetflowProvider, useNetflow, useRequireNetflow } from './NetflowContext';

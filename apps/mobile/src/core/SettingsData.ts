@@ -1,10 +1,10 @@
 /**
- * Settings screen data fetchers using FlixorCore
+ * Settings screen data fetchers using NetflowCore
  * Replaces the old api/client.ts functions for My/Settings screen
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getFlixorCore } from './index';
+import { getNetflowCore } from './index';
 
 // ============================================
 // Trakt Authentication
@@ -12,7 +12,7 @@ import { getFlixorCore } from './index';
 
 export async function getTraktProfile(): Promise<any | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.trakt.getProfile();
   } catch (e) {
     console.log('[SettingsData] getTraktProfile error:', e);
@@ -28,7 +28,7 @@ export async function startTraktDeviceAuth(): Promise<{
   interval: number;
 } | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.trakt.generateDeviceCode();
   } catch (e) {
     console.log('[SettingsData] startTraktDeviceAuth error:', e);
@@ -43,7 +43,7 @@ export async function pollTraktToken(deviceCode: string): Promise<{
   created_at: number;
 } | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.trakt.pollDeviceCode(deviceCode);
   } catch (e) {
     // Polling will fail until user authorizes - this is expected
@@ -63,7 +63,7 @@ export async function saveTraktTokens(_tokens: {
 
 export async function signOutTrakt(): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.trakt.signOut();
   } catch (e) {
     console.log('[SettingsData] signOutTrakt error:', e);
@@ -76,7 +76,7 @@ export async function signOutTrakt(): Promise<void> {
 
 export async function getPlexUser(): Promise<any | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     // Access the internal plexToken to get user info
     const token = (core as any).plexToken;
     if (token) {
@@ -99,7 +99,7 @@ export function getAppVersion(): string {
 
 export function getConnectedServerInfo(): { name: string; url: string } | null {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const server = core.server;
     const connection = core.connection;
     if (server && connection) {
@@ -141,7 +141,7 @@ export interface PlexConnectionInfo {
 
 export async function getPlexServers(): Promise<PlexServerInfo[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const servers = await core.getPlexServers();
     const currentServerId = core.server?.id;
     const currentUri = core.connection?.uri;
@@ -191,7 +191,7 @@ export async function getPlexServers(): Promise<PlexServerInfo[]> {
 
 export async function selectPlexServer(server: PlexServerInfo): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const servers = await core.getPlexServers();
     const fullServer = servers.find((s) => s.id === server.id);
     if (!fullServer) {
@@ -206,7 +206,7 @@ export async function selectPlexServer(server: PlexServerInfo): Promise<void> {
 
 export async function getServerConnections(serverId: string): Promise<PlexConnectionInfo[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const servers = await core.getPlexServers();
     const server = servers.find((s) => s.id === serverId);
     if (!server) {
@@ -231,7 +231,7 @@ export async function getServerConnections(serverId: string): Promise<PlexConnec
 
 export async function selectServerEndpoint(serverId: string, uri: string): Promise<void> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const servers = await core.getPlexServers();
     const server = servers.find((s) => s.id === serverId);
     if (!server) {
@@ -250,9 +250,9 @@ export async function selectServerEndpoint(serverId: string, uri: string): Promi
     }
 
     // Connect using the specific connection
-    // We need to manually set up the connection since FlixorCore auto-selects best
+    // We need to manually set up the connection since NetflowCore auto-selects best
     // For now, we'll reconnect to the server which may pick a different endpoint
-    // TODO: Add support for specific endpoint selection in FlixorCore
+    // TODO: Add support for specific endpoint selection in NetflowCore
     await core.connectToPlexServer(server);
   } catch (e) {
     console.log('[SettingsData] selectServerEndpoint error:', e);

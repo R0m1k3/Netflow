@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import ConditionalBlurView from '../components/ConditionalBlurView';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import {
   fetchCollections,
   fetchCollectionItems,
@@ -31,7 +31,7 @@ type ViewMode = 'collections' | 'items';
 export default function Collections() {
   const nav: any = useNavigation();
   const route = useRoute();
-  const { isLoading: flixorLoading, isConnected } = useFlixor();
+  const { isLoading: flixorLoading, isConnected } = useNetflow();
 
   const [viewMode, setViewMode] = useState<ViewMode>('collections');
   const [collections, setCollections] = useState<CollectionItem[]>([]);

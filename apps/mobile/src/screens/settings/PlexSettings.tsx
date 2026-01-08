@@ -17,7 +17,7 @@ import SettingsCard from '../../components/settings/SettingsCard';
 import SettingItem from '../../components/settings/SettingItem';
 import PlexIcon from '../../components/icons/PlexIcon';
 import TraktIcon from '../../components/icons/TraktIcon';
-import { useFlixor } from '../../core/FlixorContext';
+import { useNetflow } from '../../core/NetflowContext';
 import {
   getPlexUser,
   getConnectedServerInfo,
@@ -27,7 +27,7 @@ import {
   setAppSettings,
   type PlexConnectionInfo,
 } from '../../core/SettingsData';
-import type { PlexServer } from '@flixor/core';
+import type { PlexServer } from '@netflow/core';
 
 interface PlexSettingsProps {
   onLogout?: () => Promise<void>;
@@ -37,7 +37,7 @@ export default function PlexSettings({ onLogout }: PlexSettingsProps) {
   const nav: any = useNavigation();
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 52;
-  const { flixor, isConnected } = useFlixor();
+  const { flixor, isConnected } = useNetflow();
 
   const [plexUser, setPlexUser] = useState<any | null>(null);
   const [serverInfo, setServerInfo] = useState<{ name: string; url: string } | null>(null);
@@ -72,10 +72,10 @@ export default function PlexSettings({ onLogout }: PlexSettingsProps) {
       setServerInfo(getConnectedServerInfo());
 
       if (flixor) {
-        const serverList = await flixor.getServers();
+        const serverList = await netflow.getServers();
         setServers(serverList);
 
-        const traktAuth = flixor.isTraktAuthenticated;
+        const traktAuth = netflow.isTraktAuthenticated;
         setIsTraktConnected(traktAuth);
 
         const settings = getAppSettings();
@@ -93,7 +93,7 @@ export default function PlexSettings({ onLogout }: PlexSettingsProps) {
 
     try {
       setConnecting(server.id);
-      await flixor.connectToServer(server);
+      await netflow.connectToServer(server);
       setServerInfo({ name: server.name, url: server.connections[0]?.uri || '' });
       Alert.alert('Connected', `Now connected to ${server.name}`);
     } catch (e: any) {
@@ -144,7 +144,7 @@ export default function PlexSettings({ onLogout }: PlexSettingsProps) {
       if (!server) throw new Error('Server not found');
 
       const connection = server.connections.find(c => c.uri === uri) || { uri, protocol: 'https', local: false, relay: false };
-      const isValid = await flixor.testConnection(connection, server.accessToken);
+      const isValid = await netflow.testConnection(connection, server.accessToken);
 
       setTestResults(prev => ({ ...prev, [uri]: isValid ? 'success' : 'failed' }));
     } catch (e) {
@@ -172,7 +172,7 @@ export default function PlexSettings({ onLogout }: PlexSettingsProps) {
       if (!server) throw new Error('Server not found');
 
       const connection = { uri, protocol: uri.startsWith('https') ? 'https' : 'http', local: false, relay: false };
-      const isValid = await flixor.testConnection(connection, server.accessToken);
+      const isValid = await netflow.testConnection(connection, server.accessToken);
 
       if (isValid) {
         Alert.alert('Success', 'Custom endpoint is reachable!', [
@@ -198,7 +198,7 @@ export default function PlexSettings({ onLogout }: PlexSettingsProps) {
       const server = servers.find(s => s.id === expandedServerId);
       if (!server) throw new Error('Server not found');
 
-      await flixor.connectToServerWithUri(server, uri);
+      await netflow.connectToServerWithUri(server, uri);
       setServerInfo(getConnectedServerInfo());
       Alert.alert('Endpoint Changed', 'Successfully switched to the custom endpoint.');
       loadData();

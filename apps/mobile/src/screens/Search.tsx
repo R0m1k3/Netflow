@@ -7,7 +7,7 @@ import FastImage from '@d11/react-native-fast-image';
 import Row from '../components/Row';
 import { useNavigation } from '@react-navigation/native';
 import { TopBarStore } from '../components/TopBarStore';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import {
   searchPlex,
   searchTmdb,
@@ -36,7 +36,7 @@ const IMAGE_PRELOAD_CAP = 6;
 
 export default function Search() {
   const nav: any = useNavigation();
-  const { isConnected } = useFlixor();
+  const { isConnected } = useNetflow();
   const [query, setQuery] = useState('');
   const [plexResults, setPlexResults] = useState<SearchResult[]>([]);
   const [tmdbMovies, setTmdbMovies] = useState<SearchResult[]>([]);

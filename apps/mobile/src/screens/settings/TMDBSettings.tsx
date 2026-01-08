@@ -7,7 +7,7 @@ import SettingsCard from '../../components/settings/SettingsCard';
 import SettingItem from '../../components/settings/SettingItem';
 import TMDBIcon from '../../components/icons/TMDBIcon';
 import { useAppSettings } from '../../hooks/useAppSettings';
-import { reinitializeFlixorCore } from '../../core';
+import { reinitializeNetflowCore } from '../../core';
 
 const LANGUAGE_OPTIONS = [
   { label: 'English', value: 'en' },
@@ -28,12 +28,12 @@ export default function TMDBSettings() {
   const saveKey = async () => {
     const trimmed = apiKey.trim();
     await updateSetting('tmdbApiKey', trimmed.length ? trimmed : undefined);
-    await reinitializeFlixorCore();
+    await reinitializeNetflowCore();
   };
 
   const setLanguage = async (value: string) => {
     await updateSetting('tmdbLanguagePreference', value);
-    await reinitializeFlixorCore();
+    await reinitializeNetflowCore();
   };
 
   return (

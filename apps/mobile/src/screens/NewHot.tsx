@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TopBarStore } from '../components/TopBarStore';
 import { TOP_BAR_EXPANDED_CONTENT_HEIGHT } from '../components/topBarMetrics';
 import * as Haptics from 'expo-haptics';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import { IMAGE_PRELOAD_CAP, CACHE_TTL, isCacheValid } from '../core/PerformanceConfig';
 import {
   getUpcomingMovies,
@@ -64,7 +64,7 @@ function TabPill({ active, label, onPress }: { active?: boolean; label: string; 
 
 export default function NewHot() {
   const nav: any = useNavigation();
-  const { isConnected } = useFlixor();
+  const { isConnected } = useNetflow();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('coming-soon');
   const [loading, setLoading] = useState(false);

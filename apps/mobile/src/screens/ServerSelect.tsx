@@ -9,15 +9,15 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFlixor } from '../core';
-import type { PlexServer } from '@flixor/core';
+import { useNetflow } from '../core';
+import type { PlexServer } from '@netflow/core';
 
 interface ServerSelectProps {
   onConnected: () => void;
 }
 
 export default function ServerSelect({ onConnected }: ServerSelectProps) {
-  const { flixor } = useFlixor();
+  const { netflow } = useNetflow();
   const [servers, setServers] = useState<PlexServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export default function ServerSelect({ onConnected }: ServerSelectProps) {
 
     try {
       console.log('[ServerSelect] Loading servers...');
-      const serverList = await flixor.getServers();
+      const serverList = await netflow.getServers();
       console.log('[ServerSelect] Found', serverList.length, 'servers');
       setServers(serverList);
     } catch (e: any) {
@@ -51,7 +51,7 @@ export default function ServerSelect({ onConnected }: ServerSelectProps) {
       setConnecting(server.id);
       console.log('[ServerSelect] Connecting to server:', server.name);
 
-      await flixor.connectToServer(server);
+      await netflow.connectToServer(server);
       console.log('[ServerSelect] Connected successfully');
       onConnected();
     } catch (e: any) {

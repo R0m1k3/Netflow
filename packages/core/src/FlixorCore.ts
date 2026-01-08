@@ -8,7 +8,7 @@ import { TMDBService } from './services/TMDBService';
 import { TraktService } from './services/TraktService';
 import type { PlexServer, PlexConnection } from './models/plex';
 
-export interface FlixorCoreConfig {
+export interface NetflowCoreConfig {
   // Platform bindings
   storage: IStorage;
   secureStorage: ISecureStorage;
@@ -37,11 +37,11 @@ interface StoredPlexAuth {
 }
 
 /**
- * Main entry point for Flixor Core
+ * Main entry point for Netflow Core
  * Initializes and manages all services with platform-specific storage bindings
  */
-export class FlixorCore {
-  private config: FlixorCoreConfig;
+export class NetflowCore {
+  private config: NetflowCoreConfig;
   private _plexAuth: PlexAuthService;
   private _plexServer: PlexServerService | null = null;
   private _plexTv: PlexTvService | null = null;
@@ -53,7 +53,7 @@ export class FlixorCore {
   private currentServer: PlexServer | null = null;
   private currentConnection: PlexConnection | null = null;
 
-  constructor(config: FlixorCoreConfig) {
+  constructor(config: NetflowCoreConfig) {
     this.config = config;
 
     // Initialize Plex Auth Service (always available)

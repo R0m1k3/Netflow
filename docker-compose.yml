@@ -1,4 +1,4 @@
-# Flixor Development Docker Compose
+# Netflow Development Docker Compose
 # Runs backend and frontend as separate services for development
 
 services:
@@ -6,7 +6,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: flixor-backend
+    container_name: netflow-backend
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -24,7 +24,7 @@ services:
     build:
       context: ./web_frontend
       dockerfile: docker/frontend.Dockerfile
-    container_name: flixor-frontend
+    container_name: netflow-frontend
     depends_on:
       - backend
     ports:

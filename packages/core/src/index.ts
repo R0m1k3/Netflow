@@ -1,6 +1,6 @@
 // Main entry point
-export { FlixorCore } from './FlixorCore';
-export type { FlixorCoreConfig } from './FlixorCore';
+export { NetflowCore } from './FlixorCore';
+export type { NetflowCoreConfig } from './FlixorCore';
 
 // Storage interfaces
 export type { IStorage } from './storage/IStorage';

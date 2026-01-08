@@ -56,7 +56,7 @@ export default function OverseerrSettings() {
   // Check if current values match saved settings
   const hasChanges = useMemo(() => {
     return url.trim() !== (settings.overseerrUrl || '') ||
-           apiKey.trim() !== (settings.overseerrApiKey || '');
+      apiKey.trim() !== (settings.overseerrApiKey || '');
   }, [url, apiKey, settings.overseerrUrl, settings.overseerrApiKey]);
 
   const canTest = hasUrl && hasKey && settings.overseerrEnabled && (!saved || hasChanges);
@@ -314,7 +314,7 @@ export default function OverseerrSettings() {
           <View style={styles.aboutWrap}>
             <Text style={styles.aboutText}>
               Overseerr is a request management and media discovery tool for your Plex ecosystem.
-              When enabled, you can request movies and TV shows directly from Flixor when they're
+              When enabled, you can request movies and TV shows directly from Netflow when they're
               not available in your library.
             </Text>
             <View style={styles.featureList}>

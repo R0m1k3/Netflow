@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, Switch, Dimensions, Linking, Pressa
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import {
   getTraktProfile,
   getPlexUser,
@@ -24,11 +24,11 @@ const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 const ABOUT_LINKS = {
-  privacy: 'https://flixor.xyz/privacy',
-  reportIssue: 'https://github.com/Flixorui/flixor/issues',
-  contributors: 'https://github.com/Flixorui/flixor',
-  discord: 'https://discord.gg/flixor',
-  reddit: 'https://www.reddit.com/r/flixor/',
+  privacy: 'https://netflow.xyz/privacy',
+  reportIssue: 'https://github.com/Netflow/netflow/issues',
+  contributors: 'https://github.com/Netflow/netflow',
+  discord: 'https://discord.gg/netflow',
+  reddit: 'https://www.reddit.com/r/netflow/',
 };
 
 type CategoryId =
@@ -60,7 +60,7 @@ export default function Settings({ onBack }: SettingsProps) {
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 52;
   const scrollY = useRef(new Animated.Value(0)).current;
-  const { isLoading: flixorLoading, isConnected } = useFlixor();
+  const { isLoading: netflowLoading, isConnected } = useNetflow();
   const { settings, updateSetting } = useAppSettings();
   const [traktProfile, setTraktProfile] = useState<any | null>(null);
   const [plexUser, setPlexUser] = useState<any | null>(null);
@@ -69,14 +69,14 @@ export default function Settings({ onBack }: SettingsProps) {
 
   useFocusEffect(
     useCallback(() => {
-      if (flixorLoading || !isConnected) return;
+      if (netflowLoading || !isConnected) return;
 
       (async () => {
         setTraktProfile(await getTraktProfile());
         setPlexUser(await getPlexUser());
         setServerInfo(getConnectedServerInfo());
       })();
-    }, [flixorLoading, isConnected])
+    }, [netflowLoading, isConnected])
   );
 
   // Only create goBack if onBack was provided (from sub-screen navigation)
@@ -242,7 +242,7 @@ export default function Settings({ onBack }: SettingsProps) {
         title="Auto-play Best Stream"
         description="Coming soon"
         icon="flash-outline"
-        renderRight={() => <Switch value={false} onValueChange={() => {}} disabled />}
+        renderRight={() => <Switch value={false} onValueChange={() => { }} disabled />}
         disabled
         isLast={false}
       />
@@ -250,7 +250,7 @@ export default function Settings({ onBack }: SettingsProps) {
         title="Always Resume"
         description="Coming soon"
         icon="refresh-outline"
-        renderRight={() => <Switch value={false} onValueChange={() => {}} disabled />}
+        renderRight={() => <Switch value={false} onValueChange={() => { }} disabled />}
         disabled
         isLast={true}
       />

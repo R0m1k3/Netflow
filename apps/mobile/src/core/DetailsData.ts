@@ -1,10 +1,10 @@
 /**
- * Details screen data fetchers using FlixorCore
+ * Details screen data fetchers using NetflowCore
  * Replaces the old api/data.ts functions for Details screen
  */
 
-import { getFlixorCore } from './index';
-import type { PlexMediaItem } from '@flixor/core';
+import { getNetflowCore } from './index';
+import type { PlexMediaItem } from '@netflow/core';
 
 export type RowItem = {
   id: string;
@@ -19,7 +19,7 @@ export type RowItem = {
 
 export async function fetchPlexMetadata(ratingKey: string): Promise<PlexMediaItem | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getMetadata(ratingKey);
   } catch (e) {
     console.log('[DetailsData] fetchPlexMetadata error:', e);
@@ -29,7 +29,7 @@ export async function fetchPlexMetadata(ratingKey: string): Promise<PlexMediaIte
 
 export async function fetchPlexSeasons(showRatingKey: string): Promise<PlexMediaItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const children = await core.plexServer.getChildren(showRatingKey);
     // Filter to seasons only
     let seasons = children.filter((c: PlexMediaItem) => c.type === 'season');
@@ -46,7 +46,7 @@ export async function fetchPlexSeasons(showRatingKey: string): Promise<PlexMedia
 
 export async function fetchPlexSeasonEpisodes(seasonRatingKey: string): Promise<PlexMediaItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getChildren(seasonRatingKey);
   } catch (e) {
     console.log('[DetailsData] fetchPlexSeasonEpisodes error:', e);
@@ -60,7 +60,7 @@ export async function fetchPlexSeasonEpisodes(seasonRatingKey: string): Promise<
 
 export async function fetchTmdbDetails(mediaType: 'movie' | 'tv', tmdbId: number): Promise<any> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (mediaType === 'movie') {
       return await core.tmdb.getMovieDetails(tmdbId);
     } else {
@@ -74,7 +74,7 @@ export async function fetchTmdbDetails(mediaType: 'movie' | 'tv', tmdbId: number
 
 export async function fetchTmdbLogo(mediaType: 'movie' | 'tv', tmdbId: number): Promise<string | undefined> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const images = mediaType === 'movie'
       ? await core.tmdb.getMovieImages(tmdbId)
       : await core.tmdb.getTVImages(tmdbId);
@@ -93,7 +93,7 @@ export async function fetchTmdbLogo(mediaType: 'movie' | 'tv', tmdbId: number): 
 
 export async function fetchTmdbCredits(mediaType: 'movie' | 'tv', tmdbId: number): Promise<{ cast: any[]; crew: any[] }> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const credits = mediaType === 'movie'
       ? await core.tmdb.getMovieCredits(tmdbId)
       : await core.tmdb.getTVCredits(tmdbId);
@@ -114,7 +114,7 @@ export async function fetchTmdbCredits(mediaType: 'movie' | 'tv', tmdbId: number
 
 export async function fetchTmdbSeasonsList(tvId: number): Promise<Array<{ key: string; title: string; season_number: number }>> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const details = await core.tmdb.getTVDetails(tvId);
     const seasons = details.seasons || [];
 
@@ -133,7 +133,7 @@ export async function fetchTmdbSeasonsList(tvId: number): Promise<Array<{ key: s
 
 export async function fetchTmdbSeasonEpisodes(tvId: number, seasonNumber: number): Promise<any[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const seasonDetails = await core.tmdb.getSeasonDetails(tvId, seasonNumber);
     return seasonDetails.episodes || [];
   } catch (e) {
@@ -148,7 +148,7 @@ export async function fetchTmdbSeasonEpisodes(tvId: number, seasonNumber: number
 
 export async function fetchTmdbRecommendations(mediaType: 'movie' | 'tv', tmdbId: number): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const data = mediaType === 'movie'
       ? await core.tmdb.getMovieRecommendations(tmdbId)
       : await core.tmdb.getTVRecommendations(tmdbId);
@@ -168,7 +168,7 @@ export async function fetchTmdbRecommendations(mediaType: 'movie' | 'tv', tmdbId
 
 export async function fetchTmdbSimilar(mediaType: 'movie' | 'tv', tmdbId: number): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const data = mediaType === 'movie'
       ? await core.tmdb.getSimilarMovies(tmdbId)
       : await core.tmdb.getSimilarTV(tmdbId);
@@ -204,7 +204,7 @@ export async function mapTmdbToPlex(
   year?: string
 ): Promise<PlexMediaItem | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const typeNum = mediaType === 'movie' ? 1 : 2;
     const hits: PlexMediaItem[] = [];
 
@@ -391,7 +391,7 @@ export async function fetchTmdbTrailers(
   tmdbId: number
 ): Promise<TrailerInfo[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const videos = mediaType === 'movie'
       ? await core.tmdb.getMovieVideos(tmdbId)
       : await core.tmdb.getTVVideos(tmdbId);
@@ -446,7 +446,7 @@ export function getYouTubeThumbnailUrl(videoKey: string): string {
 export function getPlexImageUrl(path: string | undefined, width: number = 300): string {
   if (!path) return '';
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.plexServer.getImageUrl(path, width);
   } catch {
     return '';
@@ -456,7 +456,7 @@ export function getPlexImageUrl(path: string | undefined, width: number = 300): 
 export function getTmdbImageUrl(path: string | undefined, size: string = 'w780'): string {
   if (!path) return '';
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.tmdb.getImageUrl(path, size);
   } catch {
     return '';
@@ -466,7 +466,7 @@ export function getTmdbImageUrl(path: string | undefined, size: string = 'w780')
 export function getTmdbProfileUrl(path: string | undefined): string {
   if (!path) return '';
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.tmdb.getProfileUrl(path, 'w185');
   } catch {
     return '';
@@ -531,7 +531,7 @@ export interface PersonCredit {
 
 export async function fetchPersonDetails(personId: number): Promise<PersonInfo | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const person = await core.tmdb.getPersonDetails(personId);
 
     return {
@@ -552,7 +552,7 @@ export async function fetchPersonDetails(personId: number): Promise<PersonInfo |
 
 export async function fetchPersonCredits(personId: number): Promise<PersonCredit[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const credits = await core.tmdb.getPersonCredits(personId);
 
     // Combine cast and crew, dedupe by id+media_type
@@ -606,7 +606,7 @@ export async function fetchPersonCredits(personId: number): Promise<PersonCredit
 export function getPersonProfileUrl(profilePath: string | undefined, size: string = 'w185'): string {
   if (!profilePath) return '';
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return core.tmdb.getProfileUrl(profilePath, size);
   } catch {
     return '';
@@ -639,7 +639,7 @@ export async function getNextUpEpisode(
   allSeasons: any[]
 ): Promise<NextUpEpisode | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
 
     // First, check Plex on-deck for this show
     try {
@@ -756,7 +756,7 @@ export interface WatchlistIds {
  */
 export async function isInPlexWatchlist(ratingKey: string): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexTv.isInWatchlist(ratingKey);
   } catch (e) {
     console.log('[DetailsData] isInPlexWatchlist error:', e);
@@ -769,7 +769,7 @@ export async function isInPlexWatchlist(ratingKey: string): Promise<boolean> {
  */
 export async function isInTraktWatchlist(ids: WatchlistIds): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (!core.isTraktAuthenticated) return false;
 
     const type = ids.mediaType === 'movie' ? 'movies' : 'shows';
@@ -794,7 +794,7 @@ export async function isInTraktWatchlist(ids: WatchlistIds): Promise<boolean> {
  */
 export async function addToPlexWatchlist(ratingKey: string): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.plexTv.addToWatchlist(ratingKey);
     return true;
   } catch (e) {
@@ -808,7 +808,7 @@ export async function addToPlexWatchlist(ratingKey: string): Promise<boolean> {
  */
 export async function removeFromPlexWatchlist(ratingKey: string): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     await core.plexTv.removeFromWatchlist(ratingKey);
     return true;
   } catch (e) {
@@ -822,7 +822,7 @@ export async function removeFromPlexWatchlist(ratingKey: string): Promise<boolea
  */
 export async function addToTraktWatchlist(ids: WatchlistIds): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (!core.isTraktAuthenticated) return false;
 
     const idsObj: { tmdb?: number; imdb?: string } = {};
@@ -846,7 +846,7 @@ export async function addToTraktWatchlist(ids: WatchlistIds): Promise<boolean> {
  */
 export async function removeFromTraktWatchlist(ids: WatchlistIds): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (!core.isTraktAuthenticated) return false;
 
     const idsObj: { tmdb?: number; imdb?: string } = {};
@@ -880,7 +880,7 @@ export async function toggleWatchlist(
   _provider: 'plex' | 'trakt' | 'both' = 'both'
 ): Promise<{ inWatchlist: boolean; success: boolean }> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const { getAppSettings } = await import('./SettingsData');
     const settings = getAppSettings();
 
@@ -959,7 +959,7 @@ export async function toggleWatchlist(
  */
 export async function checkWatchlistStatus(ids: WatchlistIds): Promise<boolean> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
 
     // Check Plex first
     if (ids.plexRatingKey) {

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { FlixorMobile, initializeFlixorMobile } from './FlixorMobile';
+import { NetflowMobile, initializeNetflowMobile } from './NetflowMobile';
 
-interface FlixorContextValue {
-  flixor: FlixorMobile | null;
+interface NetflowContextValue {
+  netflow: NetflowMobile | null;
   isLoading: boolean;
   error: Error | null;
   isAuthenticated: boolean;
@@ -10,21 +10,21 @@ interface FlixorContextValue {
   refresh: () => Promise<void>;
 }
 
-const FlixorContext = createContext<FlixorContextValue>({
-  flixor: null,
+const NetflowContext = createContext<NetflowContextValue>({
+  netflow: null,
   isLoading: true,
   error: null,
   isAuthenticated: false,
   isConnected: false,
-  refresh: async () => {},
+  refresh: async () => { },
 });
 
-interface FlixorProviderProps {
+interface NetflowProviderProps {
   children: React.ReactNode;
 }
 
-export function FlixorProvider({ children }: FlixorProviderProps) {
-  const [flixor, setFlixor] = useState<FlixorMobile | null>(null);
+export function NetflowProvider({ children }: NetflowProviderProps) {
+  const [netflow, setNetflow] = useState<NetflowMobile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [authState, setAuthState] = useState({
@@ -36,8 +36,8 @@ export function FlixorProvider({ children }: FlixorProviderProps) {
     try {
       setIsLoading(true);
       setError(null);
-      const instance = await initializeFlixorMobile();
-      setFlixor(instance);
+      const instance = await initializeNetflowMobile();
+      setNetflow(instance);
       setAuthState({
         isAuthenticated: instance.isPlexAuthenticated,
         isConnected: instance.isConnected,
@@ -54,54 +54,54 @@ export function FlixorProvider({ children }: FlixorProviderProps) {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (flixor) {
+    if (netflow) {
       setAuthState({
-        isAuthenticated: flixor.isPlexAuthenticated,
-        isConnected: flixor.isConnected,
+        isAuthenticated: netflow.isPlexAuthenticated,
+        isConnected: netflow.isConnected,
       });
     }
-  }, [flixor]);
+  }, [netflow]);
 
   const value = useMemo(() => ({
-    flixor,
+    netflow,
     isLoading,
     error,
     isAuthenticated: authState.isAuthenticated,
     isConnected: authState.isConnected,
     refresh,
-  }), [flixor, isLoading, error, authState.isAuthenticated, authState.isConnected, refresh]);
+  }), [netflow, isLoading, error, authState.isAuthenticated, authState.isConnected, refresh]);
 
   return (
-    <FlixorContext.Provider value={value}>
+    <NetflowContext.Provider value={value}>
       {children}
-    </FlixorContext.Provider>
+    </NetflowContext.Provider>
   );
 }
 
 /**
- * Hook to access FlixorMobile instance
+ * Hook to access NetflowMobile instance
  */
-export function useFlixor(): FlixorContextValue {
-  return useContext(FlixorContext);
+export function useNetflow(): NetflowContextValue {
+  return useContext(NetflowContext);
 }
 
 /**
- * Hook that throws if Flixor is not loaded
+ * Hook that throws if Netflow is not loaded
  */
-export function useRequireFlixor(): FlixorMobile {
-  const { flixor, isLoading, error } = useFlixor();
+export function useRequireNetflow(): NetflowMobile {
+  const { netflow, isLoading, error } = useNetflow();
 
   if (isLoading) {
-    throw new Error('Flixor is still loading');
+    throw new Error('Netflow is still loading');
   }
 
   if (error) {
     throw error;
   }
 
-  if (!flixor) {
-    throw new Error('Flixor is not initialized');
+  if (!netflow) {
+    throw new Error('Netflow is not initialized');
   }
 
-  return flixor;
+  return netflow;
 }

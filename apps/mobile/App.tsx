@@ -66,7 +66,7 @@ if (Platform.OS === 'ios') {
 }
 
 // New standalone imports
-import { FlixorProvider, useFlixor } from './src/core';
+import { NetflowProvider, useNetflow } from './src/core';
 import PlexLogin from './src/screens/PlexLogin';
 import ServerSelect from './src/screens/ServerSelect';
 
@@ -256,9 +256,9 @@ const Tabs = React.memo(() => {
         tabBarIcon: ({ color, focused }) => {
           const name = route.name === 'HomeTab' ? (focused ? 'home' : 'home-outline')
             : route.name === 'NewHotTab' ? (focused ? 'play-circle' : 'play-circle-outline')
-            : route.name === 'SettingsTab' ? (focused ? 'settings' : 'settings-outline')
-            : route.name === 'MyTab' ? (focused ? 'bookmark' : 'bookmark-outline')
-            : (focused ? 'home' : 'home-outline');
+              : route.name === 'SettingsTab' ? (focused ? 'settings' : 'settings-outline')
+                : route.name === 'MyTab' ? (focused ? 'bookmark' : 'bookmark-outline')
+                  : (focused ? 'home' : 'home-outline');
           return <Ionicons name={name as any} size={22} color={color} />;
         }
       })}
@@ -277,15 +277,15 @@ const Tabs = React.memo(() => {
 });
 
 function AppContent() {
-  const { flixor, isLoading, error, isAuthenticated, isConnected, refresh } = useFlixor();
+  const { netflow, isLoading, error, isAuthenticated, isConnected, refresh } = useNetflow();
 
   // Update the logout handler ref so memoized components can access it
   logoutHandlerRef = React.useCallback(async () => {
-    if (flixor) {
-      await flixor.logout();
+    if (netflow) {
+      await netflow.logout();
       refresh();
     }
-  }, [flixor, refresh]);
+  }, [netflow, refresh]);
 
   // Show loading screen during initialization
   if (isLoading) {
@@ -340,9 +340,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <FlixorProvider>
+      <NetflowProvider>
         <AppContent />
-      </FlixorProvider>
+      </NetflowProvider>
     </SafeAreaProvider>
   );
 }

@@ -1,11 +1,11 @@
 /**
- * Home screen data fetchers using FlixorCore
+ * Home screen data fetchers using NetflowCore
  * Replaces the old api/data.ts functions for Home screen
  */
 
-import { getFlixorCore } from './index';
+import { getNetflowCore } from './index';
 import { loadAppSettings } from './SettingsData';
-import type { PlexMediaItem, TMDBMedia, PlexUltraBlurColors } from '@flixor/core';
+import type { PlexMediaItem, TMDBMedia, PlexUltraBlurColors } from '@netflow/core';
 
 export type RowItem = {
   id: string;
@@ -37,7 +37,7 @@ async function withLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<
 
 export async function fetchTmdbTrendingAllWeek(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const data = await core.tmdb.getTrendingAll('week', 1);
     const results = data.results || [];
 
@@ -62,7 +62,7 @@ export async function fetchTmdbTrendingAllWeek(): Promise<RowItem[]> {
 
 export async function fetchTmdbTrendingTVWeek(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const data = await core.tmdb.getTrendingTV('week', 1);
     const results = data.results || [];
 
@@ -84,7 +84,7 @@ export async function fetchTmdbTrendingTVWeek(): Promise<RowItem[]> {
 
 export async function fetchTmdbTrendingMoviesWeek(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const data = await core.tmdb.getTrendingMovies('week', 1);
     const results = data.results || [];
 
@@ -110,7 +110,7 @@ export async function fetchTmdbTrendingMoviesWeek(): Promise<RowItem[]> {
 
 export async function fetchContinueWatching(): Promise<PlexMediaItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getContinueWatching();
   } catch (e) {
     console.log('[HomeData] fetchContinueWatching error:', e);
@@ -120,7 +120,7 @@ export async function fetchContinueWatching(): Promise<PlexMediaItem[]> {
 
 export async function fetchRecentlyAdded(): Promise<PlexMediaItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getRecentlyAdded();
   } catch (e) {
     console.log('[HomeData] fetchRecentlyAdded error:', e);
@@ -130,7 +130,7 @@ export async function fetchRecentlyAdded(): Promise<PlexMediaItem[]> {
 
 export function getPlexImageUrl(item: PlexMediaItem, width: number = 300): string {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const path = item.thumb || item.art;
     if (!path) return '';
     return core.plexServer.getImageUrl(path, width);
@@ -141,7 +141,7 @@ export function getPlexImageUrl(item: PlexMediaItem, width: number = 300): strin
 
 export function getContinueWatchingImageUrl(item: PlexMediaItem, width: number = 300): string {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const path =
       item.type === 'episode'
         ? item.grandparentThumb || item.thumb || item.art
@@ -159,7 +159,7 @@ export function getContinueWatchingImageUrl(item: PlexMediaItem, width: number =
 
 export async function fetchPlexWatchlist(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const items = await core.plexTv.getWatchlist();
 
     return items.slice(0, 12).map((item: PlexMediaItem) => {
@@ -186,7 +186,7 @@ export async function fetchPlexWatchlist(): Promise<RowItem[]> {
 
 export async function fetchPlexGenreRow(type: 'movie' | 'show', genre: string): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const libraries = await core.plexServer.getLibraries();
     const lib = libraries.find((d) => d.type === type);
     if (!lib) return [];
@@ -216,7 +216,7 @@ export async function fetchPlexGenreRow(type: 'movie' | 'show', genre: string): 
 
 export async function fetchTraktTrendingMovies(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const trending = await core.trakt.getTrendingMovies(1, 20);
 
     return withLimit(trending.slice(0, 12), 5, async (item) => {
@@ -248,7 +248,7 @@ export async function fetchTraktTrendingMovies(): Promise<RowItem[]> {
 
 export async function fetchTraktTrendingShows(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const trending = await core.trakt.getTrendingShows(1, 20);
 
     return withLimit(trending.slice(0, 12), 5, async (item) => {
@@ -280,7 +280,7 @@ export async function fetchTraktTrendingShows(): Promise<RowItem[]> {
 
 export async function fetchTraktPopularShows(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const popular = await core.trakt.getPopularShows(1, 20);
 
     return withLimit(popular.slice(0, 12), 5, async (show) => {
@@ -311,7 +311,7 @@ export async function fetchTraktPopularShows(): Promise<RowItem[]> {
 
 export async function fetchTraktWatchlist(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (!core.isTraktAuthenticated) return [];
 
     const [movies, shows] = await Promise.all([
@@ -356,7 +356,7 @@ export async function fetchTraktWatchlist(): Promise<RowItem[]> {
 
 export async function fetchTraktHistory(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (!core.isTraktAuthenticated) return [];
 
     const [movies, shows] = await Promise.all([
@@ -401,7 +401,7 @@ export async function fetchTraktHistory(): Promise<RowItem[]> {
 
 export async function fetchTraktRecommendations(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (!core.isTraktAuthenticated) return [];
 
     const [movies, shows] = await Promise.all([
@@ -456,7 +456,7 @@ export async function getTmdbLogo(
   mediaType: 'movie' | 'tv'
 ): Promise<string | undefined> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const images =
       mediaType === 'movie'
         ? await core.tmdb.getMovieImages(tmdbId)
@@ -484,7 +484,7 @@ export async function getTmdbTextlessPoster(
   mediaType: 'movie' | 'tv'
 ): Promise<string | undefined> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const images =
       mediaType === 'movie'
         ? await core.tmdb.getMovieImages(tmdbId)
@@ -520,7 +520,7 @@ export async function getTmdbTextlessBackdrop(
   mediaType: 'movie' | 'tv'
 ): Promise<string | undefined> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const images =
       mediaType === 'movie'
         ? await core.tmdb.getMovieImages(tmdbId)
@@ -556,7 +556,7 @@ export async function getTmdbBackdropWithTitle(
   mediaType: 'movie' | 'tv'
 ): Promise<string | undefined> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const images =
       mediaType === 'movie'
         ? await core.tmdb.getMovieImages(tmdbId)
@@ -598,7 +598,7 @@ export async function getTmdbBackdropWithTitle(
  */
 export async function getShowTmdbId(showRatingKey: string): Promise<string | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const showMeta = await core.plexServer.getMetadata(showRatingKey, true);
     if (!showMeta?.Guid) return null;
 
@@ -622,7 +622,7 @@ export async function getTmdbOverview(
   mediaType: 'movie' | 'tv'
 ): Promise<string | undefined> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     if (mediaType === 'movie') {
       const details = await core.tmdb.getMovieDetails(tmdbId);
       return details.overview || undefined;
@@ -650,7 +650,7 @@ export async function getUltraBlurColors(
   imageUrl: string
 ): Promise<PlexUltraBlurColors | null> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const colors = await core.plexServer.getUltraBlurColors(imageUrl);
     if (colors) {
       console.log('[HomeData] UltraBlur colors:', colors);
@@ -668,7 +668,7 @@ export async function getUltraBlurColors(
 
 export async function getUsername(): Promise<string> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const token = (core as any).plexToken;
     if (token) {
       const user = await core.plexAuth.getUser(token);
@@ -694,7 +694,7 @@ export type GenreItem = {
  */
 export async function fetchMovieGenres(): Promise<GenreItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getAllGenres('movie');
   } catch (e) {
     console.log('[HomeData] fetchMovieGenres error:', e);
@@ -707,7 +707,7 @@ export async function fetchMovieGenres(): Promise<GenreItem[]> {
  */
 export async function fetchTvGenres(): Promise<GenreItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getAllGenres('show');
   } catch (e) {
     console.log('[HomeData] fetchTvGenres error:', e);
@@ -720,7 +720,7 @@ export async function fetchTvGenres(): Promise<GenreItem[]> {
  */
 export async function fetchAllGenres(): Promise<GenreItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     return await core.plexServer.getAllGenres();
   } catch (e) {
     console.log('[HomeData] fetchAllGenres error:', e);
@@ -733,7 +733,7 @@ export async function fetchAllGenres(): Promise<GenreItem[]> {
  */
 export async function fetchLibraries(): Promise<Array<{ key: string; title: string; type: string }>> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const libraries = await core.plexServer.getLibraries();
     const settings = await loadAppSettings();
     const enabledKeys = settings.enabledLibraryKeys;
@@ -753,7 +753,7 @@ export async function fetchLibraries(): Promise<Array<{ key: string; title: stri
 
 export async function fetchAllLibraries(): Promise<Array<{ key: string; title: string; type: string }>> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const libraries = await core.plexServer.getLibraries();
     return libraries.map((lib) => ({
       key: lib.key,

@@ -1,8 +1,8 @@
 /**
- * Search screen data fetchers using FlixorCore
+ * Search screen data fetchers using NetflowCore
  */
 
-import { getFlixorCore } from './index';
+import { getNetflowCore } from './index';
 import { getTmdbBackdropWithTitle } from './HomeData';
 
 export type SearchResult = {
@@ -66,7 +66,7 @@ export const GENRE_MAP: { [key: number]: string } = {
 
 export async function searchPlex(query: string): Promise<SearchResult[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const items = await core.plexServer.search(query);
 
     return items.slice(0, 20).map((item: any) => {
@@ -88,7 +88,7 @@ export async function searchPlex(query: string): Promise<SearchResult[]> {
 
 export async function searchTmdb(query: string): Promise<{ movies: SearchResult[]; shows: SearchResult[] }> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const res = await core.tmdb.searchMulti(query);
     const items = res?.results || [];
 
@@ -132,7 +132,7 @@ export async function searchTmdb(query: string): Promise<{ movies: SearchResult[
 
 export async function getTrendingForSearch(): Promise<RowItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const [moviesRes, showsRes] = await Promise.all([
       core.tmdb.getTrendingMovies('week'),
       core.tmdb.getTrendingTV('week'),
@@ -176,7 +176,7 @@ export async function getTrendingForSearch(): Promise<RowItem[]> {
 
 export async function discoverByGenre(genreId: number): Promise<SearchResult[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
 
     const [movieRes, tvRes] = await Promise.all([
       core.tmdb.discoverMovies({ withGenres: String(genreId) }),

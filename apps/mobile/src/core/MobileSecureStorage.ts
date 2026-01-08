@@ -1,4 +1,4 @@
-import type { ISecureStorage } from '@flixor/core';
+import type { ISecureStorage } from '@netflow/core';
 
 // Note: In production, you should use expo-secure-store
 // For now, we'll use a simple implementation that can be swapped later

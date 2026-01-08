@@ -1,8 +1,8 @@
 /**
- * New & Hot screen data fetchers using FlixorCore
+ * New & Hot screen data fetchers using NetflowCore
  */
 
-import { getFlixorCore } from './index';
+import { getNetflowCore } from './index';
 import { getTmdbBackdropWithTitle } from './HomeData';
 
 export type ContentItem = {
@@ -51,7 +51,7 @@ export async function fetchPreferredBackdrops(
 
 export async function getUpcomingMovies(): Promise<ContentItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const res = await core.tmdb.getUpcomingMovies();
 
     return (res?.results || []).slice(0, 20).map((item: any) => ({
@@ -75,7 +75,7 @@ export async function getUpcomingMovies(): Promise<ContentItem[]> {
 
 export async function getTrendingAll(): Promise<ContentItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const res = await core.tmdb.getTrendingAll('week');
 
     return (res?.results || []).slice(0, 20).map((item: any) => ({
@@ -97,7 +97,7 @@ export async function getTrendingAll(): Promise<ContentItem[]> {
 
 export async function getTop10Shows(): Promise<ContentItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const res = await core.tmdb.getTrendingTV('week');
 
     return (res?.results || []).slice(0, 10).map((item: any, index: number) => ({
@@ -119,7 +119,7 @@ export async function getTop10Shows(): Promise<ContentItem[]> {
 
 export async function getTop10Movies(): Promise<ContentItem[]> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const res = await core.tmdb.getTrendingMovies('week');
 
     return (res?.results || []).slice(0, 10).map((item: any, index: number) => ({

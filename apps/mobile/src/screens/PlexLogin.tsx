@@ -9,7 +9,7 @@ import {
   AppState,
   AppStateStatus,
 } from 'react-native';
-import { getFlixorCore } from '../core';
+import { getNetflowCore } from '../core';
 
 // The URL where users enter their PIN code
 const PLEX_LINK_URL = 'https://plex.tv/link';
@@ -47,7 +47,7 @@ export default function PlexLogin({ onAuthenticated }: PlexLoginProps) {
       setBusy(true);
       abortRef.current = false;
 
-      const core = getFlixorCore();
+      const core = getNetflowCore();
       const pinData = await core.createPlexPin();
       setPin(pinData);
 

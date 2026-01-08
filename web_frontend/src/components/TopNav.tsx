@@ -40,7 +40,7 @@ export default function TopNav() {
           try {
             // best-effort server sync
             await apiClient.syncPlexServers(s.plexClientId || 'web');
-          } catch {}
+          } catch { }
           const backendServers = await apiClient.getServers();
           if (backendServers && backendServers.length > 0) {
             list = backendServers.map((s: any) => ({
@@ -50,7 +50,7 @@ export default function TopNav() {
               token: s.token
             }));
           }
-        } catch (backendError) {}
+        } catch (backendError) { }
 
         if (list.length > 0) {
           setServers(list);
@@ -132,7 +132,7 @@ export default function TopNav() {
       try {
         try {
           await apiClient.syncPlexServers(loadSettings().plexClientId || 'web');
-        } catch {}
+        } catch { }
         const backendServers = await apiClient.getServers();
 
         if (backendServers && backendServers.length > 0) {
@@ -144,7 +144,7 @@ export default function TopNav() {
             token: s.token
           }));
         }
-      } catch (backendError) {}
+      } catch (backendError) { }
 
       setServers(list);
       saveSettings({ plexServers: list });
@@ -179,7 +179,7 @@ export default function TopNav() {
       <div ref={headerRef} className="relative h-16">
         <div className="nav-bg" />
         <div className="page-gutter h-16 flex items-center gap-8 relative z-10">
-          <Link to="/" className="text-2xl font-extrabold tracking-tight text-brand">FLIXOR</Link>
+          <Link to="/" className="text-2xl font-extrabold tracking-tight text-brand">NETFLOW</Link>
           <nav className="hidden md:flex gap-6 text-sm text-neutral-300">
             {items.map((it) => {
               const base = it.to.split('?')[0];
@@ -198,7 +198,7 @@ export default function TopNav() {
             <IconBell />
             {/* Server switcher */}
             <div className="relative hidden md:block">
-              <button className="btn" onClick={() => setOpen(v=>!v)}>{current?.name || 'Server'}</button>
+              <button className="btn" onClick={() => setOpen(v => !v)}>{current?.name || 'Server'}</button>
               {open && (
                 <div className="absolute right-0 mt-2 w-64 rounded-lg ring-1 ring-white/10 bg-black/80 backdrop-blur p-2 z-50">
                   <div className="text-xs text-neutral-400 px-2 py-1">Servers</div>
@@ -213,7 +213,7 @@ export default function TopNav() {
                             <button
                               key={i}
                               className={`w-full text-left px-2 py-1 rounded hover:bg-white/10 flex items-center justify-between ${isSelected ? 'bg-white/10' : ''}`}
-                              onClick={()=>{
+                              onClick={() => {
                                 // Persist new server and clear Plex caches
                                 saveSettings({ plexServer: { name: s.name, clientIdentifier: s.clientIdentifier, baseUrl: s.bestUri, token: s.token }, plexBaseUrl: s.bestUri, plexToken: s.token });
                                 forget('plex:');
@@ -226,13 +226,13 @@ export default function TopNav() {
                             </button>
                           );
                         })}
-                        {servers.length===0 && <div className="px-2 py-1 text-neutral-400">No servers</div>}
+                        {servers.length === 0 && <div className="px-2 py-1 text-neutral-400">No servers</div>}
                       </>
                     )}
                   </div>
                   <div className="border-t border-white/10 mt-2 pt-2 flex justify-between">
                     <button className="text-sm hover:text-white" onClick={doRefresh}>Refresh</button>
-                    <Link to="/settings" className="text-sm hover:text-white" onClick={()=> setOpen(false)}>Settings</Link>
+                    <Link to="/settings" className="text-sm hover:text-white" onClick={() => setOpen(false)}>Settings</Link>
                   </div>
                 </div>
               )}
@@ -253,20 +253,20 @@ function NavLink({ to, children, active }: { to: string; children: React.ReactNo
 
 function IconSearch() {
   return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 21l-4.3-4.3"/><circle cx="11" cy="11" r="7"/></svg>
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 21l-4.3-4.3" /><circle cx="11" cy="11" r="7" /></svg>
   );
 }
 function IconBell() {
   return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .53-.21 1.04-.59 1.41L4 17h5"/><path d="M9 21h6"/></svg>
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .53-.21 1.04-.59 1.41L4 17h5" /><path d="M9 21h6" /></svg>
   );
 }
 
 function IconCog() {
   return (
     <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0A1.65 1.65 0 0 0 9 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0A1.65 1.65 0 0 0 20.91 11H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0A1.65 1.65 0 0 0 9 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0A1.65 1.65 0 0 0 20.91 11H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
     </svg>
   );
 }

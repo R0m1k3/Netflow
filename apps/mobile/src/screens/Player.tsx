@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { KSPlayerComponent, KSPlayerRef, AudioTrack, TextTrack, MPVPlayerComponent, MPVPlayerRef, MPVAudioTrack, MPVSubtitleTrack } from '../components/player';
 import PlaybackStatsHUD from '../components/player/PlaybackStatsHUD';
 import { Stream, PlaybackInfo } from '../components/PlayerSettingsSheet';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import {
   fetchPlayerMetadata,
   fetchMarkers,
@@ -54,7 +54,7 @@ export default function Player({ route }: RouteParams) {
   const playerRef = useRef<KSPlayerRef>(null);
   const mpvPlayerRef = useRef<MPVPlayerRef>(null); // Android MPV player
   const videoRef = useRef<Video>(null); // expo-av fallback (unused with MPV)
-  const { isLoading: flixorLoading, isConnected } = useFlixor();
+  const { isLoading: flixorLoading, isConnected } = useNetflow();
   const KSPlayerModule = Platform.OS === 'ios' ? NativeModules.KSPlayerModule : null;
 
   // Track selection state (iOS KSPlayer only)

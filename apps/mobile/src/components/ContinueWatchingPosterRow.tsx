@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ContextMenu from 'react-native-context-menu-view';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import type { PlexMediaItem } from '@flixor/core';
+import type { PlexMediaItem } from '@netflow/core';
 import { useAppSettings } from '../hooks/useAppSettings';
 
 const POSTER_SIZES = {

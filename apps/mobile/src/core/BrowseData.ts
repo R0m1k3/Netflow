@@ -3,9 +3,9 @@
  * Fetches paginated data based on BrowseContext
  */
 
-import { getFlixorCore } from './index';
-import type { BrowseContext, BrowseItem, BrowseResult } from '@flixor/core';
-import type { PlexMediaItem, TMDBMedia } from '@flixor/core';
+import { getNetflowCore } from './index';
+import type { BrowseContext, BrowseItem, BrowseResult } from '@netflow/core';
+import type { PlexMediaItem, TMDBMedia } from '@netflow/core';
 
 // Helper: Parallel processing with concurrency limit
 async function withLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
@@ -57,7 +57,7 @@ export async function fetchBrowseItems(
  */
 async function fetchPlexDirectory(path: string, page: number): Promise<BrowseResult> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const offset = (page - 1) * PAGE_SIZE;
 
     // Parse the path to add pagination params
@@ -91,7 +91,7 @@ async function fetchPlexDirectory(path: string, page: number): Promise<BrowseRes
  */
 async function fetchPlexLibrary(libraryKey: string, page: number): Promise<BrowseResult> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const offset = (page - 1) * PAGE_SIZE;
 
     const response = await core.plexServer.getLibraryItems(libraryKey, {
@@ -125,7 +125,7 @@ async function fetchPlexLibrary(libraryKey: string, page: number): Promise<Brows
  */
 async function fetchPlexWatchlist(page: number): Promise<BrowseResult> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const items = await core.plexTv.getWatchlist();
 
     // Client-side pagination since Plex watchlist doesn't support server-side
@@ -158,7 +158,7 @@ async function fetchTmdbBrowse(
   page: number
 ): Promise<BrowseResult> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const { kind, mediaType, id } = context;
 
     let response: { results: TMDBMedia[]; total_pages?: number; page?: number };
@@ -221,7 +221,7 @@ async function fetchTraktBrowse(
   page: number
 ): Promise<BrowseResult> {
   try {
-    const core = getFlixorCore();
+    const core = getNetflowCore();
     const { kind, mediaType } = context;
 
     let items: any[] = [];

@@ -11,7 +11,7 @@ import { TOP_BAR_EXPANDED_CONTENT_HEIGHT } from '../components/topBarMetrics';
 import { LinearGradient } from 'expo-linear-gradient';
 import ConditionalBlurView from '../components/ConditionalBlurView';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useFlixor } from '../core/FlixorContext';
+import { useNetflow } from '../core/NetflowContext';
 import {
   fetchMyList,
   getMyListPosterUrl,
@@ -58,7 +58,7 @@ const persistentStore = {
 export default function MyList() {
   const nav: any = useNavigation();
   const insets = useSafeAreaInsets();
-  const { flixor, isLoading: flixorLoading, isConnected } = useFlixor();
+  const { flixor, isLoading: flixorLoading, isConnected } = useNetflow();
   const { settings } = useAppSettings();
 
   // Initialize from persistent store for instant render
@@ -160,8 +160,8 @@ export default function MyList() {
     if (flixor) {
       console.log('[MyList] Clearing Plex and Trakt caches...');
       await Promise.all([
-        flixor.clearPlexCache(),
-        flixor.clearTraktCache(),
+        netflow.clearPlexCache(),
+        netflow.clearTraktCache(),
       ]);
       console.log('[MyList] Caches cleared');
     }
@@ -242,7 +242,7 @@ export default function MyList() {
     }, [filterPills, nav, y])
   );
 
-  // Show loading while FlixorCore is initializing
+  // Show loading while NetflowCore is initializing
   if (flixorLoading || !isConnected) {
     return (
       <View style={styles.center}>
