@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { VideoSeekSlider } from 'react-video-seek-slider';
 import PlexVideoPlayer from './PlexVideoPlayer';
 import { apiClient } from '@/services/api';
@@ -143,16 +144,17 @@ const QUALITY_LEVELS = {
 };
 
 export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: AdvancedPlayerProps) {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const seekSliderRef = useRef<any>(null);
   const sessionId = useRef<string>(Math.random().toString(36).substring(2, 15));
-  
+
   const [metadata, setMetadata] = useState<PlexMetadata | null>(null);
   const [streamUrl, setStreamUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Playback state
   const [playing, setPlaying] = useState(true);
   const [duration, setDuration] = useState(0);
@@ -175,7 +177,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   const [volumeSliderKey, setVolumeSliderKey] = useState(0);
   const [showSpeed, setShowSpeed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
-  
+
   // UI state
   const [showControls, setShowControls] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
@@ -183,9 +185,47 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const volumePopoverRef = useRef<HTMLDivElement | null>(null);
   const volumeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const { t: tPlayer } = useTranslation(); // Helper for QUALITY_LEVELS labels
+
+  const QUALITY_LEVELS_XLATED = useMemo(() => ({
+    '4k': [
+      { label: `4K ${t('player.high')} (40 ${t('player.mbps')})`, value: 40000 },
+      { label: `4K ${t('player.medium')} (30 ${t('player.mbps')})`, value: 30000 },
+      { label: `4K ${t('player.low')} (20 ${t('player.mbps')})`, value: 20000 },
+      { label: `1080p ${t('player.high')} (20 ${t('player.mbps')})`, value: 20000 },
+      { label: `1080p ${t('player.medium')} (12 ${t('player.mbps')})`, value: 12000 },
+      { label: `1080p ${t('player.low')} (10 ${t('player.mbps')})`, value: 10000 },
+      { label: `720p ${t('player.high')} (4 ${t('player.mbps')})`, value: 4000 },
+      { label: `720p ${t('player.medium')} (3 ${t('player.mbps')})`, value: 3000 },
+      { label: `720p ${t('player.low')} (2 ${t('player.mbps')})`, value: 2000 },
+      { label: `480p (1.5 ${t('player.mbps')})`, value: 1500 },
+      { label: `360p (0.75 ${t('player.mbps')})`, value: 750 },
+      { label: `240p (0.3 ${t('player.mbps')})`, value: 300 },
+    ],
+    '1080': [
+      { label: `1080p ${t('player.high')} (20 ${t('player.mbps')})`, value: 20000 },
+      { label: `1080p ${t('player.medium')} (12 ${t('player.mbps')})`, value: 12000 },
+      { label: `1080p ${t('player.low')} (10 ${t('player.mbps')})`, value: 10000 },
+      { label: `720p ${t('player.high')} (4 ${t('player.mbps')})`, value: 4000 },
+      { label: `720p ${t('player.medium')} (3 ${t('player.mbps')})`, value: 3000 },
+      { label: `720p ${t('player.low')} (2 ${t('player.mbps')})`, value: 2000 },
+      { label: `480p (1.5 ${t('player.mbps')})`, value: 1500 },
+      { label: `360p (0.75 ${t('player.mbps')})`, value: 750 },
+      { label: `240p (0.3 ${t('player.mbps')})`, value: 300 },
+    ],
+    '720': [
+      { label: `720p ${t('player.high')} (4 ${t('player.mbps')})`, value: 4000 },
+      { label: `720p ${t('player.medium')} (3 ${t('player.mbps')})`, value: 3000 },
+      { label: `720p ${t('player.low')} (2 ${t('player.mbps')})`, value: 2000 },
+      { label: `480p (1.5 ${t('player.mbps')})`, value: 1500 },
+      { label: `360p (0.75 ${t('player.mbps')})`, value: 750 },
+      { label: `240p (0.3 ${t('player.mbps')})`, value: 300 },
+    ],
+  }), [t]);
+
   const episodesPanelRef = useRef<HTMLDivElement | null>(null);
   const episodesButtonRef = useRef<HTMLButtonElement | null>(null);
-  
+
   // Quality settings
   const [quality, setQuality] = useState<string | number>(() => {
     const saved = localStorage.getItem('player_quality');
@@ -195,7 +235,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     }
     return saved || 'original';
   });
-  
+
   // Stream selections
   const [selectedAudioStream, setSelectedAudioStream] = useState<string | null>(null);
   const [selectedSubtitleStream, setSelectedSubtitleStream] = useState<string | null>('0');
@@ -223,7 +263,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   const [codecErrorMessage, setCodecErrorMessage] = useState<string | null>(null);
   const [retryingWithTranscode, setRetryingWithTranscode] = useState(false);
   const hasRetriedWithTranscode = useRef(false);
-  
+
   // Timeline update interval
   const timelineIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -237,7 +277,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         localStorage.setItem('player_volume_last', String(volume));
       }
       const v = videoRef.current; if (v) v.volume = Math.max(0, Math.min(1, volume));
-    } catch {}
+    } catch { }
   }, [volume]);
 
   // Keyboard shortcuts for volume
@@ -245,11 +285,11 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'm' || e.key === 'M') {
         e.preventDefault();
-        setVolume((v) => v === 0 ? (parseFloat(localStorage.getItem('player_volume_last')||'0.8')||0.8) : 0);
+        setVolume((v) => v === 0 ? (parseFloat(localStorage.getItem('player_volume_last') || '0.8') || 0.8) : 0);
       } else if (e.key === 'ArrowUp') {
-        e.preventDefault(); setVolume((v)=> Math.min(1, v + 0.05));
+        e.preventDefault(); setVolume((v) => Math.min(1, v + 0.05));
       } else if (e.key === 'ArrowDown') {
-        e.preventDefault(); setVolume((v)=> Math.max(0, v - 0.05));
+        e.preventDefault(); setVolume((v) => Math.max(0, v - 0.05));
       }
     };
     window.addEventListener('keydown', onKey);
@@ -261,7 +301,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     const release = () => {
       if (!isDraggingVolume) return;
       setIsDraggingVolume(false);
-      try { volumeSliderRef.current?.blur(); } catch {}
+      try { volumeSliderRef.current?.blur(); } catch { }
       // Force remount to drop any stuck active state in WebKit
       setVolumeSliderKey((k) => k + 1);
     };
@@ -323,8 +363,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
   const endVolDrag = useCallback(() => {
     setIsDraggingVolume(false);
-    try { volumeSliderRef.current?.blur(); } catch {}
-    try { document.body.style.userSelect = ''; } catch {}
+    try { volumeSliderRef.current?.blur(); } catch { }
+    try { document.body.style.userSelect = ''; } catch { }
     window.removeEventListener('mousemove', onVolMove as any);
     window.removeEventListener('pointermove', onVolMove as any);
     window.removeEventListener('touchmove', onVolMove as any);
@@ -335,17 +375,17 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
   const onVolMove = useCallback((e: any) => {
     if (!isDraggingVolumeRef.current) return;
-    try { e.preventDefault?.(); } catch {}
+    try { e.preventDefault?.(); } catch { }
     updateVolumeFromEvent(e);
   }, []);
 
   const startVolDrag = useCallback((e: any) => {
     setIsDraggingVolume(true);
-    try { e.preventDefault?.(); } catch {}
+    try { e.preventDefault?.(); } catch { }
     const nat = e?.nativeEvent || e;
     updateVolumeFromEvent(nat);
-    try { if (nat?.target?.setPointerCapture && nat.pointerId != null) nat.target.setPointerCapture(nat.pointerId); } catch {}
-    try { document.body.style.userSelect = 'none'; } catch {}
+    try { if (nat?.target?.setPointerCapture && nat.pointerId != null) nat.target.setPointerCapture(nat.pointerId); } catch { }
+    try { document.body.style.userSelect = 'none'; } catch { }
     window.addEventListener('mousemove', onVolMove as any, { passive: false } as any);
     window.addEventListener('pointermove', onVolMove as any, { passive: false } as any);
     window.addEventListener('touchmove', onVolMove as any, { passive: false } as any);
@@ -365,7 +405,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
       if (!volumePopoverRef.current.contains(el)) {
         setShowVolumeSlider(false);
         setIsDraggingVolume(false);
-        try { volumeSliderRef.current?.blur(); } catch {}
+        try { volumeSliderRef.current?.blur(); } catch { }
       }
     };
     document.addEventListener('mousedown', onDocPointerDown);
@@ -386,11 +426,11 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         const num = parseFloat(saved);
         if (!Number.isNaN(num) && num > 0) setPlaybackRate(num);
       }
-    } catch {}
+    } catch { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    try { localStorage.setItem('player_rate', String(playbackRate)); } catch {}
+    try { localStorage.setItem('player_rate', String(playbackRate)); } catch { }
   }, [playbackRate]);
 
   // Click anywhere on video to toggle play/pause (ignore controls)
@@ -398,7 +438,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     const el = e.target as HTMLElement;
     if (el.closest('.player-controls') || el.closest('button') || el.closest('input') || el.closest('select') || el.closest('textarea')) return;
     const v = videoRef.current; if (!v) return;
-    if (playing) { v.pause(); setPlaying(false); } else { v.play().catch(()=>{}); setPlaying(true); }
+    if (playing) { v.pause(); setPlaying(false); } else { v.play().catch(() => { }); setPlaying(true); }
   }
 
   // Load metadata and initialize player
@@ -410,7 +450,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         setLoading(true);
         setError(null);
         hasRetriedWithTranscode.current = false; // Reset retry flag when loading new content
-        
+
         // Load metadata
         // Prefer backend for metadata; fallback to direct if it fails
         const metaResponse = await (await import('@/services/plex_backend')).plexBackendMetadata(itemId);
@@ -423,7 +463,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
           // If item was fully watched (>=95%), start from beginning
           const fromStart = (start !== undefined && durSec && durSec > 0 && start / durSec >= 0.95) ? 0 : start;
           setInitialStartAt(fromStart);
-        } catch {}
+        } catch { }
 
         // Fetch markers (intro/credits) if available from Plex for this item (backend session avoids token issues)
         try {
@@ -433,24 +473,24 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
           if (m2?.Marker && Array.isArray(m2.Marker)) {
             setMetadata(prev => prev ? { ...prev, Marker: m2.Marker } as PlexMetadata : prev);
           }
-        } catch {}
-        
+        } catch { }
+
         // Get quality, audio, and subtitle options
         const qualOpts = getQualityOptions(meta);
         const audioOpts = getAudioOptions(meta);
         const subOpts = getSubtitleOptions(meta);
-        
-        setQualityOptions(qualOpts);
+
+        setQualityOptions(qualOpts.map(o => ({ ...o, label: o.value === 'original' ? t('player.original') : o.label })));
         setAudioOptions(audioOpts);
         setSubtitleOptions(subOpts);
-        
+
         // Set default selections
         const defaultAudio = audioOpts.find((a: any) => a.selected || a.default);
         if (defaultAudio) setSelectedAudioStream(defaultAudio.id);
-        
+
         const defaultSub = subOpts.find(s => s.selected);
         setSelectedSubtitleStream(defaultSub ? defaultSub.id : '0');
-        
+
         // Check for Dolby Vision
         const hasDV = hasDolbyVision(meta);
         let effectiveQuality = quality;
@@ -504,7 +544,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
           });
         }
         setStreamUrl(url);
-        
+
         // Load play queue and season episodes for TV content
         if (meta.type === 'episode') {
           try {
@@ -532,7 +572,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
             setEpisodesLoading(false);
           }
         }
-        
+
         setLoading(false);
       } catch (err) {
         console.error('Failed to load content:', err);
@@ -540,26 +580,26 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         setLoading(false);
       }
     };
-    
+
     loadContent();
   }, [itemId, plexConfig]);
 
   // Timeline updates
   useEffect(() => {
     if (!metadata || !duration) return;
-    
+
     const updateTimeline = () => {
       const state = buffering ? 'buffering' : playing ? 'playing' : 'paused';
       // Keep backend for progress updates, but playback URL logic is direct
       backendUpdateProgress(metadata.ratingKey, currentTime * 1000, duration * 1000, state as any).catch(console.warn);
     };
-    
+
     // Initial update
     updateTimeline();
-    
+
     // Set up interval
     timelineIntervalRef.current = setInterval(updateTimeline, 5000);
-    
+
     return () => {
       if (timelineIntervalRef.current) {
         clearInterval(timelineIntervalRef.current);
@@ -572,7 +612,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   // Controls auto-hide
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
-    
+
     const handleMouseMove = () => {
       setShowControls(true);
       clearTimeout(timeout);
@@ -580,16 +620,16 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         timeout = setTimeout(() => setShowControls(false), 3000);
       }
     };
-    
+
     const handleMouseLeave = () => {
       if (playing && !showEpisodes && !showNextHover && nextEpisodeCountdown === null) {
         timeout = setTimeout(() => setShowControls(false), 1000);
       }
     };
-    
+
     document.addEventListener('mousemove', handleMouseMove);
     containerRef.current?.addEventListener('mouseleave', handleMouseLeave);
-    
+
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       containerRef.current?.removeEventListener('mouseleave', handleMouseLeave);
@@ -602,7 +642,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     const handleKeyPress = (e: KeyboardEvent) => {
       const video = videoRef.current;
       if (!video) return;
-      
+
       switch (e.key) {
         case ' ':
         case 'k':
@@ -650,7 +690,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
           break;
       }
     };
-    
+
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [currentTime, duration, showEpisodes, showNextHover]);
@@ -739,9 +779,9 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         });
         // console.log('Generated stream URL based on Plex decision:', url);
       }
-      
+
       setStreamUrl(url);
-      
+
       // Store position to restore after reload
       setTimeout(() => {
         const video = videoRef.current;
@@ -757,12 +797,12 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   // Audio stream change
   const handleAudioStreamChange = useCallback(async (streamId: string) => {
     if (!metadata?.Media?.[0]?.Part?.[0]) return;
-    
+
     try {
       const partId = metadata.Media[0].Part[0].id;
       await plexUpdateAudioStream(plexConfig, partId, streamId);
       setSelectedAudioStream(streamId);
-      
+
       // Reload stream
       const currentPos = currentTime;
       const decision = getStreamDecision(metadata, {
@@ -771,7 +811,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         audioStreamId: streamId,
         subtitleStreamId: selectedSubtitleStream || undefined,
       });
-      
+
       const url = plexStreamUrl(plexConfig, itemId, {
         maxVideoBitrate: quality === 'original' ? undefined : Number(quality),
         protocol: 'hls',
@@ -783,7 +823,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         forceReload: true,
       });
       setStreamUrl(url);
-      
+
       setTimeout(() => {
         const video = videoRef.current;
         if (video && currentPos > 0) {
@@ -798,12 +838,12 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   // Subtitle stream change
   const handleSubtitleStreamChange = useCallback(async (streamId: string) => {
     if (!metadata?.Media?.[0]?.Part?.[0]) return;
-    
+
     try {
       const partId = metadata.Media[0].Part[0].id;
       await plexUpdateSubtitleStream(plexConfig, partId, streamId);
       setSelectedSubtitleStream(streamId);
-      
+
       // Reload stream
       const currentPos = currentTime;
       const decision = getStreamDecision(metadata, {
@@ -812,7 +852,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         audioStreamId: selectedAudioStream || undefined,
         subtitleStreamId: streamId,
       });
-      
+
       const url = plexStreamUrl(plexConfig, itemId, {
         maxVideoBitrate: quality === 'original' ? undefined : Number(quality),
         protocol: 'hls',
@@ -824,7 +864,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         forceReload: true,
       });
       setStreamUrl(url);
-      
+
       setTimeout(() => {
         const video = videoRef.current;
         if (video && currentPos > 0) {
@@ -843,8 +883,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     try {
       setExiting(true);
       setPlaying(false);
-      const v = videoRef.current; if (v) { try { v.pause(); } catch {} }
-    } catch {}
+      const v = videoRef.current; if (v) { try { v.pause(); } catch { } }
+    } catch { }
     const target = m.type === 'episode' && m.grandparentRatingKey ? `plex:${m.grandparentRatingKey}` : `plex:${m.ratingKey}`;
     window.location.href = `/details/${encodeURIComponent(target)}`;
   }, [metadata]);
@@ -852,12 +892,12 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   // Skip current marker
   const skipCurrentMarker = useCallback(() => {
     if (!metadata?.Marker || !videoRef.current) return;
-    
-    const marker = metadata.Marker.find(m => 
+
+    const marker = metadata.Marker.find(m =>
       currentTime * 1000 >= m.startTimeOffset &&
       currentTime * 1000 <= m.endTimeOffset
     );
-    
+
     if (marker) {
       if (marker.type === 'credits') {
         if (metadata.type === 'movie') { goToDetails(); return; }
@@ -902,7 +942,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
   useEffect(() => {
     if (nextEpisodeCountdown === null || nextEpisodeCountdown <= 0) return;
-    
+
     const timer = setTimeout(() => {
       if (nextEpisodeCountdown === 1 && nextEpisode) {
         onNext?.(String(nextEpisode.ratingKey));
@@ -910,7 +950,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         setNextEpisodeCountdown(c => (c ?? 0) - 1);
       }
     }, 1000);
-    
+
     return () => clearTimeout(timer);
   }, [nextEpisodeCountdown, nextEpisode, onNext]);
 
@@ -925,7 +965,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
-    
+
     if (h > 0) {
       return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
@@ -1000,7 +1040,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
       headerRetryRef.current = true;
       try {
         await plexKillAllTranscodeSessions(plexConfig);
-      } catch {}
+      } catch { }
       try {
         // Re-generate stream URL from the beginning with same quality settings
         const url = plexStreamUrl(plexConfig, itemId, {
@@ -1037,7 +1077,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
     }
 
     hasRetriedWithTranscode.current = true;
-    setCodecErrorMessage('Dolby Vision Profile 7 not supported. Switching to transcoded quality...');
+    setCodecErrorMessage(t('player.dv_switch'));
     setRetryingWithTranscode(true);
 
     try {
@@ -1105,7 +1145,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
               className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
               onClick={onBack}
             >
-              Go Back
+              {t('player.back')}
             </button>
           </div>
         </div>
@@ -1145,7 +1185,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+        <div className="text-white">{t('home.loading')}</div>
       </div>
     );
   }
@@ -1204,7 +1244,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
             className="px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur rounded-lg text-white font-medium transition-all"
             onClick={skipCurrentMarker}
           >
-            Skip {currentMarker.type === 'intro' ? 'Intro' : currentMarker.type === 'credits' ? 'Credits' : 'Marker'}
+            Skip {currentMarker.type === 'intro' ? t('player.skip_intro') : currentMarker.type === 'credits' ? t('player.skip_credits') : t('player.skip_marker')}
           </button>
         </div>
       )}
@@ -1213,20 +1253,20 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
       {nextEpisodeCountdown !== null && nextEpisode && (
         <div className="absolute bottom-32 right-8 z-40">
           <div className="bg-black/85 backdrop-blur rounded-xl p-4 ring-1 ring-white/10 shadow-2xl max-w-md">
-            <div className="text-white text-base mb-1 font-semibold">Up Next • Playing in {nextEpisodeCountdown}s</div>
+            <div className="text-white text-base mb-1 font-semibold">{t('player.up_next')} • {t('player.playing_in', { count: nextEpisodeCountdown })}</div>
             <div className="text-white/90 mb-3 font-medium line-clamp-1">{nextEpisode.title}</div>
             <div className="flex gap-2">
               <button
                 className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-white"
                 onClick={() => setNextEpisodeCountdown(null)}
               >
-                Cancel
+                {t('player.cancel')}
               </button>
               <button
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white"
                 onClick={() => onNext?.(String(nextEpisode.ratingKey))}
               >
-                Play Now
+                {t('player.play_now')}
               </button>
             </div>
           </div>
@@ -1235,9 +1275,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
       {/* Controls overlay */}
       <div
-        className={`absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/50 transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/50 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
       >
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 p-6">
@@ -1247,7 +1286,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
               onClick={() => {
                 backendUpdateProgress(metadata!.ratingKey, currentTime * 1000, duration * 1000, 'stopped')
                   .catch(() => {
-                    try { plexTimelineUpdate(plexConfig, metadata!.ratingKey, currentTime * 1000, duration * 1000, 'stopped'); } catch {}
+                    try { plexTimelineUpdate(plexConfig, metadata!.ratingKey, currentTime * 1000, duration * 1000, 'stopped'); } catch { }
                   })
                   .finally(() => {
                     if (metadata?.type === 'episode' && metadata.grandparentRatingKey) {
@@ -1266,7 +1305,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
             </button>
             <div className="text-white">
               <div className="text-2xl font-bold">
-                {metadata?.type === 'episode' 
+                {metadata?.type === 'episode'
                   ? `${metadata.grandparentTitle} - S${metadata.parentIndex}E${metadata.index}`
                   : metadata?.title}
               </div>
@@ -1304,10 +1343,10 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                   -{formatTime(Math.max(0, duration - currentTime))}
                 </span>
               )}
-          </div>
+            </div>
 
-          {/* Control buttons */}
-          <div className="flex items-center justify-between">
+            {/* Control buttons */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {/* Play/Pause */}
                 <button
@@ -1363,8 +1402,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                     ref={volumeButtonRef}
                     className="w-12 h-12 sm:w-14 sm:h-14 bg-transparent flex items-center justify-center text-white transition-transform duration-150 ease-out hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded"
                     onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-                    aria-label="Volume"
-                    title="Volume"
+                    aria-label={t('details.mute')}
+                    title={t('details.mute')}
                   >
                     {(() => {
                       const state = volume === 0 ? 'off' : volume <= 0.33 ? 'low' : volume <= 0.66 ? 'medium' : 'high';
@@ -1405,7 +1444,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                           const cls = 'w-5 h-5 text-white flex-shrink-0';
                           if (state === 'off') {
                             return (
-                        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" role="img" className={cls}>
+                              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" role="img" className={cls}>
                                 <path fillRule="evenodd" clipRule="evenodd" d="M11 4.00003C11 3.59557 10.7564 3.23093 10.3827 3.07615C10.009 2.92137 9.57889 3.00692 9.29289 3.29292L4.58579 8.00003H1C0.447715 8.00003 0 8.44774 0 9.00003V15C0 15.5523 0.447715 16 1 16H4.58579L9.29289 20.7071C9.57889 20.9931 10.009 21.0787 10.3827 20.9239C10.7564 20.7691 11 20.4045 11 20V4.00003ZM5.70711 9.70714L9 6.41424V17.5858L5.70711 14.2929L5.41421 14H5H2V10H5H5.41421L5.70711 9.70714ZM15.2929 9.70714L17.5858 12L15.2929 14.2929L16.7071 15.7071L19 13.4142L21.2929 15.7071L22.7071 14.2929L20.4142 12L22.7071 9.70714L21.2929 8.29292L19 10.5858L16.7071 8.29292L15.2929 9.70714Z" />
                               </svg>
                             );
@@ -1432,7 +1471,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                         })()}
                         <div className="relative flex-1 h-1.5 select-none">
                           <div className="absolute inset-0 bg-white/20 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${Math.round(volume*100)}%`, transition: 'width 160ms ease' }} />
+                            <div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-600" style={{ width: `${Math.round(volume * 100)}%`, transition: 'width 160ms ease' }} />
                           </div>
                           {/* Visible thumb to mirror Netflix */}
                           <div
@@ -1484,8 +1523,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                           onFocus={() => setShowNextHover(true)}
                           onBlur={() => setShowNextHover(false)}
                           onClick={() => onNext?.(String(nextEpisode.ratingKey))}
-                          aria-label="Next Episode"
-                          title="Next Episode"
+                          aria-label={t('player.episode')}
+                          title={t('player.episode')}
                         >
                           <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" role="img" className="w-8 h-8 text-white">
                             <path fillRule="evenodd" clipRule="evenodd" d="M22 3H20V21H22V3ZM4.28615 3.61729C3.28674 3.00228 2 3.7213 2 4.89478V19.1052C2 20.2787 3.28674 20.9977 4.28615 20.3827L15.8321 13.2775C16.7839 12.6918 16.7839 11.3082 15.8321 10.7225L4.28615 3.61729ZM4 18.2104V5.78956L14.092 12L4 18.2104Z" />
@@ -1494,7 +1533,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
                         {showNextHover && (
                           <div className="absolute bottom-full right-0 mb-3 w-[42rem] max-w-[92vw] bg-black/90 rounded-xl ring-1 ring-white/10 overflow-hidden shadow-2xl z-50" role="dialog" aria-label="Next Episode">
-                            <div className="px-6 py-4 text-2xl font-bold text-white bg-white/5">Next Episode</div>
+                            <div className="px-6 py-4 text-2xl font-bold text-white bg-white/5">{t('player.up_next')}</div>
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                               <div className="relative aspect-video bg-black/40 rounded overflow-hidden">
                                 {nextEpisode?.thumb && (
@@ -1509,7 +1548,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                                 </div>
                               </div>
                               <div className="text-white/90">
-                                <div className="text-xl font-semibold mb-1">{nextEpisode?.index ?? ''} <span className="opacity-80 font-normal">Episode {nextEpisode?.index ?? ''}</span></div>
+                                <div className="text-xl font-semibold mb-1">{nextEpisode?.index ?? ''} <span className="opacity-80 font-normal">{t('player.episode')} {nextEpisode?.index ?? ''}</span></div>
                                 <div className="text-xl font-bold mb-2">{nextEpisode?.title}</div>
                                 <div className="text-white/80 leading-relaxed line-clamp-5">{nextEpisode?.summary}</div>
                               </div>
@@ -1524,8 +1563,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                         ref={episodesButtonRef}
                         className="p-2 bg-transparent text-white transition-transform duration-150 ease-out hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded"
                         onClick={() => setShowEpisodes(s => !s)}
-                        aria-label="Episodes"
-                        title="Episodes"
+                        aria-label={t('details.episodes')}
+                        title={t('details.episodes')}
                       >
                         <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" role="img" className="w-8 h-8 text-white">
                           <path fillRule="evenodd" clipRule="evenodd" d="M8 5H22V13H24V5C24 3.89543 23.1046 3 22 3H8V5ZM18 9H4V7H18C19.1046 7 20 7.89543 20 9V17H18V9ZM0 13C0 11.8954 0.895431 11 2 11H14C15.1046 11 16 11.8954 16 13V19C16 20.1046 15.1046 21 14 21H2C0.895431 21 0 20.1046 0 19V13ZM14 19V13H2V19H14Z" />
@@ -1545,7 +1584,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </button>
-                  
+
                   {showSettings && (
                     <div className="absolute bottom-full right-0 mb-2 w-80 bg-black/95 backdrop-blur rounded-lg overflow-hidden">
                       <div className="flex border-b border-white/10">
@@ -1553,22 +1592,22 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                           className={`flex-1 px-4 py-2 text-sm ${settingsTab === 'quality' ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}
                           onClick={() => setSettingsTab('quality')}
                         >
-                          Quality
+                          {t('player.quality')}
                         </button>
                         <button
                           className={`flex-1 px-4 py-2 text-sm ${settingsTab === 'audio' ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}
                           onClick={() => setSettingsTab('audio')}
                         >
-                          Audio
+                          {t('details.audio')}
                         </button>
                         <button
                           className={`flex-1 px-4 py-2 text-sm ${settingsTab === 'subtitles' ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'}`}
                           onClick={() => setSettingsTab('subtitles')}
                         >
-                          Subtitles
+                          {t('details.subtitles')}
                         </button>
                       </div>
-                      
+
                       <div className="max-h-64 overflow-y-auto">
                         {settingsTab === 'quality' && (
                           <div className="p-2">
@@ -1579,9 +1618,9 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                   </svg>
                                   <div>
-                                    <div className="font-semibold">Dolby Vision Content</div>
+                                    <div className="font-semibold">{t('player.dv_title')}</div>
                                     <div className="text-xs text-yellow-300/80 mt-1">
-                                      Direct play may not work. Select a transcoded quality for best compatibility.
+                                      {t('player.dv_desc')}
                                     </div>
                                   </div>
                                 </div>
@@ -1590,9 +1629,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                             {qualityOptions.map((option) => (
                               <button
                                 key={option.value}
-                                className={`w-full text-left px-3 py-2 rounded hover:bg-white/10 transition-colors ${
-                                  (quality === option.value || (typeof quality === 'number' && typeof option.value === 'number' && quality === option.value)) ? 'text-red-500' : 'text-white'
-                                }`}
+                                className={`w-full text-left px-3 py-2 rounded hover:bg-white/10 transition-colors ${(quality === option.value || (typeof quality === 'number' && typeof option.value === 'number' && quality === option.value)) ? 'text-red-500' : 'text-white'
+                                  }`}
                                 onClick={() => {
                                   hasRetriedWithTranscode.current = false; // Reset retry flag when manually changing quality
                                   handleQualityChange(option.value);
@@ -1619,7 +1657,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                             ))}
                           </div>
                         )}
-                        
+
                         {settingsTab === 'audio' && (
                           <div className="p-2">
                             {audioOptions.length === 0 ? (
@@ -1628,9 +1666,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                               audioOptions.map((option) => (
                                 <button
                                   key={option.id}
-                                  className={`w-full text-left px-3 py-2 rounded hover:bg-white/10 transition-colors ${
-                                    selectedAudioStream === option.id ? 'text-red-500' : 'text-white'
-                                  }`}
+                                  className={`w-full text-left px-3 py-2 rounded hover:bg-white/10 transition-colors ${selectedAudioStream === option.id ? 'text-red-500' : 'text-white'
+                                    }`}
                                   onClick={() => {
                                     handleAudioStreamChange(option.id);
                                     setShowSettings(false);
@@ -1642,15 +1679,14 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                             )}
                           </div>
                         )}
-                        
+
                         {settingsTab === 'subtitles' && (
                           <div className="p-2">
                             {subtitleOptions.map((option) => (
                               <button
                                 key={option.id}
-                                className={`w-full text-left px-3 py-2 rounded hover:bg-white/10 transition-colors ${
-                                  selectedSubtitleStream === option.id ? 'text-red-500' : 'text-white'
-                                }`}
+                                className={`w-full text-left px-3 py-2 rounded hover:bg-white/10 transition-colors ${selectedSubtitleStream === option.id ? 'text-red-500' : 'text-white'
+                                  }`}
                                 onClick={() => {
                                   handleSubtitleStreamChange(option.id);
                                   setShowSettings(false);
@@ -1748,7 +1784,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
               </div>
             </div>
           </div>
-          
+
           {/* Episodes overlay */}
           {showEpisodes && (
             <div className="absolute bottom-24 left-0 right-0 z-40 px-6 flex" style={{ justifyContent: 'right' }}>
@@ -1778,7 +1814,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
                             )}
                             {ep.viewOffset && ep.duration && ep.duration > 0 && (
                               <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20">
-                                <div className="h-full bg-brand" style={{ width: `${Math.min(100, Math.max(0, Math.round((ep.viewOffset/ep.duration)*100)))}%` }} />
+                                <div className="h-full bg-brand" style={{ width: `${Math.min(100, Math.max(0, Math.round((ep.viewOffset / ep.duration) * 100)))}%` }} />
                               </div>
                             )}
                           </div>
@@ -1815,8 +1851,8 @@ function PiPButton({ videoRef }: { videoRef: React.RefObject<HTMLVideoElement> }
     >
       {/* Simple PiP glyph */}
       <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3 5a2 2 0 012-2h14a2 2 0 012 2v6h-2V5H5v14h6v2H5a2 2 0 01-2-2V5z"/>
-        <rect x="13" y="13" width="8" height="6" rx="1"/>
+        <path d="M3 5a2 2 0 012-2h14a2 2 0 012 2v6h-2V5H5v14h6v2H5a2 2 0 01-2-2V5z" />
+        <rect x="13" y="13" width="8" height="6" rx="1" />
       </svg>
     </button>
   );

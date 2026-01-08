@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Badge from '@/components/Badge';
 import Row from '@/components/Row';
 import { loadSettings } from '@/state/settings';
@@ -25,6 +26,7 @@ import RatingsBar from '@/components/RatingsBar';
 import { fetchPlexRatingsByRatingKey, fetchPlexVodRatingsById } from '@/services/ratings';
 
 export default function Details() {
+  const { t } = useTranslation();
   let { id } = useParams();
   id = id ? decodeURIComponent(id) : id;
   const nav = useNavigate();
@@ -41,17 +43,17 @@ export default function Details() {
   const [poster, setPoster] = useState<string | undefined>(undefined);
   const [toast, setToast] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('SUGGESTED');
-  const [seasons, setSeasons] = useState<Array<{key:string; title:string}>>([]);
+  const [seasons, setSeasons] = useState<Array<{ key: string; title: string }>>([]);
   const [seasonKey, setSeasonKey] = useState<string>('');
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [episodesLoading, setEpisodesLoading] = useState<boolean>(false);
   const [onDeck, setOnDeck] = useState<any | null>(null);
   const [showKey, setShowKey] = useState<string | undefined>(undefined);
   const [tech, setTech] = useState<any>({});
-  const [versions, setVersions] = useState<Array<{id:string; label:string}>>([]);
+  const [versions, setVersions] = useState<Array<{ id: string; label: string }>>([]);
   const [activeVersion, setActiveVersion] = useState<string | undefined>(undefined);
   const [versionPartMap, setVersionPartMap] = useState<Record<string, string>>({});
-  const [versionDetails, setVersionDetails] = useState<Array<{id:string; label:string; audios: Track[]; subs: Track[]; tech: any}>>([]);
+  const [versionDetails, setVersionDetails] = useState<Array<{ id: string; label: string; audios: Track[]; subs: Track[]; tech: any }>>([]);
   const [infoVersion, setInfoVersion] = useState<string | undefined>(undefined);
   const [audioTracks, setAudioTracks] = useState<Track[]>([]);
   const [subtitleTracks, setSubtitleTracks] = useState<Track[]>([]);
@@ -71,9 +73,9 @@ export default function Details() {
   const [personOpen, setPersonOpen] = useState(false);
   const [personId, setPersonId] = useState<string | undefined>(undefined);
   const [personName, setPersonName] = useState<string | undefined>(undefined);
-  const [tmdbCtx, setTmdbCtx] = useState<{ media?: 'movie'|'tv'; id?: string } | undefined>(undefined);
-  const [kind, setKind] = useState<'movie'|'tv'|undefined>(undefined);
-  const [watchIds, setWatchIds] = useState<{ tmdbId?: string; imdbId?: string; plexKey?: string; media?: 'movie'|'tv' }>({});
+  const [tmdbCtx, setTmdbCtx] = useState<{ media?: 'movie' | 'tv'; id?: string } | undefined>(undefined);
+  const [kind, setKind] = useState<'movie' | 'tv' | undefined>(undefined);
+  const [watchIds, setWatchIds] = useState<{ tmdbId?: string; imdbId?: string; plexKey?: string; media?: 'movie' | 'tv' }>({});
 
   useEffect(() => {
     // expose setter for trailer mute to toggle function
@@ -110,13 +112,13 @@ export default function Details() {
               rating: m.contentRating || m.rating,
             });
             if (m.year) setYear(String(m.year));
-            try { setMoodTags(deriveTags((m.Genre||[]).map((g:any)=>g.tag))); } catch {}
+            try { setMoodTags(deriveTags((m.Genre || []).map((g: any) => g.tag))); } catch { }
             setCast((m.Role || []).slice(0, 12).map((r: any) => ({ name: r.tag, img: apiClient.getPlexImageNoToken(r.thumb || '') })));
             // Fetch ratings directly from Plex for plex items
             try {
               const r = await (await import('@/services/ratings')).fetchPlexRatingsByRatingKey(rk);
               if (r) setExternalRatings({ imdb: r.imdb || undefined, rt: r.rt || undefined });
-            } catch {}
+            } catch { }
             // Badges detection
             const bs: string[] = [];
             const media = (m.Media || [])[0];
@@ -126,15 +128,15 @@ export default function Details() {
               const ap = (media.audioProfile || '').toLowerCase(); const ac = (media.audioCodec || '').toLowerCase(); if (ap.includes('atmos') || ac.includes('truehd')) bs.push('Atmos');
               setTech({
                 rating: m.contentRating || m.rating,
-                runtimeMin: Math.round((m.duration||0)/60000),
+                runtimeMin: Math.round((m.duration || 0) / 60000),
                 videoCodec: media.videoCodec,
                 videoProfile: media.videoProfile,
-                resolution: w&&h? `${w}x${h}`: undefined,
+                resolution: w && h ? `${w}x${h}` : undefined,
                 bitrateKbps: media.bitrate ? media.bitrate * 1000 : undefined,
                 audioCodec: media.audioCodec,
                 audioChannels: media.audioChannels,
-                fileSizeMB: media.Part?.[0]?.size ? media.Part[0].size / (1024*1024) : undefined,
-                subsCount: (media.Part?.[0]?.Stream||[]).filter((st:any)=>st.streamType===3).length,
+                fileSizeMB: media.Part?.[0]?.size ? media.Part[0].size / (1024 * 1024) : undefined,
+                subsCount: (media.Part?.[0]?.Stream || []).filter((st: any) => st.streamType === 3).length,
               });
             }
             setBadges(bs);
@@ -146,46 +148,46 @@ export default function Details() {
             } else { setToast('No direct stream found. Open in Plex.'); }
             setPlexDetailsUrl(`${s.plexBaseUrl!.replace(/\/$/, '')}/web/index.html#!/details?key=/library/metadata/${m.ratingKey}`);
             // Versions
-            const vs = (m.Media||[]).map((me:any, idx:number)=>({ id:String(me.id||idx), label: `${(me.width||0)>=3800?'4K':'HD'} ${String(me.videoCodec||'').toUpperCase()} ${me.audioChannels||''}` }));
+            const vs = (m.Media || []).map((me: any, idx: number) => ({ id: String(me.id || idx), label: `${(me.width || 0) >= 3800 ? '4K' : 'HD'} ${String(me.videoCodec || '').toUpperCase()} ${me.audioChannels || ''}` }));
             // Map version -> part id
-            const vm: Record<string,string> = {};
-            (m.Media||[]).forEach((me:any)=>{ const pid = me.Part?.[0]?.id; if ((me.id || me.Id) && pid) vm[String(me.id || me.Id)] = String(pid); });
+            const vm: Record<string, string> = {};
+            (m.Media || []).forEach((me: any) => { const pid = me.Part?.[0]?.id; if ((me.id || me.Id) && pid) vm[String(me.id || me.Id)] = String(pid); });
             setVersionPartMap(vm);
             setVersions(vs); setActiveVersion(vs[0]?.id);
             // Build per-version media info
             try {
-              const vds: Array<{id:string; label:string; audios: Track[]; subs: Track[]; tech: any}> = (m.Media||[]).map((mm:any)=>{
+              const vds: Array<{ id: string; label: string; audios: Track[]; subs: Track[]; tech: any }> = (m.Media || []).map((mm: any) => {
                 const streams = mm?.Part?.[0]?.Stream || [];
-                const auds: Track[] = streams.filter((st:any)=>st.streamType===2).map((st:any, i:number)=>({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Audio ${i+1}`) }));
-                const subs: Track[] = streams.filter((st:any)=>st.streamType===3).map((st:any, i:number)=>({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Sub ${i+1}`) }));
+                const auds: Track[] = streams.filter((st: any) => st.streamType === 2).map((st: any, i: number) => ({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Audio ${i + 1}`) }));
+                const subs: Track[] = streams.filter((st: any) => st.streamType === 3).map((st: any, i: number) => ({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Sub ${i + 1}`) }));
                 const w = mm.width || 0; const h = mm.height || 0;
                 const techInfo = {
                   rating: meta.rating,
-                  runtimeMin: Math.round((m.duration||0)/60000),
+                  runtimeMin: Math.round((m.duration || 0) / 60000),
                   videoCodec: mm.videoCodec, videoProfile: mm.videoProfile,
-                  resolution: w&&h? `${w}x${h}`: undefined,
+                  resolution: w && h ? `${w}x${h}` : undefined,
                   bitrateKbps: mm.bitrate ? mm.bitrate * 1000 : undefined,
                   audioCodec: mm.audioCodec, audioChannels: mm.audioChannels,
-                  fileSizeMB: mm.Part?.[0]?.size ? mm.Part[0].size / (1024*1024) : undefined,
+                  fileSizeMB: mm.Part?.[0]?.size ? mm.Part[0].size / (1024 * 1024) : undefined,
                   subsCount: subs.length,
                 };
-                const label = `${(mm.width||0)>=3800?'4K':'HD'} ${String(mm.videoCodec||'').toUpperCase()} ${mm.audioChannels||''}`;
-                return { id: String(mm.id||mm.Id), label, audios: auds, subs, tech: techInfo };
+                const label = `${(mm.width || 0) >= 3800 ? '4K' : 'HD'} ${String(mm.videoCodec || '').toUpperCase()} ${mm.audioChannels || ''}`;
+                return { id: String(mm.id || mm.Id), label, audios: auds, subs, tech: techInfo };
               });
               setVersionDetails(vds);
               setInfoVersion(vds[0]?.id);
               // Keep backward-compat tracks state for quick display
               const first = vds[0];
               if (first) { setAudioTracks(first.audios); setSubtitleTracks(first.subs); }
-            } catch {}
+            } catch { }
             // If this Plex item has a TMDB GUID, prefer TMDB textual metadata and recs/videos
-            const tmdbGuid = (m.Guid || []).map((g:any)=>String(g.id||''))
-              .find((g:string)=>g.includes('tmdb://')||g.includes('themoviedb://'));
-            const imdbGuid = (m.Guid || []).map((g:any)=>String(g.id||''))
-              .find((g:string)=>g.includes('imdb://'));
-            setWatchIds({ tmdbId: tmdbGuid ? tmdbGuid.split('://')[1] : undefined, imdbId: imdbGuid ? imdbGuid.split('://')[1] : undefined, plexKey: String(m.ratingKey||''), media: (m.type==='movie'?'movie':'tv') });
+            const tmdbGuid = (m.Guid || []).map((g: any) => String(g.id || ''))
+              .find((g: string) => g.includes('tmdb://') || g.includes('themoviedb://'));
+            const imdbGuid = (m.Guid || []).map((g: any) => String(g.id || ''))
+              .find((g: string) => g.includes('imdb://'));
+            setWatchIds({ tmdbId: tmdbGuid ? tmdbGuid.split('://')[1] : undefined, imdbId: imdbGuid ? imdbGuid.split('://')[1] : undefined, plexKey: String(m.ratingKey || ''), media: (m.type === 'movie' ? 'movie' : 'tv') });
             if (imdbGuid) {
-              try { setImdbId(imdbGuid.split('://')[1]); } catch {}
+              try { setImdbId(imdbGuid.split('://')[1]); } catch { }
             }
             if (s.tmdbBearer && tmdbGuid) {
               const tid = tmdbGuid.split('://')[1];
@@ -195,39 +197,39 @@ export default function Details() {
               try {
                 const exIds: any = await tmdbExternalIds(s.tmdbBearer!, mediaType as any, tid);
                 if (exIds?.imdb_id) setImdbId(exIds.imdb_id);
-              } catch {}
+              } catch { }
               setTmdbCtx({ media: mediaType as any, id: String(tid) });
+              try {
+                const d: any = await tmdbDetails(s.tmdbBearer!, mediaType as any, tid);
+                setTitle(d.title || d.name || title);
+                setOverview(d.overview || overview);
+                setPoster(tmdbImage(d.poster_path, 'w500') || poster);
+                setMeta({ genres: (d.genres || []).map((x: any) => x.name), runtime: Math.round((d.runtime || d.episode_run_time?.[0] || 0)), rating: m.contentRating || m.rating });
+                const y2 = (d.release_date || d.first_air_date || '').slice(0, 4); if (y2) setYear(y2);
+                try { setMoodTags(deriveTags((d.genres || []).map((g: any) => g.name))); } catch { }
+                // Try fetch a logo image
                 try {
-                  const d: any = await tmdbDetails(s.tmdbBearer!, mediaType as any, tid);
-                  setTitle(d.title || d.name || title);
-                  setOverview(d.overview || overview);
-                  setPoster(tmdbImage(d.poster_path, 'w500') || poster);
-                  setMeta({ genres: (d.genres||[]).map((x:any)=>x.name), runtime: Math.round((d.runtime||d.episode_run_time?.[0]||0)), rating: m.contentRating || m.rating });
-                  const y2 = (d.release_date || d.first_air_date || '').slice(0,4); if (y2) setYear(y2);
-                  try { setMoodTags(deriveTags((d.genres||[]).map((g:any)=>g.name))); } catch {}
-                  // Try fetch a logo image
-                  try {
-                    const imgs: any = await tmdbImages(s.tmdbBearer!, mediaType as any, tid, 'en,null');
-                    const logo = (imgs?.logos||[]).find((l:any)=>l.iso_639_1==='en') || (imgs?.logos||[])[0];
-                    if (logo?.file_path) setLogoUrl(tmdbImage(logo.file_path, 'w500') || tmdbImage(logo.file_path, 'original'));
-                  } catch {}
-                  try {
-                    const cr: any = await tmdbCredits(s.tmdbBearer!, mediaType as any, tid);
-                    setCast((cr.cast||[]).slice(0,12).map((c:any)=>({ id:String(c.id), name:c.name, img: tmdbImage(c.profile_path,'w500') })));
-                  } catch {}
-                  try {
-                  const vids:any = await tmdbVideos(s.tmdbBearer!, mediaType as any, tid);
-                  const yt = (vids.results||[]).find((v:any)=>v.site==='YouTube'&&(v.type==='Trailer'||v.type==='Teaser'));
-                  if (yt) setTimeout(()=>{ setTrailerKey(yt.key); setShowTrailer(true); }, 2000);
-                } catch {}
+                  const imgs: any = await tmdbImages(s.tmdbBearer!, mediaType as any, tid, 'en,null');
+                  const logo = (imgs?.logos || []).find((l: any) => l.iso_639_1 === 'en') || (imgs?.logos || [])[0];
+                  if (logo?.file_path) setLogoUrl(tmdbImage(logo.file_path, 'w500') || tmdbImage(logo.file_path, 'original'));
+                } catch { }
                 try {
-                  const recs:any = await tmdbRecommendations(s.tmdbBearer!, mediaType as any, tid);
-                  setRelated((recs.results||[]).slice(0,8).map((r:any)=>({ id:`tmdb:${mediaType}:${r.id}`, title:r.title||r.name, image: tmdbImage(r.backdrop_path,'w780')||tmdbImage(r.poster_path,'w500') })));
-                } catch {}
+                  const cr: any = await tmdbCredits(s.tmdbBearer!, mediaType as any, tid);
+                  setCast((cr.cast || []).slice(0, 12).map((c: any) => ({ id: String(c.id), name: c.name, img: tmdbImage(c.profile_path, 'w500') })));
+                } catch { }
                 try {
-                  const sim:any = await tmdbSimilar(s.tmdbBearer!, mediaType as any, tid);
-                  setSimilar((sim.results||[]).slice(0,8).map((r:any)=>({ id:`tmdb:${mediaType}:${r.id}`, title:r.title||r.name, image: tmdbImage(r.backdrop_path,'w780')||tmdbImage(r.poster_path,'w500') })));
-                } catch {}
+                  const vids: any = await tmdbVideos(s.tmdbBearer!, mediaType as any, tid);
+                  const yt = (vids.results || []).find((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
+                  if (yt) setTimeout(() => { setTrailerKey(yt.key); setShowTrailer(true); }, 2000);
+                } catch { }
+                try {
+                  const recs: any = await tmdbRecommendations(s.tmdbBearer!, mediaType as any, tid);
+                  setRelated((recs.results || []).slice(0, 8).map((r: any) => ({ id: `tmdb:${mediaType}:${r.id}`, title: r.title || r.name, image: tmdbImage(r.backdrop_path, 'w780') || tmdbImage(r.poster_path, 'w500') })));
+                } catch { }
+                try {
+                  const sim: any = await tmdbSimilar(s.tmdbBearer!, mediaType as any, tid);
+                  setSimilar((sim.results || []).slice(0, 8).map((r: any) => ({ id: `tmdb:${mediaType}:${r.id}`, title: r.title || r.name, image: tmdbImage(r.backdrop_path, 'w780') || tmdbImage(r.poster_path, 'w500') })));
+                } catch { }
               } catch (e) { console.error(e); }
             }
             // Try Plex Extras for trailer preview
@@ -237,16 +239,16 @@ export default function Details() {
               const pkey = em?.Media?.[0]?.Part?.[0]?.key as string | undefined;
               if (pkey) {
                 setPlexTrailerUrl(plexPartUrl(s.plexBaseUrl!, s.plexToken!, pkey));
-                setTimeout(()=> setShowTrailer(true), 2000);
+                setTimeout(() => setShowTrailer(true), 2000);
               }
-            } catch {}
+            } catch { }
             // Seasons for Plex-native series
             if (m.type === 'show') {
               setKind('tv');
               setShowKey(rk);
               try {
                 const ch: any = await plexBackendDir(`/library/metadata/${rk}/children`);
-                const ss = (ch?.MediaContainer?.Metadata||[]).map((x:any)=>({ key:String(x.ratingKey), title:x.title }));
+                const ss = (ch?.MediaContainer?.Metadata || []).map((x: any) => ({ key: String(x.ratingKey), title: x.title }));
                 setSeasons(ss);
                 if (ss[0]) setSeasonKey(ss[0].key);
                 setActiveTab('EPISODES');
@@ -257,14 +259,14 @@ export default function Details() {
                 const od: any = await plexBackendDir(`/library/metadata/${rk}/onDeck`);
                 const ep = od?.MediaContainer?.Metadata?.[0];
                 if (ep) {
+                  const rKey = String(ep.ratingKey);
                   setOnDeck({
-                    id: `plex:${ep.ratingKey}`,
+                    id: `plex:${rKey}`,
                     title: ep.title,
                     overview: ep.summary,
                     image: apiClient.getPlexImageNoToken(ep.thumb || ep.parentThumb || ''),
-                    duration: Math.round((ep.duration||0)/60000),
-                    progress: ep.viewOffset ? Math.round(((ep.viewOffset/1000)/((ep.duration||1)/1000))*100) : 0,
-                    ratingKey: String(ep.ratingKey),
+                    progress: ep.viewOffset ? Math.round(((ep.viewOffset / 1000) / ((ep.duration || 1) / 1000)) * 100) : 0,
+                    ratingKey: rKey,
                   });
                 } else {
                   setOnDeck(null);
@@ -285,39 +287,39 @@ export default function Details() {
               runtime: Math.round((d.runtime || d.episode_run_time?.[0] || 0)),
               rating: d.adult ? '18+' : undefined,
             });
-            const y = (d.release_date || d.first_air_date || '').slice(0,4); if (y) setYear(y);
-            try { setMoodTags(deriveTags((d.genres||[]).map((g:any)=>g.name))); } catch {}
+            const y = (d.release_date || d.first_air_date || '').slice(0, 4); if (y) setYear(y);
+            try { setMoodTags(deriveTags((d.genres || []).map((g: any) => g.name))); } catch { }
             setKind((media as any) === 'movie' ? 'movie' : 'tv');
             try {
               const cr: any = await tmdbCredits(s.tmdbBearer!, media as any, tmdbId);
               setCast((cr.cast || []).slice(0, 12).map((c: any) => ({ id: String(c.id), name: c.name, img: tmdbImage(c.profile_path, 'w500') })));
-            } catch {}
+            } catch { }
             try {
               const vids: any = await tmdbVideos(s.tmdbBearer!, media as any, tmdbId);
               const yt = (vids.results || []).find((v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
               if (yt) setTimeout(() => { setTrailerKey(yt.key); setShowTrailer(true); }, 2000);
-            } catch {}
+            } catch { }
             try {
               const recs: any = await tmdbRecommendations(s.tmdbBearer!, media as any, tmdbId);
               setRelated((recs.results || []).slice(0, 8).map((r: any) => ({ id: `tmdb:${media}:${r.id}`, title: r.title || r.name, image: tmdbImage(r.backdrop_path, 'w780') || tmdbImage(r.poster_path, 'w500') })));
-            } catch {}
+            } catch { }
             try {
               const sim: any = await tmdbSimilar(s.tmdbBearer!, media as any, tmdbId);
               setSimilar((sim.results || []).slice(0, 8).map((r: any) => ({ id: `tmdb:${media}:${r.id}`, title: r.title || r.name, image: tmdbImage(r.backdrop_path, 'w780') || tmdbImage(r.poster_path, 'w500') })));
-            } catch {}
+            } catch { }
             setTmdbCtx({ media: media as any, id: String(tmdbId) });
             setWatchIds({ tmdbId: String(tmdbId), media: (media as any) });
             // Try to fetch a logo for the TMDB item
             try {
               const imgs: any = await tmdbImages(s.tmdbBearer!, media as any, tmdbId, 'en,null');
-              const logo = (imgs?.logos||[]).find((l:any)=>l.iso_639_1==='en') || (imgs?.logos||[])[0];
+              const logo = (imgs?.logos || []).find((l: any) => l.iso_639_1 === 'en') || (imgs?.logos || [])[0];
               if (logo?.file_path) setLogoUrl(tmdbImage(logo.file_path, 'w500') || tmdbImage(logo.file_path, 'original'));
-            } catch {}
+            } catch { }
             // TMDB seasons fallback (if mapping to Plex fails or no Plex)
             if (media === 'tv') {
               try {
                 const tv: any = await tmdbTvSeasons(s.tmdbBearer!, tmdbId);
-                const ss = (tv.seasons||[]).filter((x:any)=>x.season_number>0).map((x:any)=>({ key: String(x.season_number), title: `Season ${x.season_number}` }));
+                const ss = (tv.seasons || []).filter((x: any) => x.season_number > 0).map((x: any) => ({ key: String(x.season_number), title: `${t('details.season')} ${x.season_number}` }));
                 if (ss.length) {
                   setSeasons(ss);
                   setSeasonKey(String(ss[0].key));
@@ -350,26 +352,26 @@ export default function Details() {
                   if (ex?.tvdb_id && media === 'tv') {
                     searchGuids.push(`tvdb://${ex.tvdb_id}`);
                   }
-                } catch {}
+                } catch { }
 
                 // Use backend GUID search for each GUID and merge
                 try {
                   const t = media === 'movie' ? 1 : 2;
                   for (const guid of searchGuids) {
                     try {
-                      const gr: any = await plexBackendFindByGuid(guid, t as 1|2);
+                      const gr: any = await plexBackendFindByGuid(guid, t as 1 | 2);
                       const hits = (gr?.MediaContainer?.Metadata || []) as any[];
                       if (hits.length) allHits.push(...hits);
-                    } catch {}
+                    } catch { }
                   }
-                } catch {}
+                } catch { }
 
                 // Method 3: Title search as last resort
                 if (allHits.length === 0) {
                   try {
                     const search: any = await plexBackendSearch(q, media === 'movie' ? 1 : 2);
                     allHits = (search?.MediaContainer?.Metadata || []) as any[];
-                  } catch {}
+                  } catch { }
                 }
 
                 // Deduplicate hits by ratingKey
@@ -379,7 +381,7 @@ export default function Details() {
 
                 // Find best match
                 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
-                const year = (d.release_date || d.first_air_date || '').slice(0,4);
+                const year = (d.release_date || d.first_air_date || '').slice(0, 4);
                 let match: any | undefined = undefined;
 
                 console.log(`[TMDB->Plex] Searching for TMDB ID: ${tmdbId}, Title: "${q}", Year: ${year}`);
@@ -387,9 +389,9 @@ export default function Details() {
 
                 // First priority: exact TMDB GUID match
                 for (const h of uniqueHits) {
-                  const guids = (h.Guid || []).map((g: any) => String(g.id||''));
+                  const guids = (h.Guid || []).map((g: any) => String(g.id || ''));
                   console.log(`[TMDB->Plex] Checking item "${h.title}" (${h.ratingKey}), GUIDs:`, guids);
-                  if (guids.some(g => g === `tmdb://${tmdbId}` || g === `themoviedb://${tmdbId}`)) {
+                  if (guids.some((g: string) => g === `tmdb://${tmdbId}` || g === `themoviedb://${tmdbId}`)) {
                     console.log(`[TMDB->Plex] ✓ Found exact TMDB match!`);
                     match = h;
                     break;
@@ -399,8 +401,8 @@ export default function Details() {
                 // Second priority: title and year match
                 if (!match) {
                   for (const h of uniqueHits) {
-                    const titleMatch = norm(h.title||h.grandparentTitle||'') === norm(q);
-                    const yearMatch = !year || String(h.year||'') === year;
+                    const titleMatch = norm(h.title || h.grandparentTitle || '') === norm(q);
+                    const yearMatch = !year || String(h.year || '') === year;
                     if (titleMatch && yearMatch) {
                       console.log(`[TMDB->Plex] ✓ Found title/year match: "${h.title}" (${h.year})`);
                       match = h;
@@ -420,7 +422,7 @@ export default function Details() {
                   try {
                     const r = await (await import('@/services/ratings')).fetchPlexRatingsByRatingKey(String(m.ratingKey));
                     if (r) setExternalRatings({ imdb: r.imdb || undefined, rt: r.rt || undefined });
-                  } catch {}
+                  } catch { }
                   setBackdrop(apiClient.getPlexImageNoToken((m.art || m.thumb || m.parentThumb || m.grandparentThumb) || '') || backdrop);
                   const extra: string[] = [];
                   const media0 = (m.Media || [])[0];
@@ -431,41 +433,41 @@ export default function Details() {
                   }
                   // Per-version details for mapped Plex item
                   try {
-                    const vds: Array<{id:string; label:string; audios: Track[]; subs: Track[]; tech: any}> = (m.Media||[]).map((mm:any)=>{
+                    const vds: Array<{ id: string; label: string; audios: Track[]; subs: Track[]; tech: any }> = (m.Media || []).map((mm: any) => {
                       const streams = mm?.Part?.[0]?.Stream || [];
-                      const auds: Track[] = streams.filter((st:any)=>st.streamType===2).map((st:any, i:number)=>({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Audio ${i+1}`) }));
-                      const subs: Track[] = streams.filter((st:any)=>st.streamType===3).map((st:any, i:number)=>({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Sub ${i+1}`) }));
+                      const auds: Track[] = streams.filter((st: any) => st.streamType === 2).map((st: any, i: number) => ({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Audio ${i + 1}`) }));
+                      const subs: Track[] = streams.filter((st: any) => st.streamType === 3).map((st: any, i: number) => ({ id: String(st.id || i), label: (st.displayTitle || st.languageTag || st.language || `Sub ${i + 1}`) }));
                       const w = mm.width || 0; const h = mm.height || 0;
                       const techInfo = {
                         rating: m.contentRating || m.rating,
-                        runtimeMin: Math.round((m.duration||0)/60000),
+                        runtimeMin: Math.round((m.duration || 0) / 60000),
                         videoCodec: mm.videoCodec, videoProfile: mm.videoProfile,
-                        resolution: w&&h? `${w}x${h}`: undefined,
+                        resolution: w && h ? `${w}x${h}` : undefined,
                         bitrateKbps: mm.bitrate ? mm.bitrate * 1000 : undefined,
                         audioCodec: mm.audioCodec, audioChannels: mm.audioChannels,
-                        fileSizeMB: mm.Part?.[0]?.size ? mm.Part[0].size / (1024*1024) : undefined,
+                        fileSizeMB: mm.Part?.[0]?.size ? mm.Part[0].size / (1024 * 1024) : undefined,
                         subsCount: subs.length,
                       };
-                      const label = `${(mm.width||0)>=3800?'4K':'HD'} ${String(mm.videoCodec||'').toUpperCase()} ${mm.audioChannels||''}`;
-                      return { id: String(mm.id||mm.Id), label, audios: auds, subs, tech: techInfo };
+                      const label = `${(mm.width || 0) >= 3800 ? '4K' : 'HD'} ${String(mm.videoCodec || '').toUpperCase()} ${mm.audioChannels || ''}`;
+                      return { id: String(mm.id || mm.Id), label, audios: auds, subs, tech: techInfo };
                     });
                     setVersionDetails(vds);
                     setInfoVersion(vds[0]?.id);
-                  } catch {}
+                  } catch { }
                   setBadges((b) => Array.from(new Set([...b, ...extra, 'Plex'])));
                   const part = media0?.Part?.[0];
                   if (part?.id) setPlexWatch(`${s.plexBaseUrl!.replace(/\/$/, '')}/library/parts/${part.id}/stream?X-Plex-Token=${s.plexToken}`);
                   // If it's a show, load seasons/episodes
-            if (m.type === 'show') {
-              try {
-                const ch: any = await plexBackendDir(`/library/metadata/${String(m.ratingKey)}/children`);
-                const ss = (ch?.MediaContainer?.Metadata || []).map((x: any) => ({ key: String(x.ratingKey), title: x.title }));
-                setSeasons(ss);
-                if (ss[0]) setSeasonKey(ss[0].key);
-              } catch (e) { console.error(e); }
-            }
+                  if (m.type === 'show') {
+                    try {
+                      const ch: any = await plexBackendDir(`/library/metadata/${String(m.ratingKey)}/children`);
+                      const ss = (ch?.MediaContainer?.Metadata || []).map((x: any) => ({ key: String(x.ratingKey), title: x.title }));
+                      setSeasons(ss);
+                      if (ss[0]) setSeasonKey(ss[0].key);
+                    } catch (e) { console.error(e); }
+                  }
                   // Prefer cast from Plex if available for better thumbs
-                  if (match.Role && match.Role.length) setCast(match.Role.slice(0,12).map((r: any) => ({ name: r.tag, img: apiClient.getPlexImageNoToken(r.thumb || '') })));
+                  if (match.Role && match.Role.length) setCast(match.Role.slice(0, 12).map((r: any) => ({ name: r.tag, img: apiClient.getPlexImageNoToken(r.thumb || '') })));
                   // Trailer from Plex Extras for matched item
                   try {
                     const ex: any = await plexBackendMetadataWithExtras(String(m.ratingKey));
@@ -473,9 +475,9 @@ export default function Details() {
                     const pkey = em?.Media?.[0]?.Part?.[0]?.key as string | undefined;
                     if (pkey) {
                       setPlexTrailerUrl(plexPartUrl(s.plexBaseUrl!, s.plexToken!, pkey));
-                      setTimeout(()=> setShowTrailer(true), 2000);
+                      setTimeout(() => setShowTrailer(true), 2000);
                     }
-                  } catch {}
+                  } catch { }
                 } else {
                   setBadges((b) => Array.from(new Set([...b, 'No local source'])));
                 }
@@ -498,7 +500,7 @@ export default function Details() {
         const r = await fetchPlexVodRatingsById(vid);
         if (!alive) return;
         if (r) setExternalRatings({ imdb: r.imdb || undefined, rt: r.rt || undefined });
-      } catch {}
+      } catch { }
     })();
     return () => { alive = false; };
   }, [id]);
@@ -513,30 +515,30 @@ export default function Details() {
         // Prefer Plex episodes if plex seasonKey is numeric (ratingKey), otherwise use TMDB fallback
         if (/^\d+$/.test(seasonKey)) {
           const ch: any = await plexBackendDir(`/library/metadata/${seasonKey}/children?nocache=${Date.now()}`);
-          const eps = (ch?.MediaContainer?.Metadata||[]).map((e:any)=>({
+          const eps = (ch?.MediaContainer?.Metadata || []).map((e: any) => ({
             id: `plex:${e.ratingKey}`,
             title: e.title,
             overview: e.summary,
             image: apiClient.getPlexImageNoToken((e.thumb || e.parentThumb) || ''),
-            duration: Math.round((e.duration||0)/60000),
+            duration: Math.round((e.duration || 0) / 60000),
             progress: (() => {
-              const dur = (e.duration||0)/1000; const vo = (e.viewOffset||0)/1000; const vc = e.viewCount||0;
+              const dur = (e.duration || 0) / 1000; const vo = (e.viewOffset || 0) / 1000; const vc = e.viewCount || 0;
               if (vc > 0) return 100;
-              if (dur > 0 && vo/dur >= 0.95) return 100;
-              if (dur > 0) return Math.round((vo/dur)*100);
+              if (dur > 0 && vo / dur >= 0.95) return 100;
+              if (dur > 0) return Math.round((vo / dur) * 100);
               return 0;
             })(),
           }));
           setEpisodes(eps);
-        } else if (tmdbCtx?.media==='tv' && tmdbCtx?.id) {
+        } else if (tmdbCtx?.media === 'tv' && tmdbCtx?.id) {
           const tvSeason = Number(seasonKey);
           const data: any = await tmdbTvSeasonEpisodes(s.tmdbBearer!, tmdbCtx.id, tvSeason);
-          const eps = (data.episodes||[]).map((e:any)=>({
+          const eps = (data.episodes || []).map((e: any) => ({
             id: `tmdb:tv:${tmdbCtx.id}:s${tvSeason}e${e.episode_number}`,
             title: e.name,
             overview: e.overview,
-            image: tmdbImage(e.still_path,'w780'),
-            duration: Math.round((e.runtime||0)),
+            image: tmdbImage(e.still_path, 'w780'),
+            duration: Math.round((e.runtime || 0)),
             progress: 0,
           }));
           setEpisodes(eps);
@@ -555,17 +557,17 @@ export default function Details() {
         if (activeTab === 'EPISODES' && seasonKey) {
           setEpisodesLoading(true);
           const ch: any = await plexBackendDir(`/library/metadata/${seasonKey}/children?nocache=${Date.now()}`);
-          const eps = (ch?.MediaContainer?.Metadata||[]).map((e:any)=>({
+          const eps = (ch?.MediaContainer?.Metadata || []).map((e: any) => ({
             id: `plex:${e.ratingKey}`,
             title: e.title,
             overview: e.summary,
             image: apiClient.getPlexImageNoToken((e.thumb || e.parentThumb) || ''),
-            duration: Math.round((e.duration||0)/60000),
+            duration: Math.round((e.duration || 0) / 60000),
             progress: (() => {
-              const dur = (e.duration||0)/1000; const vo = (e.viewOffset||0)/1000; const vc = e.viewCount||0;
+              const dur = (e.duration || 0) / 1000; const vo = (e.viewOffset || 0) / 1000; const vc = e.viewCount || 0;
               if (vc > 0) return 100;
-              if (dur > 0 && vo/dur >= 0.95) return 100;
-              if (dur > 0) return Math.round((vo/dur)*100);
+              if (dur > 0 && vo / dur >= 0.95) return 100;
+              if (dur > 0) return Math.round((vo / dur) * 100);
               return 0;
             })(),
           }));
@@ -580,12 +582,12 @@ export default function Details() {
             title: ep.title,
             overview: ep.summary,
             image: apiClient.getPlexImageNoToken(ep.thumb || ep.parentThumb || ''),
-            duration: Math.round((ep.duration||0)/60000),
-            progress: ep.viewOffset ? Math.round(((ep.viewOffset/1000)/((ep.duration||1)/1000))*100) : 0,
+            duration: Math.round((ep.duration || 0) / 60000),
+            progress: ep.viewOffset ? Math.round(((ep.viewOffset / 1000) / ((ep.duration || 1) / 1000)) * 100) : 0,
             ratingKey: String(ep.ratingKey),
           } : null);
         }
-      } catch {}
+      } catch { }
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
@@ -593,33 +595,33 @@ export default function Details() {
 
   const tabsData = seasons.length > 0
     ? [
-        { id: 'EPISODES', label: 'Episodes', count: episodes.length || undefined },
-        { id: 'SUGGESTED', label: 'Suggested' },
-        { id: 'EXTRAS', label: 'Extras' },
-        { id: 'DETAILS', label: 'Details' }
-      ]
+      { id: 'EPISODES', label: t('details.episodes'), count: episodes.length || undefined },
+      { id: 'SUGGESTED', label: t('details.suggested') },
+      { id: 'EXTRAS', label: t('details.extras') },
+      { id: 'DETAILS', label: t('details.details_tab') }
+    ]
     : [
-        { id: 'SUGGESTED', label: 'Suggested' },
-        { id: 'EXTRAS', label: 'Extras' },
-        { id: 'DETAILS', label: 'Details' }
-      ];
+      { id: 'SUGGESTED', label: t('details.suggested') },
+      { id: 'EXTRAS', label: t('details.extras') },
+      { id: 'DETAILS', label: t('details.details_tab') }
+    ];
   const playSelected = async () => {
     try {
-    // For TV series, prefer on-deck episode or first episode
-    if (kind === 'tv') {
-      if (onDeck?.id) {
-        nav(`/player/${encodeURIComponent(onDeck.id)}`);
-        return;
+      // For TV series, prefer on-deck episode or first episode
+      if (kind === 'tv') {
+        if (onDeck?.id) {
+          nav(`/player/${encodeURIComponent(onDeck.id)}`);
+          return;
+        }
+        if (episodes && episodes.length > 0) {
+          nav(`/player/${encodeURIComponent(episodes[0].id)}`);
+          return;
+        }
       }
-      if (episodes && episodes.length > 0) {
-        nav(`/player/${encodeURIComponent(episodes[0].id)}`);
-        return;
-      }
-    }
-    // Otherwise go through in-app player for the item (movie or fallback)
-    const targetId = (plexMappedId || id)!;
-    const ver = activeVersion ? `?v=${encodeURIComponent(activeVersion)}` : '';
-    nav(`/player/${encodeURIComponent(targetId)}${ver}`);
+      // Otherwise go through in-app player for the item (movie or fallback)
+      const targetId = (plexMappedId || id)!;
+      const ver = activeVersion ? `?v=${encodeURIComponent(activeVersion)}` : '';
+      nav(`/player/${encodeURIComponent(targetId)}${ver}`);
     } catch (e) { console.error(e); }
   };
 
@@ -632,67 +634,67 @@ export default function Details() {
         background: 'linear-gradient(to bottom, transparent 0%, transparent 70%, #0b0b0b 100%)'
       }}>
         <DetailsHero
-        key={id} // Force re-render when ID changes
-        title={title}
-        overview={overview}
-        backdrop={backdrop || `https://picsum.photos/seed/details-${id}/1920/1080`}
-        poster={poster}
-        logo={logoUrl}
-        year={year}
-        rating={meta.rating}
-        runtime={meta.runtime}
-        genres={meta.genres}
-        badges={badges}
-        ratings={externalRatings || undefined}
-        cast={cast}
-        moodTags={moodTags}
-        kind={kind}
-        hasMediaInfo={versions.length > 0}
-        onToggleMediaInfo={() => setShowMediaInfo(v => !v)}
-        showMediaInfo={showMediaInfo}
-        versionDetails={versionDetails}
-        infoVersion={infoVersion}
-        onVersionChange={(id) => {
-          setInfoVersion(id);
-          setActiveVersion(id);
-          const v = versionDetails.find(vd => vd.id === id);
-          if (v) {
-            setAudioTracks(v.audios);
-            setSubtitleTracks(v.subs);
-          }
-        }}
-        playable={id?.startsWith('plex:') || !!plexMappedId}
-        onPlay={playSelected}
-        onContinue={(() => {
-          if (kind !== 'tv') return undefined;
-          const cont = onDeck?.id || (episodes.find(e => (e.progress||0) > 0)?.id) || (episodes.find(e => (e.progress||0) < 100)?.id);
-          return cont ? (() => nav(`/player/${encodeURIComponent(cont)}`)) : undefined;
-        })()}
-        continueLabel={kind==='tv' ? 'Continue Watching' : undefined}
-        watchlistProps={{
-          itemId: id!,
-          itemType: (kind==='tv'?'show':'movie') as any,
-          tmdbId: tmdbCtx?.id || watchIds.tmdbId,
-        }}
-        onMarkWatched={() => setToast('Marked as Watched')}
-        onPersonClick={(person) => {
-          setPersonId(person.id);
-          setPersonName(person.name);
-          setPersonOpen(true);
-        }}
-        trailerUrl={plexTrailerUrl}
-        trailerKey={trailerKey}
-        trailerMuted={trailerMuted}
-        showTrailer={showTrailer}
-        onToggleMute={toggleMute}
-      />
+          key={id} // Force re-render when ID changes
+          title={title}
+          overview={overview}
+          backdrop={backdrop || `https://picsum.photos/seed/details-${id}/1920/1080`}
+          poster={poster}
+          logo={logoUrl}
+          year={year}
+          rating={meta.rating}
+          runtime={meta.runtime}
+          genres={meta.genres}
+          badges={badges}
+          ratings={externalRatings || undefined}
+          cast={cast}
+          moodTags={moodTags}
+          kind={kind}
+          hasMediaInfo={versions.length > 0}
+          onToggleMediaInfo={() => setShowMediaInfo(v => !v)}
+          showMediaInfo={showMediaInfo}
+          versionDetails={versionDetails}
+          infoVersion={infoVersion}
+          onVersionChange={(id) => {
+            setInfoVersion(id);
+            setActiveVersion(id);
+            const v = versionDetails.find(vd => vd.id === id);
+            if (v) {
+              setAudioTracks(v.audios);
+              setSubtitleTracks(v.subs);
+            }
+          }}
+          playable={id?.startsWith('plex:') || !!plexMappedId}
+          onPlay={playSelected}
+          onContinue={(() => {
+            if (kind !== 'tv') return undefined;
+            const cont = onDeck?.id || (episodes.find(e => (e.progress || 0) > 0)?.id) || (episodes.find(e => (e.progress || 0) < 100)?.id);
+            return cont ? (() => nav(`/player/${encodeURIComponent(cont)}`)) : undefined;
+          })()}
+          continueLabel={kind === 'tv' ? t('details.continue_watching') : undefined}
+          watchlistProps={{
+            itemId: id!,
+            itemType: (kind === 'tv' ? 'show' : 'movie') as any,
+            tmdbId: tmdbCtx?.id || watchIds.tmdbId,
+          }}
+          onMarkWatched={() => setToast(t('details.marked_watched'))}
+          onPersonClick={(person) => {
+            setPersonId(person.id);
+            setPersonName(person.name);
+            setPersonOpen(true);
+          }}
+          trailerUrl={plexTrailerUrl}
+          trailerKey={trailerKey}
+          trailerMuted={trailerMuted}
+          showTrailer={showTrailer}
+          onToggleMute={toggleMute}
+        />
       </div>
 
       {/* Continue Watching for TV shows */}
       {kind === 'tv' && onDeck && (
         <div className="page-gutter-left mt-4">
           <div className="bg-white/5 rounded-xl ring-1 ring-white/10 overflow-hidden">
-            <div className="px-4 py-3 text-white/90 font-semibold">Continue watching</div>
+            <div className="px-4 py-3 text-white/90 font-semibold">{t('details.continue_watching')}</div>
             <div className="px-3 pb-3">
               <EpisodeItem ep={{
                 id: onDeck.id,
@@ -701,7 +703,7 @@ export default function Details() {
                 image: onDeck.image,
                 duration: onDeck.duration,
                 progress: onDeck.progress,
-              }} onClick={(eid)=> nav(`/player/${encodeURIComponent(eid)}`)} />
+              }} onClick={(eid) => nav(`/player/${encodeURIComponent(eid)}`)} />
             </div>
           </div>
         </div>
@@ -748,7 +750,7 @@ export default function Details() {
                 />
               ))
             ) : (
-              <div className="text-white/60 text-center py-10">{badges.includes('No local source') ? 'No source found' : 'No episodes found'}</div>
+              <div className="text-white/60 text-center py-10">{badges.includes('No local source') ? t('details.no_source') : t('details.no_episodes')}</div>
             )}
           </section>
         )}
@@ -758,7 +760,7 @@ export default function Details() {
             {related.length > 0 ? (
               <>
                 <Row
-                  title="Recommendations"
+                  title={t('details.recommendations')}
                   items={related as any}
                   browseKey={tmdbCtx?.id ? `tmdb:recs:${tmdbCtx.media}:${tmdbCtx.id}` : undefined}
                   gutter="edge"
@@ -766,7 +768,7 @@ export default function Details() {
                 />
                 {similar.length > 0 && (
                   <Row
-                    title="More Like This"
+                    title={t('details.more_like_this')}
                     items={similar as any}
                     browseKey={tmdbCtx?.id ? `tmdb:similar:${tmdbCtx.media}:${tmdbCtx.id}` : undefined}
                     gutter="edge"
@@ -782,7 +784,7 @@ export default function Details() {
 
         {activeTab === 'EXTRAS' && (
           <section className="text-white/50 text-center py-12">
-            <p>No extras available</p>
+            <p>{t('details.no_extras')}</p>
           </section>
         )}
 
@@ -790,7 +792,7 @@ export default function Details() {
           <section className="space-y-8">
             {/* Technical Details */}
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Technical Details</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">{t('details.technical_details')}</h3>
               <TechnicalChips
                 info={{
                   rating: meta.rating,
@@ -810,7 +812,7 @@ export default function Details() {
             {/* Full Cast */}
             {cast.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Cast & Crew</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">{t('details.cast')}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   {cast.map((c, i) => (
                     <button
@@ -842,7 +844,7 @@ export default function Details() {
           </section>
         )}
       </div>
-      <PersonModal open={personOpen} onClose={()=> setPersonOpen(false)} personId={personId} name={personName} tmdbKey={loadSettings().tmdbBearer} />
+      <PersonModal open={personOpen} onClose={() => setPersonOpen(false)} personId={personId} name={personName} tmdbKey={loadSettings().tmdbBearer} />
       <BrowseModal />
     </div>
   );
@@ -872,7 +874,7 @@ function toggleMute() {
   const vid = document.getElementById('plex-trailer') as HTMLVideoElement | null;
   if (vid) {
     vid.muted = !vid.muted;
-    const root = (window as any).reactSetTrailerMuted as ((v:boolean)=>void)|undefined;
+    const root = (window as any).reactSetTrailerMuted as ((v: boolean) => void) | undefined;
     if (root) root(vid.muted);
     return;
   }
@@ -885,7 +887,7 @@ function toggleMute() {
     const msg = JSON.stringify({ event: 'command', func: muted ? 'mute' : 'unMute', args: [] });
     iframe.contentWindow.postMessage(msg, '*');
     // Also reflect in React state
-    const root = (window as any).reactSetTrailerMuted as ((v:boolean)=>void)|undefined;
+    const root = (window as any).reactSetTrailerMuted as ((v: boolean) => void) | undefined;
     if (root) root(muted);
   } catch (e) { console.error(e); }
 }
@@ -894,12 +896,12 @@ function toggleMute() {
 function deriveTags(genres: string[]): string[] {
   const g = (genres || []).map(x => x.toLowerCase());
   const tags = new Set<string>();
-  if (g.some(x=>['thriller','mystery','crime'].includes(x))) tags.add('Suspenseful');
-  if (g.some(x=>['comedy','sitcom'].includes(x))) tags.add('Witty');
-  if (g.some(x=>['action','adventure'].includes(x))) tags.add('Exciting');
-  if (g.some(x=>['drama'].includes(x))) tags.add('Emotional');
-  if (g.some(x=>['horror'].includes(x))) tags.add('Scary');
-  if (g.some(x=>['family','kids'].includes(x))) tags.add('Family-friendly');
-  if (g.some(x=>['documentary'].includes(x))) tags.add('Inspiring');
+  if (g.some(x => ['thriller', 'mystery', 'crime'].includes(x))) tags.add('Suspenseful');
+  if (g.some(x => ['comedy', 'sitcom'].includes(x))) tags.add('Witty');
+  if (g.some(x => ['action', 'adventure'].includes(x))) tags.add('Exciting');
+  if (g.some(x => ['drama'].includes(x))) tags.add('Emotional');
+  if (g.some(x => ['horror'].includes(x))) tags.add('Scary');
+  if (g.some(x => ['family', 'kids'].includes(x))) tags.add('Family-friendly');
+  if (g.some(x => ['documentary'].includes(x))) tags.add('Inspiring');
   return Array.from(tags).slice(0, 4);
 }

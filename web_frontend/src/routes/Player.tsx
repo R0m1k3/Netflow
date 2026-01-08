@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PlayerChrome from '@/components/PlayerChrome';
 import WebPlayer from '@/components/WebPlayer';
@@ -11,13 +12,14 @@ import { backendStreamUrl, backendUpdateProgress } from '@/services/plex_backend
 import { plexChildren } from '@/services/plex';
 
 export default function Player() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const loc = useLocation();
   const nav = useNavigate();
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(3600);
-  const qs = useMemo(()=> new URLSearchParams(loc.search), [loc.search]);
+  const qs = useMemo(() => new URLSearchParams(loc.search), [loc.search]);
   const [webUrl, setWebUrl] = useState<string | null>(null);
   const [isDash, setIsDash] = useState(false);
   const [title, setTitle] = useState<string>('');
@@ -25,20 +27,20 @@ export default function Player() {
   const [quality, setQuality] = useState<string>('auto');
   const [resolution, setResolution] = useState<string>('source');
   const qualityOptions = useMemo(() => ([
-    { label: 'Auto', value: 'auto' },
-    { label: 'Original', value: 'original' },
-    { label: '1 Mbps', value: '1000' },
-    { label: '2 Mbps', value: '2000' },
-    { label: '3 Mbps', value: '3000' },
-    { label: '4 Mbps', value: '4000' },
-    { label: '6 Mbps', value: '6000' },
-    { label: '8 Mbps', value: '8000' },
-    { label: '10 Mbps', value: '10000' },
-    { label: '12 Mbps', value: '12000' },
-    { label: '20 Mbps', value: '20000' },
-  ]), []);
+    { label: t('player.auto'), value: 'auto' },
+    { label: t('player.original'), value: 'original' },
+    { label: `1 ${t('player.mbps')}`, value: '1000' },
+    { label: `2 ${t('player.mbps')}`, value: '2000' },
+    { label: `3 ${t('player.mbps')}`, value: '3000' },
+    { label: `4 ${t('player.mbps')}`, value: '4000' },
+    { label: `6 ${t('player.mbps')}`, value: '6000' },
+    { label: `8 ${t('player.mbps')}`, value: '8000' },
+    { label: `10 ${t('player.mbps')}`, value: '10000' },
+    { label: `12 ${t('player.mbps')}`, value: '12000' },
+    { label: `20 ${t('player.mbps')}`, value: '20000' },
+  ]), [t]);
   const resolutionOptions = useMemo(() => ([
-    { label: 'Source', value: 'source' },
+    { label: t('player.source'), value: 'source' },
     { label: '480p', value: '854x480' },
     { label: '720p', value: '1280x720' },
     { label: '1080p', value: '1920x1080' },
@@ -58,7 +60,7 @@ export default function Player() {
   const [ratingKey, setRatingKey] = useState<string | null>(null);
   const [markers, setMarkers] = useState<Array<{ type: string; start: number; end: number }>>([]);
   const [next, setNext] = useState<{ id: string; title: string } | null>(null);
-  const last = useRef<{ t: number; d: number; state: 'playing'|'paused'|'buffering' } | null>(null);
+  const last = useRef<{ t: number; d: number; state: 'playing' | 'paused' | 'buffering' } | null>(null);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -83,28 +85,28 @@ export default function Player() {
               try {
                 const mark: any = await (await import('@/services/plex_backend')).plexBackendMetadataWithExtras(String(m.ratingKey));
                 const mm = mark?.MediaContainer?.Metadata?.[0];
-                const list = (mm?.Marker || []).map((mk: any) => ({ type: String(mk.type||''), start: (mk.start||0)/1000, end: (mk.end||0)/1000 }));
+                const list = (mm?.Marker || []).map((mk: any) => ({ type: String(mk.type || ''), start: (mk.start || 0) / 1000, end: (mk.end || 0) / 1000 }));
                 setMarkers(list);
-              } catch {}
+              } catch { }
             }
             const v = qs.get('v');
             let partId: string | undefined;
-              if (v) {
-                const media = (m?.Media||[]).find((me:any)=> String(me.id||me.Id)===v);
-                partId = media?.Part?.[0]?.id ? String(media.Part[0].id) : undefined;
-              } else {
-                partId = m?.Media?.[0]?.Part?.[0]?.id ? String(m.Media[0].Part[0].id) : undefined;
-              }
-              if (partId) {
-                const resSel = resolution !== 'source' ? resolution : undefined;
-                const resBitrate = bitrateForResolution(resSel);
-                const qnum = quality !== 'original' ? (Number(quality) || undefined) : undefined;
-                url = await backendStreamUrl(String(m.ratingKey), {
-                  quality: qnum ?? resBitrate,
-                  resolution: resSel,
-                });
-                setIsDash(false);
-              }
+            if (v) {
+              const media = (m?.Media || []).find((me: any) => String(me.id || me.Id) === v);
+              partId = media?.Part?.[0]?.id ? String(media.Part[0].id) : undefined;
+            } else {
+              partId = m?.Media?.[0]?.Part?.[0]?.id ? String(m.Media[0].Part[0].id) : undefined;
+            }
+            if (partId) {
+              const resSel = resolution !== 'source' ? resolution : undefined;
+              const resBitrate = bitrateForResolution(resSel);
+              const qnum = quality !== 'original' ? (Number(quality) || undefined) : undefined;
+              url = await backendStreamUrl(String(m.ratingKey), {
+                quality: qnum ?? resBitrate,
+                resolution: resSel,
+              });
+              setIsDash(false);
+            }
 
             // Compute next episode prompt if current is an episode
             if (m?.type === 'episode' && m.parentRatingKey) {
@@ -112,10 +114,10 @@ export default function Player() {
                 const kids: any = await (await import('@/services/plex_backend')).plexBackendDir(`/library/metadata/${String(m.parentRatingKey)}/children`);
                 const list = (kids?.MediaContainer?.Metadata || []) as any[];
                 // Sort by 'index' ascending
-                list.sort((a:any,b:any)=> (a.index||0)-(b.index||0));
-                const idx = list.findIndex((e:any)=> String(e.ratingKey) === String(m.ratingKey));
-                const n = idx>=0 ? list[idx+1] : null;
-                if (n) setNext({ id: `plex:${String(n.ratingKey)}`, title: n.title || `Episode ${(n.index||'')}` }); else setNext(null);
+                list.sort((a: any, b: any) => (a.index || 0) - (b.index || 0));
+                const idx = list.findIndex((e: any) => String(e.ratingKey) === String(m.ratingKey));
+                const n = idx >= 0 ? list[idx + 1] : null;
+                if (n) setNext({ id: `plex:${String(n.ratingKey)}`, title: n.title || `${t('player.episode')} ${(n.index || '')}` }); else setNext(null);
               } catch { setNext(null); }
             } else { setNext(null); }
           } catch (e) { console.error(e); }
@@ -134,7 +136,9 @@ export default function Player() {
     if (!ratingKey) return;
     function tick() {
       const v = last.current; if (!v) return;
-      backendUpdateProgress(ratingKey, v.t*1000, v.d*1000, v.state as any).catch(()=>{});
+      if (ratingKey) {
+        backendUpdateProgress(ratingKey, v.t * 1000, v.d * 1000, v.state as any).catch(() => { });
+      }
     }
     timerRef.current = window.setInterval(tick, 10000) as unknown as number;
     return () => { if (timerRef.current) window.clearInterval(timerRef.current); timerRef.current = null; };
@@ -144,7 +148,7 @@ export default function Player() {
   useEffect(() => {
     const handler = () => {
       const v = last.current; if (!ratingKey || !v) return;
-      backendUpdateProgress(ratingKey, v.t*1000, v.d*1000, 'paused').catch(()=>{});
+      backendUpdateProgress(ratingKey, v.t * 1000, v.d * 1000, 'paused').catch(() => { });
     };
     document.addEventListener('visibilitychange', handler);
     window.addEventListener('beforeunload', handler);
@@ -168,7 +172,7 @@ export default function Player() {
     // Check if we have Plex configuration for advanced player
     const s = loadSettings();
     const useAdvanced = qs.get('advanced') === 'true' || true; // Default to advanced player
-    
+
     if (useAdvanced && s.plexBaseUrl && s.plexToken && ratingKey) {
       // Use AdvancedPlayer for Plex content
       return (
@@ -190,7 +194,7 @@ export default function Player() {
           src={webUrl}
           title={title || String(id)}
           poster={poster}
-          startTime={isFinite(tParam) ? Math.max(0, tParam/1000) : undefined}
+          startTime={isFinite(tParam) ? Math.max(0, tParam / 1000) : undefined}
           quality={quality}
           qualityOptions={qualityOptions}
           onQualityChange={(v) => setQuality(v)}
@@ -202,7 +206,7 @@ export default function Player() {
           onProgress={(t, d, state) => { last.current = { t, d, state }; setCurrentTime(Math.floor(t)); setDuration(Math.floor(d)); }}
           onBack={() => {
             if (ratingKey && last.current) {
-              backendUpdateProgress(ratingKey, (last.current?.t||0)*1000, (last.current?.d||0)*1000, 'paused').finally(()=> nav(-1));
+              backendUpdateProgress(ratingKey, (last.current?.t || 0) * 1000, (last.current?.d || 0) * 1000, 'paused').finally(() => nav(-1));
             } else { nav(-1); }
           }}
           nextLabel={next?.title}

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SmartImage from './SmartImage';
 
 export type Episode = {
@@ -12,6 +13,7 @@ export type Episode = {
 };
 
 export default function EpisodeItem({ ep, onClick }: { ep: Episode; onClick?: (id: string) => void }) {
+  const { t } = useTranslation();
   const nav = useNavigate();
   const go = () => (onClick ? onClick(ep.id) : nav(`/player/${encodeURIComponent(ep.id)}`));
   return (
@@ -22,7 +24,7 @@ export default function EpisodeItem({ ep, onClick }: { ep: Episode; onClick?: (i
           {ep.image ? <SmartImage url={ep.image} alt={ep.title} width={160} className="w-full h-full" imgClassName="object-cover" /> : null}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors" />
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="px-3 py-1.5 rounded-full bg-white text-black text-sm font-medium">Play</div>
+            <div className="px-3 py-1.5 rounded-full bg-white text-black text-sm font-medium">{t('details.play')}</div>
           </div>
           {typeof ep.progress === 'number' && ep.progress > 0 && (
             <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20">
@@ -31,7 +33,7 @@ export default function EpisodeItem({ ep, onClick }: { ep: Episode; onClick?: (i
           )}
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2 text-sm text-neutral-300"><span className="text-white font-medium line-clamp-1">{ep.title}</span>{ep.duration? <span>• {ep.duration} min</span>: null}</div>
+          <div className="flex items-center gap-2 text-sm text-neutral-300"><span className="text-white font-medium line-clamp-1">{ep.title}</span>{ep.duration ? <span>• {ep.duration} min</span> : null}</div>
           <p className="text-neutral-400 text-sm line-clamp-2">{ep.overview}</p>
         </div>
       </div>
