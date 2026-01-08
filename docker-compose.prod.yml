@@ -3,9 +3,9 @@
 
 services:
   netflow:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: docker/Dockerfile
     image: ghcr.io/r0m1k3/netflow:latest
     container_name: netflow
     environment:
