@@ -1,0 +1,24 @@
+{
+    "common": {
+        "server": "Serveur",
+        "servers": "Serveurs",
+        "loading_servers": "Chargement des serveurs...",
+        "no_servers": "Aucun serveur",
+        "refresh": "Actualiser"
+    },
+    "nav": {
+        "home": "Accueil",
+        "movies": "Films",
+        "shows": "Séries",
+        "kids": "Enfants",
+        "live": "Direct",
+        "browse": "Naviguer",
+        "search": "Recherche",
+        "settings": "Paramètres"
+    },
+    "auth": {
+        "login_plex": "Se connecter avec Plex",
+        "login_server_manual": "Connexion Manuelle",
+        "subtitle": "Connectez votre compte Plex pour accéder à vos médiathèques"
+    }
+}

@@ -10,6 +10,7 @@ import {
   AppStateStatus,
 } from 'react-native';
 import { getNetflowCore } from '../core';
+import { useTranslation } from 'react-i18next';
 
 // The URL where users enter their PIN code
 const PLEX_LINK_URL = 'https://plex.tv/link';
@@ -19,6 +20,7 @@ interface PlexLoginProps {
 }
 
 export default function PlexLogin({ onAuthenticated }: PlexLoginProps) {
+  const { t } = useTranslation();
   const [pin, setPin] = useState<{ id: number; code: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [polling, setPolling] = useState(false);
@@ -105,17 +107,17 @@ export default function PlexLogin({ onAuthenticated }: PlexLoginProps) {
   return (
     <View style={{ flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <Text style={{ color: '#fff', fontSize: 28, fontWeight: '800', marginBottom: 12 }}>
-        Sign in with Plex
+        {t('auth.login_plex')}
       </Text>
 
       <Text style={{ color: '#999', fontSize: 14, textAlign: 'center', marginBottom: 24, maxWidth: 300 }}>
-        Connect your Plex account to access your media libraries
+        {t('auth.subtitle')}
       </Text>
 
       {pin && (
         <View style={{ marginBottom: 24, alignItems: 'center' }}>
           <Text style={{ color: '#bbb', fontSize: 14, marginBottom: 4 }}>
-            Go to plex.tv/link and enter:
+            {t('auth.link_instruction')}
           </Text>
           <Text style={{ color: '#fff', fontSize: 36, fontWeight: '800', letterSpacing: 6, marginVertical: 12 }}>
             {pin.code.toUpperCase()}
@@ -124,7 +126,7 @@ export default function PlexLogin({ onAuthenticated }: PlexLoginProps) {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
               <ActivityIndicator color="#e50914" size="small" />
               <Text style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>
-                Waiting for authorization...
+                {t('auth.waiting')}
               </Text>
             </View>
           )}
@@ -147,7 +149,7 @@ export default function PlexLogin({ onAuthenticated }: PlexLoginProps) {
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
-            {pin ? 'Get New Code' : 'Continue with Plex'}
+            {pin ? t('auth.get_code') : t('auth.continue')}
           </Text>
         )}
       </Pressable>
@@ -155,14 +157,14 @@ export default function PlexLogin({ onAuthenticated }: PlexLoginProps) {
       {pin && (
         <Pressable onPress={openPlexLink} style={{ marginTop: 16 }}>
           <Text style={{ color: '#e50914', textDecorationLine: 'underline', fontWeight: '600' }}>
-            Open plex.tv/link
+            {t('auth.open_link')}
           </Text>
         </Pressable>
       )}
 
       {!pin && (
         <Text style={{ color: '#666', fontSize: 12, marginTop: 24, textAlign: 'center', maxWidth: 280 }}>
-          You'll be asked to enter a code at plex.tv/link to authorize this app.
+          {t('auth.code_instruction')}
         </Text>
       )}
     </View>

@@ -66,6 +66,8 @@ if (Platform.OS === 'ios') {
 }
 
 // New standalone imports
+import './src/i18n'; // Initialize i18n
+import { useTranslation } from 'react-i18next';
 import { NetflowProvider, useNetflow } from './src/core';
 import PlexLogin from './src/screens/PlexLogin';
 import ServerSelect from './src/screens/ServerSelect';
@@ -170,6 +172,7 @@ const SettingsTabScreen = React.memo(() => (
 
 // Tabs component extracted and memoized to prevent unnecessary re-renders
 const Tabs = React.memo(() => {
+  const { t } = useTranslation();
   const tabBarVisible = useTopBarStore(s => s.tabBarVisible === true);
   const insets = useSafeAreaInsets();
 
@@ -194,7 +197,7 @@ const Tabs = React.memo(() => {
             name="HomeTab"
             component={HomeStackNavigator}
             options={{
-              title: 'Home',
+              title: t('nav.home'),
               tabBarIcon: () => ({ sfSymbol: 'house' }),
             }}
           />
@@ -202,7 +205,7 @@ const Tabs = React.memo(() => {
             name="NewHotTab"
             component={NewHotScreen}
             options={{
-              title: 'New & Hot',
+              title: t('nav.movies'), // Review: Should NewHot be movies or separate? Mapping to "Movies" for now based on typical structure
               tabBarIcon: () => ({ sfSymbol: 'play.circle' }),
             }}
           />
@@ -210,7 +213,7 @@ const Tabs = React.memo(() => {
             name="MyTab"
             component={MyListScreen}
             options={{
-              title: 'My List',
+              title: t('nav.shows'), // Review: Same mapping question
               tabBarIcon: () => ({ sfSymbol: 'bookmark' }),
             }}
           />
@@ -218,7 +221,7 @@ const Tabs = React.memo(() => {
             name="SettingsTab"
             component={SettingsTabScreen}
             options={{
-              title: 'Settings',
+              title: t('nav.settings'),
               tabBarIcon: () => ({ sfSymbol: 'gear' }),
             }}
           />

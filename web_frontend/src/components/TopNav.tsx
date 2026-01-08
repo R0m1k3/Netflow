@@ -4,22 +4,24 @@ import { loadSettings, saveSettings } from '@/state/settings';
 import { forget } from '@/services/cache';
 import { apiClient } from '@/services/api';
 import UserDropdown from '@/components/UserDropdown';
-
-const items = [
-  { to: '/', label: 'Home' },
-  { to: '/library?tab=tv', label: 'TV Shows' },
-  { to: '/library?tab=movies', label: 'Movies' },
-  { to: '/new-popular', label: 'New & Popular' },
-  { to: '/my-list', label: 'My List' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function TopNav() {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [servers, setServers] = useState<Array<{ name: string; clientIdentifier: string; bestUri: string; token: string }>>([]);
   const [current, setCurrent] = useState<{ name: string } | null>(null);
   const [loadingServers, setLoadingServers] = useState(false);
   const headerRef = useRef<HTMLDivElement | null>(null);
+
+  const items = [
+    { to: '/', label: t('nav.home') },
+    { to: '/library?tab=tv', label: t('nav.shows') },
+    { to: '/library?tab=movies', label: t('nav.movies') },
+    { to: '/new-popular', label: t('nav.new_popular') },
+    { to: '/my-list', label: t('nav.my_list') },
+  ];
 
   useEffect(() => {
     const s = loadSettings();
@@ -198,13 +200,13 @@ export default function TopNav() {
             <IconBell />
             {/* Server switcher */}
             <div className="relative hidden md:block">
-              <button className="btn" onClick={() => setOpen(v => !v)}>{current?.name || 'Server'}</button>
+              <button className="btn" onClick={() => setOpen(v => !v)}>{current?.name || t('common.server')}</button>
               {open && (
                 <div className="absolute right-0 mt-2 w-64 rounded-lg ring-1 ring-white/10 bg-black/80 backdrop-blur p-2 z-50">
-                  <div className="text-xs text-neutral-400 px-2 py-1">Servers</div>
+                  <div className="text-xs text-neutral-400 px-2 py-1">{t('common.servers')}</div>
                   <div className="max-h-60 overflow-auto">
                     {loadingServers ? (
-                      <div className="px-2 py-1 text-neutral-400">Loading servers...</div>
+                      <div className="px-2 py-1 text-neutral-400">{t('common.loading_servers')}</div>
                     ) : (
                       <>
                         {servers.map((s, i) => {
@@ -226,13 +228,13 @@ export default function TopNav() {
                             </button>
                           );
                         })}
-                        {servers.length === 0 && <div className="px-2 py-1 text-neutral-400">No servers</div>}
+                        {servers.length === 0 && <div className="px-2 py-1 text-neutral-400">{t('common.no_servers')}</div>}
                       </>
                     )}
                   </div>
                   <div className="border-t border-white/10 mt-2 pt-2 flex justify-between">
-                    <button className="text-sm hover:text-white" onClick={doRefresh}>Refresh</button>
-                    <Link to="/settings" className="text-sm hover:text-white" onClick={() => setOpen(false)}>Settings</Link>
+                    <button className="text-sm hover:text-white" onClick={doRefresh}>{t('common.refresh')}</button>
+                    <Link to="/settings" className="text-sm hover:text-white" onClick={() => setOpen(false)}>{t('nav.settings')}</Link>
                   </div>
                 </div>
               )}

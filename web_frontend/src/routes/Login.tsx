@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient, checkAuth } from '@/services/api';
+import { useTranslation } from 'react-i18next';
 
 export default function Login() {
+  const { t } = useTranslation();
   const nav = useNavigate();
   const [status, setStatus] = useState('Initializing...');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -124,8 +126,8 @@ export default function Login() {
               <div className="md:hidden mb-3">
                 <span className="text-4xl font-extrabold tracking-tight text-brand">NETFLOW</span>
               </div>
-              <h1 className="text-2xl font-semibold text-white">Sign in</h1>
-              <p className="text-sm text-neutral-400">Use your Plex account to continue</p>
+              <h1 className="text-2xl font-semibold text-white">{t('auth.sign_in')}</h1>
+              <p className="text-sm text-neutral-400">{t('auth.use_plex_account')}</p>
             </div>
 
             {/* Status Message */}
@@ -142,7 +144,7 @@ export default function Login() {
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M4 2C2.9 2 2 2.9 2 4V20C2 21.1 2.9 22 4 22H20C21.1 22 22 21.1 22 20V4C22 2.9 21.1 2 20 2H4M8 8L16 12L8 16V8Z" />
                 </svg>
-                Continue with Plex
+                {t('auth.login_plex')}
               </button>
             ) : (
               <div className="space-y-3">
@@ -158,7 +160,7 @@ export default function Login() {
                       onClick={(e) => { e.preventDefault(); try { window.open(authUrl, '_blank'); } catch { } }}
                       className="inline-flex items-center justify-center text-sm text-brand hover:text-brand-400 underline"
                     >
-                      Open Plex sign‑in
+                      {t('auth.open_plex_sign_in')}
                     </a>
                   </div>
                 )}
@@ -167,14 +169,14 @@ export default function Login() {
 
             {/* Help Text */}
             <div className="mt-8 text-center text-xs text-neutral-500">
-              <p>Don&apos;t have a Plex account?</p>
+              <p>{t('auth.no_account')}</p>
               <a
                 href="https://www.plex.tv/sign-up"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-brand hover:text-brand-600 underline"
               >
-                Create one for free
+                {t('auth.create_account')}
               </a>
             </div>
           </div>

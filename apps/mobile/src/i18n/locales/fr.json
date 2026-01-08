@@ -1,0 +1,25 @@
+{
+    "common": {
+        "loading": "Chargement...",
+        "error": "Une erreur est survenue",
+        "back": "Retour",
+        "save": "Enregistrer",
+        "cancel": "Annuler"
+    },
+    "auth": {
+        "login_plex": "Se connecter avec Plex",
+        "login_server_manual": "Connexion Manuelle",
+        "server_address": "Adresse du serveur",
+        "connect": "Se connecter"
+    },
+    "nav": {
+        "home": "Accueil",
+        "movies": "Films",
+        "shows": "Séries",
+        "kids": "Enfants",
+        "live": "Direct",
+        "browse": "Naviguer",
+        "search": "Recherche",
+        "settings": "Paramètres"
+    }
+}

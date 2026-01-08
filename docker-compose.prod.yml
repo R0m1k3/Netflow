@@ -6,7 +6,7 @@ services:
     # build:
     #   context: .
     #   dockerfile: docker/Dockerfile
-    image: ghcr.io/r0m1k3/netflow:latest
+    image: ghcr.io/r0m1k3/netflow:main
     container_name: netflow
     environment:
       - NODE_ENV=production

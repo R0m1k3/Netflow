@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './styles/index.css';
+import './i18n'; // Initialize i18n
 import App from './App';
 import Home from './routes/Home';
 import Library from './routes/Library';
