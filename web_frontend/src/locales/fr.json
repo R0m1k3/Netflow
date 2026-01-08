@@ -4,7 +4,10 @@
         "servers": "Serveurs",
         "loading_servers": "Chargement des serveurs...",
         "no_servers": "Aucun serveur",
-        "refresh": "Actualiser"
+        "refresh": "Actualiser",
+        "testing": "Test en cours...",
+        "ok": "OK",
+        "failed": "Échec :"
     },
     "nav": {
         "home": "Accueil",
@@ -14,7 +17,9 @@
         "live": "Direct",
         "browse": "Naviguer",
         "search": "Recherche",
-        "settings": "Paramètres"
+        "settings": "Paramètres",
+        "my_list": "Ma Liste",
+        "new_popular": "Nouveautés"
     },
     "auth": {
         "login_plex": "Se connecter avec Plex",
@@ -29,6 +34,7 @@
         "step_1": "1. Visitez cette URL :",
         "step_2": "2. Entrez ce code :",
         "copy": "Copier",
+        "copy_success": "Code copié !",
         "waiting": "En attente d'autorisation...",
         "cancel": "Annuler",
         "disconnect": "Déconnecter",
@@ -37,5 +43,36 @@
         "error_timeout": "Délai d'authentification dépassé. Veuillez réessayer.",
         "error_expired": "Le code a expiré. Veuillez réessayer.",
         "error_generic": "Échec de l'authentification"
+    },
+    "settings": {
+        "accounts": "Comptes",
+        "plex_account": "Compte Plex",
+        "connected_to": "Connecté à",
+        "authenticated_select": "Authentifié. Sélectionnez un serveur ci-dessous.",
+        "not_signed_in": "Non connecté",
+        "sign_in_plex": "Se connecter avec Plex",
+        "refresh_servers": "Actualiser les serveurs",
+        "enter_code": "Entrez ce code sur Plex :",
+        "open_plex": "Ouvrir Plex",
+        "poll": "Vérifier",
+        "select_server": "Sélectionner un serveur",
+        "use": "Utiliser",
+        "endpoints": "Points d'accès...",
+        "plex_url": "URL Plex",
+        "plex_token": "Token Plex",
+        "tmdb_key": "Clé API TMDB",
+        "watchlist_provider": "Fournisseur de Watchlist",
+        "trakt_not_connected": "Trakt non connecté — utilisez la section Trakt ci-dessus pour vous connecter.",
+        "test_tmdb": "Tester TMDB",
+        "test_plex": "Tester Plex",
+        "clear_cache": "Vider le cache",
+        "sign_out_plex": "Déconnexion Plex",
+        "backend_servers": "Serveurs Backend",
+        "backend_servers_desc": "Serveurs connus du backend (utilisés pour la bibliothèque/recherche).",
+        "make_current": "Définir comme actuel",
+        "select_endpoint": "Sélectionner un point d'accès",
+        "playback": "Lecture",
+        "mpv_profile": "Profil MPV",
+        "hdr_tone_map": "Tone-mapping HDR vers SDR"
     }
 }

@@ -10,16 +10,16 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 RUN npm run build
 
-# 2) Runtime stage (Nginx)
-FROM nginx:1.27-alpine AS runner
-WORKDIR /usr/share/nginx/html
+# 2) Runtime stage (Node serve)
+FROM node:20-slim AS runner
+WORKDIR /app
 
-# Replace default site with SPA config
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Install serve
+RUN npm install -g serve
 
 # Copy built static assets
-COPY --from=builder /app/dist .
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["serve", "-s", "dist", "-l", "80"]
 

@@ -13,6 +13,26 @@ import {
 import { useTranslation } from 'react-i18next';
 // ... imports
 
+// Fallback for non-secure contexts
+function fallbackCopyTextToClipboard(text: string): boolean {
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.position = 'fixed';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error('Fallback: Oops, unable to copy', err);
+    return false;
+  }
+}
+
 interface TraktAuthProps {
   onAuthComplete?: () => void;
   onAuthError?: (error: string) => void;
@@ -160,12 +180,18 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(deviceCode.user_code);
+          try { window.dispatchEvent(new CustomEvent('app-toast', { detail: t('trakt.copy_success') || 'Code copied!' })); } catch { }
         } else {
-          // Fallback for non-secure contexts or older browsers
-          console.warn('Clipboard API not available');
+          const success = fallbackCopyTextToClipboard(deviceCode.user_code);
+          if (success) {
+            try { window.dispatchEvent(new CustomEvent('app-toast', { detail: t('trakt.copy_success') || 'Code copied!' })); } catch { }
+          } else {
+            throw new Error('Clipboard unavailable');
+          }
         }
       } catch (err) {
         console.error('Failed to copy to clipboard', err);
+        prompt('Copy this code:', deviceCode.user_code);
       }
     }
   };
