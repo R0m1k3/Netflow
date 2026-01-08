@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  bmad:
+    image: node:20-slim
+    container_name: netflow-bmad
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - TERM=xterm-256color
+      - NODE_ENV=development
+    command: tail -f /dev/null
+    networks:
+      - netflow-network
+
+networks:
+  netflow-network:
+    name: netflow-network
+    driver: bridge
