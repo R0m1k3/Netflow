@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from './errorHandler';
+import { getSecret } from '../utils/secret';
 
 // Extend Express Request type to include user
 declare module 'express-session' {
@@ -35,7 +36,7 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
   const m = /^Bearer\s+(.+)$/i.exec(Array.isArray(auth) ? auth[0] : auth);
   if (m) {
     try {
-      const secret = process.env.SESSION_SECRET || 'change-this-in-production';
+      const secret = getSecret();
       const payload: any = jwt.verify(m[1], secret);
       if (payload && payload.sub) {
         req.user = {
@@ -45,7 +46,7 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
         };
         return next();
       }
-    } catch {}
+    } catch { }
   }
 
   throw new AppError('Authentication required', 401);

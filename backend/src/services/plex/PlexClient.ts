@@ -4,6 +4,7 @@ import { createLogger } from '../../utils/logger';
 import { AppDataSource } from '../../db/data-source';
 import { UserSettings } from '../../db/entities';
 import { decryptForUser, isEncrypted } from '../../utils/crypto';
+import { getSecret } from '../../utils/secret';
 import crypto from 'crypto';
 
 const logger = createLogger('plex');
@@ -57,7 +58,7 @@ export class PlexClient {
 
     // Generate encryption key from server ID and user ID
     this.encryptionKey = crypto.scryptSync(
-      process.env.SESSION_SECRET || 'default-secret',
+      getSecret(),
       `${server.id}:${userId}`,
       32
     );
@@ -155,7 +156,7 @@ export class PlexClient {
 
       const candidates: string[] = [];
       const port = this.server.port || 32400;
-      const protos: Array<'https'|'http'> = this.server.protocol === 'https' ? ['https','http'] : ['http','https'];
+      const protos: Array<'https' | 'http'> = this.server.protocol === 'https' ? ['https', 'http'] : ['http', 'https'];
       const push = (proto: string, host?: string) => { if (host) candidates.push(`${proto}://${host}:${port}`); };
       // Original
       push(this.server.protocol, this.server.host);
@@ -224,7 +225,7 @@ export class PlexClient {
 
     const qs = usp.toString();
     const path = `/library/sections/${libraryKey}/all${qs ? `?${qs}` : ''}`;
-    const cacheKey = `${this.server.id}:library:${libraryKey}:${offset}:${limit}:${JSON.stringify(params||{})}`;
+    const cacheKey = `${this.server.id}:library:${libraryKey}:${offset}:${limit}:${JSON.stringify(params || {})}`;
 
     const data = await this.cachedRequest<any>(
       path,
@@ -378,7 +379,7 @@ export class PlexClient {
       );
       const meta = data?.MediaContainer?.Metadata || [];
       if (meta.length > 0) return data.MediaContainer;
-    } catch {}
+    } catch { }
 
     // Fallback: iterate sections (optionally filtering by type)
     try {
@@ -402,9 +403,9 @@ export class PlexClient {
           );
           const meta = data?.MediaContainer?.Metadata || [];
           if (meta.length > 0) return data.MediaContainer;
-        } catch {}
+        } catch { }
       }
-    } catch {}
+    } catch { }
 
     return { Metadata: [] };
   }

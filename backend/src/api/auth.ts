@@ -8,6 +8,7 @@ import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { createLogger } from '../utils/logger';
 import crypto from 'crypto';
 import { encryptForUser, decryptForUser, isEncrypted } from '../utils/crypto';
+import { getSecret } from '../utils/secret';
 
 const router = Router();
 const logger = createLogger('auth');
@@ -73,7 +74,7 @@ async function normalizeAndPersistServers(userId: string, clientId: string): Pro
           host = u.hostname;
           port = Number(u.port || 32400);
           protocol = (u.protocol.replace(':', '') as 'http' | 'https');
-        } catch {}
+        } catch { }
       }
 
       // Collect addresses
@@ -92,7 +93,7 @@ async function normalizeAndPersistServers(userId: string, clientId: string): Pro
       ));
 
       // Build address -> port mapping and URI mapping (address can have multiple ports with different protocols)
-      const addressPorts: Record<string, Array<{port: number, protocol: string, uri?: string}>> = {};
+      const addressPorts: Record<string, Array<{ port: number, protocol: string, uri?: string }>> = {};
       for (const c of connections) {
         if (c?.address && c?.port) {
           const addr = String(c.address);
@@ -158,10 +159,10 @@ async function normalizeAndPersistServers(userId: string, clientId: string): Pro
         // Ensure selected endpoint persists across sync
         try {
           const u = new URL(match.preferredUri);
-          s.protocol = (u.protocol.replace(':','') as any);
+          s.protocol = (u.protocol.replace(':', '') as any);
           s.host = u.hostname;
           s.port = parseInt(u.port || '32400', 10);
-        } catch {}
+        } catch { }
       }
     }
   }
@@ -235,9 +236,9 @@ router.get('/plex/pin/:id', async (req: Request, res: Response, next: NextFuncti
       return res.json({ authenticated: false, pending: true });
     }
 
-      if (response.data.authToken) {
-        // PIN has been authenticated
-        const token = response.data.authToken;
+    if (response.data.authToken) {
+      // PIN has been authenticated
+      const token = response.data.authToken;
 
       // Get user info
       let userResponse: any;
@@ -349,7 +350,7 @@ router.get('/plex/pin/:id', async (req: Request, res: Response, next: NextFuncti
       // If mobile hint present, also issue a JWT for React Native clients
       const wantsMobile = String(req.query.mobile || req.headers['x-mobile'] || '') === '1';
       if (wantsMobile) {
-        const secret = process.env.SESSION_SECRET || 'change-this-in-production';
+        const secret = getSecret();
         const token = jwt.sign(
           { sub: user.id, plexId: user.plexId, username: user.username },
           secret,
@@ -402,7 +403,7 @@ router.get('/session', async (req: Request, res: Response, next: NextFunction) =
     });
 
     if (!user) {
-      req.session.destroy(() => {});
+      req.session.destroy(() => { });
       return res.json({ authenticated: false });
     }
 
@@ -444,7 +445,7 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
       if (c.domain) cookieOpts.domain = c.domain;
       if (c.path) cookieOpts.path = c.path;
     }
-  } catch {}
+  } catch { }
 
   req.session.destroy((err) => {
     if (err) {
@@ -452,7 +453,7 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
       return next(new AppError('Failed to logout', 500));
     }
 
-    try { res.clearCookie('plex.sid', cookieOpts); } catch {}
+    try { res.clearCookie('plex.sid', cookieOpts); } catch { }
     res.json({ success: true });
   });
 });

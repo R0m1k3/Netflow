@@ -16,6 +16,7 @@ import { AppDataSource, initializeDatabase } from './db/data-source';
 import { Session } from './db/entities';
 import { cacheManager } from './services/cache/CacheManager';
 import logger from './utils/logger';
+import { getSecret } from './utils/secret'; // Original path
 import { authRouter } from './api/auth';
 import cacheRoutes from './api/cache';
 import imageProxyRoutes from './api/image-proxy';
@@ -41,10 +42,10 @@ async function startServer() {
     const frontendUrlObj = new URL(FRONTEND_URL);
     const isHttpsFrontend = frontendUrlObj.protocol === 'https:';
     const cookieSameSiteEnv = (process.env.SESSION_SAMESITE || '').toLowerCase();
-    const cookieSecureEnv = (process.env.SESSION_SECURE || '').toLowerCase();
     const cookieSameSite = (cookieSameSiteEnv === 'lax' || cookieSameSiteEnv === 'strict' || cookieSameSiteEnv === 'none')
       ? cookieSameSiteEnv
       : (isHttpsFrontend ? 'none' : 'lax');
+    const cookieSecureEnv = (process.env.SESSION_SECURE || '').toLowerCase();
     const cookieSecure = cookieSecureEnv === 'true' ? true : cookieSecureEnv === 'false' ? false : isHttpsFrontend;
 
     // Trust proxy (for secure cookies behind reverse proxy)
@@ -84,7 +85,7 @@ async function startServer() {
     // Session configuration
     const sessionRepository = AppDataSource.getRepository(Session);
     app.use(session({
-      secret: process.env.SESSION_SECRET || 'change-this-in-production',
+      secret: getSecret(),
       resave: false,
       saveUninitialized: false,
       store: new TypeormStore({

@@ -1,8 +1,9 @@
 import crypto from 'crypto';
+import { getSecret } from './secret';
 
-// Derive a per-user key using SESSION_SECRET and user-specific salt
+// Derive a per-user key using stable secret and user-specific salt
 function deriveKey(salt: string): Buffer {
-  const secret = process.env.SESSION_SECRET || 'change-this-in-production';
+  const secret = getSecret();
   return crypto.scryptSync(secret, salt, 32);
 }
 
