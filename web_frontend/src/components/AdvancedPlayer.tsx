@@ -500,6 +500,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         // Check for Dolby Vision
         const hasDV = hasDolbyVision(meta);
         let effectiveQuality = quality;
+        let url = '';
 
         // If Dolby Vision is detected and quality is original, auto-switch to highest transcoded quality
         if (hasDV && quality === 'original' && !hasRetriedWithTranscode.current) {
