@@ -47,6 +47,12 @@
             "coming_soon": "Prochainement",
             "most_anticipated": "Les plus attendus"
         },
+        "badges": {
+            "new": "Nouveau",
+            "popular": "Populaire",
+            "coming_soon": "Bientôt",
+            "lists": "{{count}} listes"
+        },
         "no_key_warning": "Clé API TMDB non configurée. Certains contenus peuvent manquer.",
         "configure_settings": "Configurer dans les paramètres",
         "periods": {
@@ -176,7 +182,18 @@
         "my_list": "Ma Liste",
         "info": "Infos",
         "mute": "Muer",
-        "unmute": "Réactiver le son"
+        "unmute": "Réactiver le son",
+        "more_info": "Plus d'infos"
+    },
+    "watchlist": {
+        "in_list": "Dans ma liste",
+        "add_to_list": "Ajouter à ma liste",
+        "connect_trakt": "Connecter Trakt",
+        "connect_trakt_link": "Connecter Trakt",
+        "remove_title": "Retirer de ma liste",
+        "add_title": "Ajouter à ma liste",
+        "added_toast": "Ajouté à la liste {{provider}}",
+        "removed_toast": "Retiré de la liste {{provider}}"
     },
     "player": {
         "auto": "Auto",

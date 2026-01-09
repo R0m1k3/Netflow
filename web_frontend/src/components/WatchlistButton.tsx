@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 // Trakt-first implementation. Plex paths retained but not used when Trakt is preferred.
 import { plexTvWatchlist, plexTvAddToWatchlist, plexTvRemoveFromWatchlist } from '@/services/plextv';
 import { traktAddToWatchlist, traktRemoveFromWatchlist, getTraktTokens, traktGetWatchlist } from '@/services/trakt';
@@ -25,13 +26,14 @@ export default function WatchlistButton({
   className = '',
   variant = 'icon'
 }: WatchlistButtonProps) {
+  const { t } = useTranslation();
   const [isInList, setIsInList] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [visible, setVisible] = useState(false);
   const tokens = getTraktTokens();
-  const provider = (loadSettings().watchlistProvider || 'trakt') as 'trakt'|'plex';
+  const provider = (loadSettings().watchlistProvider || 'trakt') as 'trakt' | 'plex';
 
   // Defer watchlist check until button is near viewport
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function WatchlistButton({
       try {
         const watchlist = await plexTvWatchlist();
         const items = watchlist.MediaContainer?.Metadata || [];
-        const normalizedId = String(itemId || '').startsWith('plex:') ? String(itemId).replace(/^plex:/,'') : String(itemId);
+        const normalizedId = String(itemId || '').startsWith('plex:') ? String(itemId).replace(/^plex:/, '') : String(itemId);
         const found = items.some((item: any) => {
           if (String(item.ratingKey) === normalizedId) return true;
           if (tmdbId && item.guid?.includes(`tmdb://${tmdbId}`)) return true;
@@ -105,12 +107,12 @@ export default function WatchlistButton({
         // Remove from watchlist
         await removeFromWatchlists();
         setIsInList(false);
-        try { window.dispatchEvent(new CustomEvent('app-toast', { detail: `Removed from ${provider==='trakt'?'Trakt':'Plex'} Watchlist` })); } catch {}
+        try { window.dispatchEvent(new CustomEvent('app-toast', { detail: t('watchlist.removed_toast', { provider: provider === 'trakt' ? 'Trakt' : 'Plex' }) })); } catch { }
       } else {
         // Add to watchlist
         await addToWatchlists();
         setIsInList(true);
-        try { window.dispatchEvent(new CustomEvent('app-toast', { detail: `Added to ${provider==='trakt'?'Trakt':'Plex'} Watchlist` })); } catch {}
+        try { window.dispatchEvent(new CustomEvent('app-toast', { detail: t('watchlist.added_toast', { provider: provider === 'trakt' ? 'Trakt' : 'Plex' }) })); } catch { }
       }
     } catch (err) {
       console.error('Failed to update watchlist:', err);
@@ -165,27 +167,26 @@ export default function WatchlistButton({
         <button
           onClick={handleToggle}
           disabled={loading || disabled}
-          className={`inline-flex items-center px-5 py-2.5 text-sm md:text-base font-medium rounded-md transition-all ${
-            isInList
+          className={`inline-flex items-center px-5 py-2.5 text-sm md:text-base font-medium rounded-md transition-all ${isInList
               ? 'bg-white/20 text-white hover:bg-white/30'
               : 'bg-white/10 text-white hover:bg-white/20'
-          } ${loading || disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${loading || disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {loading ? (
             <div className="w-4 h-4 md:w-5 md:h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : isInList ? (
             <svg className="w-4 h-4 md:w-5 md:h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
             </svg>
           ) : (
             <svg className="w-4 h-4 md:w-5 md:h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
             </svg>
           )}
-          {provider==='trakt' ? (tokens ? (isInList ? 'In My List' : 'Add to My List') : 'Connect Trakt') : (isInList ? 'In My List' : 'Add to My List')}
+          {provider === 'trakt' ? (tokens ? (isInList ? t('watchlist.in_list') : t('watchlist.add_to_list')) : t('watchlist.connect_trakt')) : (isInList ? t('watchlist.in_list') : t('watchlist.add_to_list'))}
         </button>
-        {provider==='trakt' && !tokens && (
-          <a href="/settings" className="ml-3 text-sm text-white/70 underline hover:text-white">Connect Trakt</a>
+        {provider === 'trakt' && !tokens && (
+          <a href="/settings" className="ml-3 text-sm text-white/70 underline hover:text-white">{t('watchlist.connect_trakt_link')}</a>
         )}
       </div>
     );
@@ -197,20 +198,19 @@ export default function WatchlistButton({
       ref={btnRef}
       onClick={handleToggle}
       disabled={loading}
-      className={`w-10 h-10 flex items-center justify-center bg-black/60 rounded-full hover:bg-black/80 transition-all ${
-        loading ? 'opacity-50 cursor-not-allowed' : ''
-      } ${className}`}
-      title={isInList ? 'Remove from My List' : 'Add to My List'}
+      className={`w-10 h-10 flex items-center justify-center bg-black/60 rounded-full hover:bg-black/80 transition-all ${loading ? 'opacity-50 cursor-not-allowed' : ''
+        } ${className}`}
+      title={isInList ? t('watchlist.remove_title') : t('watchlist.add_title')}
     >
       {loading ? (
         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
       ) : isInList ? (
         <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
         </svg>
       ) : (
         <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
         </svg>
       )}
     </button>

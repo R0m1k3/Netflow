@@ -108,7 +108,8 @@ export default function NewPopular() {
       title: item.title,
       image: item.thumb ? apiClient.getPlexImageNoToken(item.thumb) : undefined,
       subtitle: item.year?.toString(),
-      badge: 'New',
+      subtitle: item.year?.toString(),
+      badge: t('new_popular.badges.new'),
       mediaType: item.type === 'movie' ? 'movie' : 'show' as const
     }));
     setRecentlyAdded(recent);
@@ -119,7 +120,8 @@ export default function NewPopular() {
       title: item.title || item.grandparentTitle,
       image: item.thumb ? apiClient.getPlexImageNoToken((item.thumb || item.parentThumb || item.grandparentThumb) || '') : undefined,
       subtitle: item.year?.toString(),
-      badge: 'Popular',
+      subtitle: item.year?.toString(),
+      badge: t('new_popular.badges.popular'),
       mediaType: item.type === 'movie' ? 'movie' : 'show' as const
     }));
     setPopularPlex(pop);
@@ -260,7 +262,7 @@ export default function NewPopular() {
       title: m.title,
       image: m.poster_path ? tmdbImage(m.poster_path, 'w342') : undefined,
       subtitle: m.release_date ? new Date(m.release_date).toLocaleDateString() : undefined,
-      badge: 'Coming Soon',
+      badge: t('new_popular.badges.coming_soon'),
       mediaType: 'movie' as const
     })) || [];
     setUpcoming(items);
@@ -285,7 +287,7 @@ export default function NewPopular() {
             title: item.movie.title,
             image,
             subtitle: item.movie.year?.toString(),
-            badge: `${item.list_count} lists`,
+            badge: t('new_popular.badges.lists', { count: item.list_count }),
             mediaType: 'movie' as const
           };
         })
@@ -363,8 +365,8 @@ export default function NewPopular() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`pb-2 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id
-                    ? 'text-white border-white'
-                    : 'text-white/50 border-transparent hover:text-white/80'
+                  ? 'text-white border-white'
+                  : 'text-white/50 border-transparent hover:text-white/80'
                   }`}
               >
                 {tab.label}
