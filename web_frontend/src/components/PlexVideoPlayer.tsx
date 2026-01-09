@@ -52,6 +52,18 @@ export default function PlexVideoPlayer({
   const startTimeRef = useRef(startTime);
   useEffect(() => { startTimeRef.current = startTime; }, [startTime]);
 
+  // Handle late-arriving startTime (race condition where metadata loads before props update)
+  useEffect(() => {
+    if (startTime && startTime > 0 && isReady) {
+      console.log('Late startTime update received, seeking to:', startTime);
+      if (dashRef.current) {
+        dashRef.current.seek(startTime);
+      } else if (videoRef.current) {
+        videoRef.current.currentTime = startTime;
+      }
+    }
+  }, [startTime, isReady]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
@@ -138,6 +150,10 @@ export default function PlexVideoPlayer({
             dash.seek(st);
           }
         });
+
+
+
+
 
         dash.on(dashjs.MediaPlayer.events.ERROR, (e: any) => {
           console.error('DASH error:', e);
