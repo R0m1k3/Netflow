@@ -70,7 +70,12 @@
     "auth": {
         "login_plex": "Se connecter avec Plex",
         "login_server_manual": "Connexion Manuelle",
-        "subtitle": "Connectez votre compte Plex pour accéder à vos médiathèques"
+        "subtitle": "Connectez votre compte Plex pour accéder à vos médiathèques",
+        "sign_in": "Connexion",
+        "use_plex_account": "Utilisez votre compte Plex",
+        "open_plex_sign_in": "Ouvrir la connexion Plex",
+        "no_account": "Pas de compte ?",
+        "create_account": "Créer un compte"
     },
     "trakt": {
         "title": "Trakt",
