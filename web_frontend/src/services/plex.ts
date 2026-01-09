@@ -440,7 +440,15 @@ export async function plexPlayQueue(cfg: PlexConfig, itemId: string, serverId?: 
   });
 
   const url = `${cfg.baseUrl}/playQueues?${params}`;
-  const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json' } });
+  // Include required Plex headers (especially X-Plex-Client-Identifier)
+  const headers = getXPlexHeaders(cfg.token);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      ...headers,
+      Accept: 'application/json',
+    }
+  });
   if (!res.ok) throw new Error(`Failed to create play queue: ${res.status}`);
   return res.json();
 }
