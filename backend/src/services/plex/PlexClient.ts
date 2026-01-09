@@ -75,6 +75,7 @@ export class PlexClient {
     this.axiosClient = axios.create({
       baseURL,
       timeout: 30000,
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       headers: {
         'Accept': 'application/json',
         'X-Plex-Token': server.accessToken,
