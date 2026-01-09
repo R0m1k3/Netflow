@@ -146,7 +146,7 @@ export default function HomeHero({
             {(metaBadges.length > 0 || genres.length > 0) && (
               <div className="flex flex-wrap items-center gap-2 mb-4 text-sm md:text-base">
                 {metaBadges.map((badge, i) => (
-                  <span key={i} className="text-white/90 font-medium">
+                  <span key={i} className={`font-medium ${badge.includes('⭐') ? 'text-yellow-500' : 'text-white/90'}`}>
                     {badge}
                   </span>
                 ))}

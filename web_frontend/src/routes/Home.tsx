@@ -164,7 +164,13 @@ export default function Home() {
               const duration = (m.duration || 0) / 1000;
               const vo = (m.viewOffset || 0) / 1000;
               const progress = duration > 0 ? Math.min(100, Math.max(1, Math.round((vo / duration) * 100))) : 0;
-              return { id: `plex:${String(m.ratingKey || i)}`, title: m.title || m.grandparentTitle || 'Continue', image: img, progress };
+              return {
+                id: `plex:${String(m.ratingKey || i)}`,
+                title: m.title || m.grandparentTitle || 'Continue',
+                image: img,
+                progress,
+                badge: m.rating ? `⭐ ${m.rating.toFixed(1)}` : m.contentRating
+              };
             });
             rowsData.splice(1, 0, { title: t('home.continue_watching'), items: items as any, variant: 'continue' });
           } catch (e) {
@@ -244,12 +250,30 @@ export default function Home() {
               const year = mm.year ? String(mm.year) : undefined;
               const runtime = mm.duration ? Math.round(mm.duration / 60000) : undefined;
 
+              let heroRating = mm.rating ? `⭐ ${Number(mm.rating).toFixed(1)}` : mm.contentRating || undefined;
+
+              // Fallback to TMDB rating if Plex rating is missing
+              if (!mm.rating && s.tmdbBearer) {
+                try {
+                  const tmdbGuid = (mm.Guid || []).map((g: any) => String(g.id || ''))
+                    .find((g: string) => g.includes('tmdb://') || g.includes('themoviedb://'));
+                  if (tmdbGuid) {
+                    const tid = tmdbGuid.split('://')[1];
+                    const mediaType = (mm.type === 'movie') ? 'movie' : 'tv';
+                    const details: any = await tmdbDetails(s.tmdbBearer!, mediaType as any, tid);
+                    if (details?.vote_average) {
+                      heroRating = `⭐ ${details.vote_average.toFixed(1)}`;
+                    }
+                  }
+                } catch { }
+              }
+
               plexHero = {
                 title: mm.title || mm.grandparentTitle || 'Title',
                 overview: mm.summary,
                 poster,
                 backdrop,
-                rating: mm.rating ? `⭐ ${mm.rating.toFixed(1)}` : mm.contentRating || undefined,
+                rating: heroRating,
                 videoUrl,
                 id: `plex:${String(mm.ratingKey)}`,
                 genres,
