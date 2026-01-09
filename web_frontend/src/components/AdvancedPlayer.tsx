@@ -459,14 +459,11 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         setMetadata(meta);
         // Record initial start time once per item
         try {
-          const start = meta.viewOffset ? Math.max(0, Math.floor(meta.viewOffset / 1000)) : undefined;
+          const start = meta.viewOffset ? Math.max(0, Math.floor(meta.viewOffset / 1000)) : 0;
           const durSec = meta.duration ? Math.floor(meta.duration / 1000) : undefined;
-
-          console.log('[AdvancedPlayer] Full Metadata Object:', meta);
 
           // If item was fully watched (>=95%), start from beginning
           const fromStart = (start !== undefined && durSec && durSec > 0 && start / durSec >= 0.95) ? 0 : start;
-          console.log('[AdvancedPlayer] Resume logic:', { viewOffsetMs: meta.viewOffset, startSec: start, durSec, fromStart });
           setInitialStartAt(fromStart);
         } catch (e) { console.error('Resume logic error', e); }
 
@@ -1200,7 +1197,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black z-50" onClick={handleBackdropClick}>
-      {streamUrl && (
+      {streamUrl && initialStartAt !== undefined && (
         <div className="absolute inset-0">
           <PlexVideoPlayer
             key={streamUrl} // Force remount when URL changes
