@@ -69,9 +69,10 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
       // Map Trakt results to unified Row items (Plex/TMDB IDs + landscape art)
       const mapped = await mapTraktToRowItems(data, mediaType);
       setItems(mapped);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       console.error('Failed to load Trakt content:', err);
-      setError(err.message || 'Failed to load content');
+      setError(message || 'Failed to load content');
     } finally {
       setLoading(false);
     }
@@ -107,10 +108,10 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
       if (!s.plexBaseUrl || !s.plexToken) return undefined;
       try {
         // Try both common GUID prefixes
-        const a: any = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `tmdb://${tmdbId}`, mTypeNum);
+        const a = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `tmdb://${tmdbId}`, mTypeNum) as any;
         let hits: any[] = (a?.MediaContainer?.Metadata || []);
         if (!hits.length) {
-          const b: any = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `themoviedb://${tmdbId}`, mTypeNum);
+          const b = await plexFindByGuid({ baseUrl: s.plexBaseUrl!, token: s.plexToken! }, `themoviedb://${tmdbId}`, mTypeNum) as any;
           hits = (b?.MediaContainer?.Metadata || []);
         }
         return hits[0];
@@ -189,10 +190,6 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
 
     // Keep rows concise like the rest of Home
     return out.slice(0, 12);
-  }
-
-  function mediaKeyFromTrakt(it: any): 'movie' | 'tv' {
-    return it?.movie ? 'movie' : 'tv';
   }
 
   function placeholderImg(): string {
