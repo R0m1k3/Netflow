@@ -156,16 +156,23 @@ export default function PlexVideoPlayer({
 
 
         dash.on(dashjs.MediaPlayer.events.ERROR, (e: any) => {
-          console.error('DASH error:', e);
-          const errorMsg = e.error?.message || e.error?.code || 'Unknown error';
+          console.error('DASH error object:', JSON.stringify(e, null, 2)); // Improve logging
+          const errorMsg = (e.error?.message || e.error?.code || 'Unknown error').toLowerCase();
 
-          // Check for Dolby Vision codec mismatch errors
+          // Check for Dolby Vision codec mismatch errors OR generic media/download errors
+          // We broaden the fallback trigger because DASH playback is failing silently for DV content on some clients
           if (errorMsg.includes('dolbyvision') ||
             errorMsg.includes('codec') ||
-            errorMsg.includes('CHUNK_DEMUXER_ERROR_APPEND_FAILED')) {
-            console.warn('Dolby Vision codec error detected, triggering fallback');
+            errorMsg.includes('chunk_demuxer') ||
+            errorMsg.includes('append_failed') ||
+            errorMsg.includes('download') || // Catch download errors (404/403 often mean transcode failure)
+            errorMsg.includes('media') ||    // Generic media errors
+            errorMsg.includes('unknown')     // Even unknown errors should trigger fallback if possible
+          ) {
+            console.warn('Playback error detected, triggering transcoding fallback:', errorMsg);
             onCodecError?.(errorMsg);
           } else {
+            console.error('Fatal DASH Error:', errorMsg);
             onError?.(`DASH Error: ${errorMsg}`);
           }
         });
