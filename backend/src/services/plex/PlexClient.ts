@@ -6,6 +6,7 @@ import { UserSettings } from '../../db/entities';
 import { decryptForUser, isEncrypted } from '../../utils/crypto';
 import { getSecret } from '../../utils/secret';
 import crypto from 'crypto';
+import https from 'https';
 
 const logger = createLogger('plex');
 
