@@ -45,7 +45,12 @@ export default function PlexVideoPlayer({
   const videoRef = externalVideoRef || internalVideoRef;
   const hlsRef = useRef<Hls | null>(null);
   const dashRef = useRef<dashjs.MediaPlayerClass | null>(null);
+
   const [isReady, setIsReady] = useState(false);
+
+  // Use a ref for startTime to avoid stale closures in event listeners
+  const startTimeRef = useRef(startTime);
+  useEffect(() => { startTimeRef.current = startTime; }, [startTime]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -121,15 +126,16 @@ export default function PlexVideoPlayer({
 
         // Handle DASH events
         dash.on(dashjs.MediaPlayer.events.PLAYBACK_METADATA_LOADED, () => {
-          console.log('DASH metadata loaded, checking seek. startTime:', startTime);
+          const st = startTimeRef.current;
+          console.log('DASH metadata loaded, checking seek. startTime:', st);
           if (!isReady) {
             setIsReady(true);
             onReady?.();
           }
           // Seek to startTime after metadata is loaded
-          if (startTime && startTime > 0) {
-            console.log('Seeking to startTime:', startTime);
-            dash.seek(startTime);
+          if (st && st > 0) {
+            console.log('Seeking to startTime:', st);
+            dash.seek(st);
           }
         });
 
@@ -247,8 +253,9 @@ export default function PlexVideoPlayer({
         setIsReady(true);
         onReady?.();
       }
-      if (startTime && startTime > 0) {
-        video.currentTime = startTime;
+      const st = startTimeRef.current;
+      if (st && st > 0) {
+        video.currentTime = st;
       }
       if (autoPlay) {
         video.play().catch(e => console.warn('Autoplay failed:', e));
