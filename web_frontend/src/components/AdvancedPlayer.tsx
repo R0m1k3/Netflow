@@ -982,16 +982,11 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   const handleTimeUpdate = useCallback((time: number, dur: number) => {
     setCurrentTime(time);
     if (dur && dur > 0) setDuration(dur);
-    // Clear initial start time after first time update to avoid any reload jumps
-    if (initialStartAt !== undefined) {
-      setInitialStartAt(undefined);
-    }
-  }, [initialStartAt]);
+  }, []);
 
   const handleUserSeek = useCallback(() => {
-    if (initialStartAt !== undefined) setInitialStartAt(undefined);
     endedRef.current = false; // user intent overrides pending end state
-  }, [initialStartAt]);
+  }, []);
 
   const handleReady = useCallback(() => {
     // console.log('Player ready');
