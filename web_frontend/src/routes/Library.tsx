@@ -1,6 +1,6 @@
 import VirtualGrid from '@/components/VirtualGrid';
 import PosterCard from '@/components/PosterCard';
-import FilterBar from '@/components/FilterBar';
+// FilterBar removed per user request
 import { loadSettings } from '@/state/settings';
 import { plexLibs, plexSectionAll, plexImage, withContainer } from '@/services/plex';
 import { plexBackendLibraries, plexBackendLibraryAll } from '@/services/plex_backend';
@@ -11,13 +11,16 @@ import { apiClient } from '@/services/api';
 
 type Item = { id: string; title: string; image?: string; subtitle?: string; badge?: string };
 
+import { useTranslation } from 'react-i18next';
+
 export default function Library() {
+  const { t } = useTranslation();
   const nav = useNavigate();
   const location = useLocation();
   const [items, setItems] = useState<Item[]>([]);
   const [start, setStart] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [sections, setSections] = useState<Array<{ key: string; title: string; type: 'movie'|'show' }>>([]);
+  const [sections, setSections] = useState<Array<{ key: string; title: string; type: 'movie' | 'show' }>>([]);
   const [active, setActive] = useState<string>('');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'movies' | 'shows'>('all');
@@ -37,7 +40,7 @@ export default function Library() {
         // Choose default section based on URL tab parameter
         const params = new URLSearchParams(location.search);
         const tab = params.get('tab'); // 'tv' | 'movies'
-        const wantType: 'show'|'movie' | null = tab === 'tv' ? 'show' : tab === 'movies' ? 'movie' : null;
+        const wantType: 'show' | 'movie' | null = tab === 'tv' ? 'show' : tab === 'movies' ? 'movie' : null;
         const preferred = wantType ? secs.find((x: any) => x.type === wantType) : (secs[0] || null);
         if (preferred) setActive(preferred.key);
         else setNeedsPlex(true);
@@ -54,7 +57,7 @@ export default function Library() {
     if (sections.length === 0) return;
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    const wantType: 'show'|'movie' | null = tab === 'tv' ? 'show' : tab === 'movies' ? 'movie' : null;
+    const wantType: 'show' | 'movie' | null = tab === 'tv' ? 'show' : tab === 'movies' ? 'movie' : null;
     if (!wantType) return;
     const preferred = sections.find((s) => s.type === wantType);
     if (preferred && preferred.key !== active) setActive(preferred.key);
@@ -104,21 +107,25 @@ export default function Library() {
 
   return (
     <div className="pb-8">
-      {!needsPlex && sections.length>0 ? (
+      {!needsPlex && sections.length > 0 ? (
         <div className="page-gutter pt-6 space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {sections.map(s => (
-              <button key={s.key} onClick={() => setActive(s.key)} className={`h-8 px-3 rounded-full text-sm ring-1 ${active===s.key? 'bg-white text-black ring-white/0':'bg-white/5 text-neutral-200 hover:bg-white/10 ring-white/10'}`}>{s.title}</button>
-            ))}
+          <div className="relative">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('library.search_placeholder')}
+              className="w-full bg-neutral-800 text-white px-4 py-2 pl-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <svg
+              className="absolute left-3 top-2.5 w-5 h-5 text-neutral-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
-        <FilterBar
-          query={query}
-          setQuery={setQuery}
-          type={filter}
-          setType={(v) => setFilter(v as any)}
-          genres={[{label:'Action', value:'action'},{label:'Drama',value:'drama'}]}
-          years={Array.from({length: 10}).map((_,i)=>({label:String(2024-i), value:String(2024-i)}))}
-        />
         </div>
       ) : (
         <SectionBanner title="Libraries" message="Connect Plex to browse your Movies and TV Show libraries here." cta="Open Settings" to="/settings" />
@@ -137,8 +144,8 @@ export default function Library() {
                 if (!hasMore) return;
                 const s = loadSettings();
                 if (!s.plexBaseUrl || !s.plexToken || !active) return;
-              // load next page
-              (async () => {
+                // load next page
+                (async () => {
                   const base = '?sort=addedAt:desc';
                   const size = 100;
                   const all: any = await plexBackendLibraryAll(active, { sort: 'addedAt:desc', offset: start, limit: size });
