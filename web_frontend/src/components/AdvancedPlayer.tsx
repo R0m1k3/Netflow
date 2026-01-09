@@ -464,6 +464,7 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
           // If item was fully watched (>=95%), start from beginning
           const fromStart = (start !== undefined && durSec && durSec > 0 && start / durSec >= 0.95) ? 0 : start;
+          console.log('[AdvancedPlayer] Calculated start time:', fromStart);
           setInitialStartAt(fromStart);
         } catch (e) { console.error('Resume logic error', e); }
 
@@ -1186,6 +1187,8 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
       goToDetails();
     }
   }, [metadata, creditsStartSec, currentTime, goToDetails, exiting]);
+
+  console.log('[AdvancedPlayer] Render:', { loading, hasStream: !!streamUrl, initialStartAt });
 
   if (loading) {
     return (
