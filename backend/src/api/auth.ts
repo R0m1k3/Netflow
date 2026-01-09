@@ -462,6 +462,7 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const userRepository = AppDataSource.getRepository(User);
+    const settingsRepository = AppDataSource.getRepository(UserSettings);
     const user = await userRepository.findOne({
       where: { id: req.user!.id },
       select: ['plexToken'],
@@ -470,6 +471,10 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
     if (!user) {
       throw new AppError('User not found', 404);
     }
+
+    // Load user settings to get any configured preferredUri
+    const settings = await settingsRepository.findOne({ where: { userId: req.user!.id } });
+    const savedServers = settings?.plexServers || [];
 
     const accountToken = isEncrypted(user.plexToken)
       ? decryptForUser(req.user!.id, user.plexToken)
@@ -493,10 +498,15 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
 
         const bestConnection = local || remote || relay;
 
+        // Check if user has configured a preferredUri for this server
+        const savedServer = savedServers.find((s: any) => s.id === server.clientIdentifier);
+        const preferredUri = savedServer?.preferredUri;
+
         return {
           name: server.name,
           clientIdentifier: server.clientIdentifier,
-          baseUrl: bestConnection?.uri,
+          // Use preferredUri if configured, otherwise fall back to auto-detected URI
+          baseUrl: preferredUri || bestConnection?.uri,
           token: server.accessToken,
           connections: connections.map((c: any) => ({
             uri: c.uri,
