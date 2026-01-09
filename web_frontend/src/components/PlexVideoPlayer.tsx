@@ -120,14 +120,15 @@ export default function PlexVideoPlayer({
         });
 
         // Handle DASH events
-        dash.on(dashjs.MediaPlayer.events.MANIFEST_LOADED, () => {
-          // console.log('DASH manifest loaded');
+        dash.on(dashjs.MediaPlayer.events.PLAYBACK_METADATA_LOADED, () => {
+          console.log('DASH metadata loaded, checking seek. startTime:', startTime);
           if (!isReady) {
             setIsReady(true);
             onReady?.();
           }
-          // Seek to startTime after manifest is loaded (video.currentTime doesn't work reliably with DASH)
+          // Seek to startTime after metadata is loaded
           if (startTime && startTime > 0) {
+            console.log('Seeking to startTime:', startTime);
             dash.seek(startTime);
           }
         });
