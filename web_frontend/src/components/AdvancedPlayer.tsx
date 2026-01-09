@@ -461,6 +461,9 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         try {
           const start = meta.viewOffset ? Math.max(0, Math.floor(meta.viewOffset / 1000)) : undefined;
           const durSec = meta.duration ? Math.floor(meta.duration / 1000) : undefined;
+
+          console.log('[AdvancedPlayer] Full Metadata Object:', meta);
+
           // If item was fully watched (>=95%), start from beginning
           const fromStart = (start !== undefined && durSec && durSec > 0 && start / durSec >= 0.95) ? 0 : start;
           console.log('[AdvancedPlayer] Resume logic:', { viewOffsetMs: meta.viewOffset, startSec: start, durSec, fromStart });
