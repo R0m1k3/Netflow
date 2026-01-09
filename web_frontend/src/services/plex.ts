@@ -4,7 +4,28 @@ import { plexBackendFindByGuid } from './plex_backend';
 import { loadSettings } from '@/state/settings';
 import { plexBackendLibraries, plexBackendLibraryAll } from './plex_backend';
 
+/**
+ * Normalize baseUrl to prevent mixed content issues.
+ * When the page is served over HTTPS, upgrade HTTP URLs to HTTPS.
+ */
+function normalizeBaseUrl(baseUrl: string): string {
+  let url = baseUrl.replace(/\/$/, '');
+  // If page is served over HTTPS but Plex URL is HTTP, upgrade to HTTPS
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    url = url.replace(/^http:\/\//i, 'https://');
+  }
+  return url;
+}
+
+/**
+ * Create a normalized PlexConfig with HTTPS-upgraded baseUrl.
+ */
+function normalizeCfg(cfg: PlexConfig): PlexConfig {
+  return { ...cfg, baseUrl: normalizeBaseUrl(cfg.baseUrl) };
+}
+
 export async function plexLibs(cfg: PlexConfig) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/sections?X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:libs`, 15 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -20,6 +41,7 @@ export async function plexLibs(cfg: PlexConfig) {
 }
 
 export async function plexOnDeck(cfg: PlexConfig, libKey: string) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/sections/${libKey}/onDeck?X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:onDeck:${libKey}`, 5 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -29,6 +51,7 @@ export async function plexOnDeck(cfg: PlexConfig, libKey: string) {
 }
 
 export async function plexOnDeckGlobal(cfg: PlexConfig) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/onDeck?X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:onDeckGlobal`, 2 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -40,11 +63,13 @@ export async function plexOnDeckGlobal(cfg: PlexConfig) {
 export function plexImage(baseUrl: string, token: string, path?: string) {
   if (!path) return undefined;
   if (/^https?:\/\//i.test(path)) return path;
+  baseUrl = normalizeBaseUrl(baseUrl);
   const sep = path.includes('?') ? '&' : '?';
   return `${baseUrl.replace(/\/$/, '')}${path}${sep}X-Plex-Token=${token}`;
 }
 
 export async function plexSectionAll(cfg: PlexConfig, sectionKey: string, params?: string) {
+  cfg = normalizeCfg(cfg);
   const qs = params?.startsWith('?') ? params : `?${params ?? 'type=1&sort=addedAt:desc'}`;
   if (!sectionKey) throw new Error('Missing section key');
   const url = `${cfg.baseUrl}/library/sections/${sectionKey}/all${qs}${qs.includes('X-Plex-Token') ? '' : (qs.includes('?') ? '&' : '?') + 'X-Plex-Token=' + cfg.token}`;
@@ -62,6 +87,7 @@ export function withContainer(qs: string, start: number, size: number) {
 
 // Fetch secondary directories for a library section, e.g., genre, year, etc.
 export async function plexLibrarySecondary(cfg: PlexConfig, sectionKey: string, directory: string) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/sections/${sectionKey}/${directory}?X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:secondary:${sectionKey}:${directory}`, 60 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -72,6 +98,7 @@ export async function plexLibrarySecondary(cfg: PlexConfig, sectionKey: string, 
 
 // Generic directory fetch: GET a Plex path under /library (or /library/metadata/.../similar etc.)
 export async function plexDir(cfg: PlexConfig, path: string, qs?: string) {
+  cfg = normalizeCfg(cfg);
   const p = path.startsWith('/') ? path : `/${path}`;
   const url = `${cfg.baseUrl}${p}${p.includes('?') ? '&' : (qs ? (qs.startsWith('?') ? '' : '?') : '?')}X-Plex-Token=${cfg.token}${qs ? `${p.includes('?') ? '&' : ''}${qs.replace(/^\?/, '')}` : ''}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:dir:${p}:${qs || ''}`, 10 * 60 * 1000, async () => {
@@ -82,6 +109,7 @@ export async function plexDir(cfg: PlexConfig, path: string, qs?: string) {
 }
 
 export async function plexMetadata(cfg: PlexConfig, ratingKey: string) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/metadata/${ratingKey}?X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:meta:${ratingKey}`, 24 * 60 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -92,6 +120,7 @@ export async function plexMetadata(cfg: PlexConfig, ratingKey: string) {
 
 // Fetch metadata with extras/external media included to access trailers
 export async function plexMetadataWithExtras(cfg: PlexConfig, ratingKey: string) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/metadata/${ratingKey}?includeExtras=1&includeExternalMedia=1&includeChildren=1&X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:meta_extras:${ratingKey}`, 6 * 60 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -104,13 +133,21 @@ export async function plexMetadataWithExtras(cfg: PlexConfig, ratingKey: string)
 export function plexPartUrl(baseUrl: string, token: string, partKey: string) {
   // partKey may already have query params; append token accordingly
   const sep = partKey.includes('?') ? '&' : '?';
-  const base = baseUrl.replace(/\/$/, '');
+  let base = baseUrl.replace(/\/$/, '');
+
+  // If page is served over HTTPS but Plex URL is HTTP, upgrade to HTTPS
+  // This prevents mixed content blocking in browsers
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    base = base.replace(/^http:\/\//i, 'https://');
+  }
+
   // Ensure partKey begins with '/'
   const key = partKey.startsWith('/') ? partKey : `/${partKey}`;
   return `${base}${key}${sep}X-Plex-Token=${token}`;
 }
 
 export async function plexCollections(cfg: PlexConfig, libraryKey: string) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/sections/${libraryKey}/collections?X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:collections:${libraryKey}`, 30 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -120,6 +157,7 @@ export async function plexCollections(cfg: PlexConfig, libraryKey: string) {
 }
 
 export async function plexSearch(cfg: PlexConfig, query: string, typeNum: 1 | 2 = 1) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/search?type=${typeNum}&query=${encodeURIComponent(query)}&X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:search:${typeNum}:${query}`, 10 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -129,6 +167,7 @@ export async function plexSearch(cfg: PlexConfig, query: string, typeNum: 1 | 2 
 }
 
 export async function plexChildren(cfg: PlexConfig, ratingKey: string) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/library/metadata/${ratingKey}/children?X-Plex-Token=${cfg.token}`;
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:children:${ratingKey}`, 10 * 60 * 1000, async () => {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -139,6 +178,7 @@ export async function plexChildren(cfg: PlexConfig, ratingKey: string) {
 
 // Comprehensive search that searches by multiple GUIDs
 export async function plexComprehensiveGuidSearch(cfg: PlexConfig, guids: string[], typeNum?: 1 | 2) {
+  cfg = normalizeCfg(cfg);
   return cached(`plex:${encodeURIComponent(cfg.baseUrl)}:guidsearch:${guids.join(',')}:${typeNum ?? 0}`, 30 * 60 * 1000, async () => {
     const allMatches: any[] = [];
     const seenKeys = new Set<string>();
@@ -294,6 +334,7 @@ export async function plexUniversalDecision(cfg: PlexConfig, itemId: string, opt
   audioStreamID?: string;
   subtitleStreamID?: string;
 }) {
+  cfg = normalizeCfg(cfg);
   const props = getStreamProps(itemId, { ...options, protocol: options?.protocol || 'hls' });
   const headers = getXPlexHeaders(cfg.token);
   const params = new URLSearchParams();
@@ -326,6 +367,7 @@ export async function plexUniversalDecision(cfg: PlexConfig, itemId: string, opt
 }
 
 export function plexStreamUrl(cfg: PlexConfig, itemId: string, options?: { maxVideoBitrate?: number; protocol?: 'dash' | 'hls'; autoAdjustQuality?: boolean; directPlay?: boolean; directStream?: boolean; audioStreamID?: string; subtitleStreamID?: string; forceReload?: boolean; }) {
+  cfg = normalizeCfg(cfg);
   const props = getStreamProps(itemId, { ...options, protocol: options?.protocol || 'hls' });
   const headers = getXPlexHeaders(cfg.token);
   const params = new URLSearchParams();
@@ -337,6 +379,7 @@ export function plexStreamUrl(cfg: PlexConfig, itemId: string, options?: { maxVi
 }
 
 export async function plexTimelineUpdate(cfg: PlexConfig, itemId: string, time: number, duration: number, state: 'playing' | 'paused' | 'stopped' | 'buffering') {
+  cfg = normalizeCfg(cfg);
   const headers = getXPlexHeaders(cfg.token);
   const params = new URLSearchParams({
     ratingKey: itemId,
@@ -356,6 +399,7 @@ export async function plexTimelineUpdate(cfg: PlexConfig, itemId: string, time: 
 
 // Utilities moved from plex_player to consolidate
 export function plexTranscodeImageUrl(cfg: PlexConfig, path: string, width: number, height: number) {
+  cfg = normalizeCfg(cfg);
   const params = new URLSearchParams({
     width: String(width),
     height: String(height),
@@ -377,6 +421,7 @@ function getPlexSessionId(): string {
 }
 
 export async function plexStopTranscodeSession(cfg: PlexConfig, sessionKey?: string) {
+  cfg = normalizeCfg(cfg);
   const params = new URLSearchParams({
     session: sessionKey || getPlexSessionId(),
     'X-Plex-Token': cfg.token,
@@ -396,12 +441,14 @@ export async function plexKillAllTranscodeSessions(cfg: PlexConfig) {
 }
 
 export async function plexPing(cfg: PlexConfig) {
+  cfg = normalizeCfg(cfg);
   const url = `${cfg.baseUrl}/:/ping?X-Plex-Token=${cfg.token}`;
   const res = await fetch(url);
   return res.ok;
 }
 
 export async function plexUpdateAudioStream(cfg: PlexConfig, partId: string, streamId: string) {
+  cfg = normalizeCfg(cfg);
   const params = new URLSearchParams({
     audioStreamID: streamId,
     allParts: '1',
@@ -415,6 +462,7 @@ export async function plexUpdateAudioStream(cfg: PlexConfig, partId: string, str
 }
 
 export async function plexUpdateSubtitleStream(cfg: PlexConfig, partId: string, streamId: string) {
+  cfg = normalizeCfg(cfg);
   const params = new URLSearchParams({
     subtitleStreamID: streamId,
     allParts: '1',
@@ -428,6 +476,7 @@ export async function plexUpdateSubtitleStream(cfg: PlexConfig, partId: string, 
 }
 
 export async function plexPlayQueue(cfg: PlexConfig, itemId: string, serverId?: string) {
+  cfg = normalizeCfg(cfg);
   // Use serverId if provided, otherwise use wildcard (may cause 400 on some setups)
   const serverPart = serverId || '*';
   const params = new URLSearchParams({
