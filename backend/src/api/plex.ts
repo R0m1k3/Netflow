@@ -93,7 +93,7 @@ router.get('/ratings/:ratingKey',
           const v10 = Math.round(Number((m as any).audienceRating) * 10);
           if (!Number.isNaN(v10)) rtAudience = v10;
         }
-      } catch {}
+      } catch { }
 
       res.json({ imdb, rottenTomatoes: (rtCritic != null || rtAudience != null) ? { critic: rtCritic, audience: rtAudience } : null });
     } catch (error: any) {
@@ -129,7 +129,7 @@ router.get('/servers/:id/connections',
       const protos: Array<'http' | 'https'> = server.protocol === 'https' ? ['https', 'http'] : ['http', 'https'];
       const storedConnections: Array<any> = Array.isArray(server.connections) ? server.connections : [];
       const localAddressSet = new Set((server.localAddresses || []).map((addr: string) => addr.toLowerCase()));
-      const addressPorts: Record<string, Array<{port: number, protocol: string, uri?: string}>> = server.addressPorts || {};
+      const addressPorts: Record<string, Array<{ port: number, protocol: string, uri?: string }>> = server.addressPorts || {};
 
       type Candidate = {
         uri: string;
@@ -156,7 +156,7 @@ router.get('/servers/:id/connections',
             rawHost = parsed.hostname;
             derivedProtocol = (parsed.protocol.replace(':', '') as 'http' | 'https');
             derivedPort = parsed.port ? parseInt(parsed.port, 10) : derivedPort;
-          } catch {}
+          } catch { }
         }
 
         // Look up address-specific port and URI from the mapping if no override
@@ -173,7 +173,7 @@ router.get('/servers/:id/connections',
                 rawHost = parsed.hostname;
                 derivedProtocol = (parsed.protocol.replace(':', '') as 'http' | 'https');
                 derivedPort = parsed.port ? parseInt(parsed.port, 10) : derivedPort;
-              } catch {}
+              } catch { }
             }
           }
         }
@@ -191,7 +191,7 @@ router.get('/servers/:id/connections',
             rawHost = parsed.hostname;
             derivedProtocol = (parsed.protocol.replace(':', '') as 'http' | 'https');
             derivedPort = parsed.port ? parseInt(parsed.port, 10) : derivedPort;
-          } catch {}
+          } catch { }
         }
 
         if (!uri) return undefined;
@@ -252,7 +252,7 @@ router.get('/servers/:id/connections',
             try {
               const u = new URL(entry.uri);
               if (u.hostname.toLowerCase() === lowerHost) return entry;
-            } catch {}
+            } catch { }
           }
           if (entry.address && String(entry.address).toLowerCase() === lowerHost) return entry;
         }
@@ -330,7 +330,7 @@ router.post('/servers/:id/endpoint',
 
       let u: URL;
       try { u = new URL(uri); } catch { throw new AppError('Invalid uri', 400); }
-      const protocol = (u.protocol.replace(':','') as 'http'|'https');
+      const protocol = (u.protocol.replace(':', '') as 'http' | 'https');
       const host = u.hostname;
       const port = parseInt(u.port || '32400', 10);
 
@@ -519,6 +519,9 @@ router.get('/dir/*',
       const mc = await client.getDir(path, req.query as any);
       res.json(mc);
     } catch (error: any) {
+      if (error.message === 'Resource not found' || error.response?.status === 404) {
+        return res.status(404).json({ error: 'Not Found' });
+      }
       logger.error('Failed to fetch directory', error);
       next(new AppError(error.message || 'Failed to fetch directory', 500));
     }
@@ -571,7 +574,7 @@ router.get('/search',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const query = req.query.query as string;
-      const type = req.query.type ? parseInt(req.query.type as string, 10) as 1|2 : undefined;
+      const type = req.query.type ? parseInt(req.query.type as string, 10) as 1 | 2 : undefined;
 
       if (!query) {
         throw new AppError('Query parameter is required', 400);
@@ -596,7 +599,7 @@ router.get('/findByGuid',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const guid = String(req.query.guid || '');
-      const type = req.query.type ? parseInt(String(req.query.type), 10) as 1|2 : undefined;
+      const type = req.query.type ? parseInt(String(req.query.type), 10) as 1 | 2 : undefined;
       if (!guid) throw new AppError('guid is required', 400);
       const client = await getPlexClient(req.user!.id);
       const mc = await client.findByGuid(guid, type);
@@ -946,7 +949,7 @@ router.get('/vod/ratings/:id',
           const v10 = Math.round(Number(m.audienceRating) * 10);
           if (!Number.isNaN(v10)) rtAudience = v10;
         }
-      } catch {}
+      } catch { }
 
       res.json({ imdb, rottenTomatoes: (rtCritic != null || rtAudience != null) ? { critic: rtCritic, audience: rtAudience } : null });
     } catch (e: any) {
