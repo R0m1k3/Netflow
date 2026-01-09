@@ -4,7 +4,7 @@ import Badge from '@/components/Badge';
 import Row from '@/components/Row';
 import { loadSettings } from '@/state/settings';
 import { plexMetadata, plexSearch, plexChildren, plexFindByGuid, plexComprehensiveGuidSearch, plexMetadataWithExtras, plexPartUrl } from '@/services/plex';
-import { plexBackendMetadataWithExtras, plexBackendDir, plexBackendSearch, plexBackendFindByGuid, plexBackendMetadata } from '@/services/plex_backend';
+import { plexBackendMetadataWithExtras, plexBackendDir, plexBackendSearch, plexBackendFindByGuid, plexBackendMetadata, plexBackendShowOnDeck } from '@/services/plex_backend';
 import { tmdbDetails, tmdbImage, tmdbCredits, tmdbExternalIds, tmdbRecommendations, tmdbVideos, tmdbSearchTitle, tmdbTvSeasons, tmdbTvSeasonEpisodes, tmdbSimilar, tmdbImages } from '@/services/tmdb';
 import { apiClient } from '@/services/api';
 import { plexTvAddToWatchlist } from '@/services/plextv';
@@ -256,7 +256,7 @@ export default function Details() {
 
               // Continue watching (onDeck) for shows
               try {
-                const od: any = await plexBackendDir(`/library/metadata/${rk}/onDeck`);
+                const od: any = await plexBackendShowOnDeck(rk);
                 const ep = od?.MediaContainer?.Metadata?.[0];
                 if (ep) {
                   const rKey = String(ep.ratingKey);
@@ -575,7 +575,7 @@ export default function Details() {
           setEpisodesLoading(false);
         }
         if (kind === 'tv' && showKey) {
-          const od: any = await plexBackendDir(`/library/metadata/${showKey}/onDeck?nocache=${Date.now()}`);
+          const od: any = await plexBackendShowOnDeck(showKey);
           const ep = od?.MediaContainer?.Metadata?.[0];
           setOnDeck(ep ? {
             id: `plex:${ep.ratingKey}`,

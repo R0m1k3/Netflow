@@ -630,6 +630,45 @@ router.get('/ondeck',
 );
 
 /**
+ * Get on deck episode for a specific TV show
+ * GET /api/plex/ondeck/:showKey
+ */
+router.get('/ondeck/:showKey',
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const { showKey } = req.params;
+      if (!showKey) throw new AppError('Show key is required', 400);
+
+      const client = await getPlexClient(req.user!.id);
+      const onDeck = await client.getOnDeck();
+
+      // Filter for episodes belonging to this show
+      const showOnDeck = onDeck.find((item: any) =>
+        item.type === 'episode' &&
+        (String(item.grandparentRatingKey) === String(showKey))
+      );
+
+      if (showOnDeck) {
+        res.json({
+          MediaContainer: {
+            Metadata: [showOnDeck]
+          }
+        });
+      } else {
+        res.json({
+          MediaContainer: {
+            Metadata: []
+          }
+        });
+      }
+    } catch (error: any) {
+      logger.error('Failed to get on deck for show', error);
+      next(new AppError(error.message || 'Failed to get on deck for show', 500));
+    }
+  }
+);
+
+/**
  * Get continue watching
  * GET /api/plex/continue
  */

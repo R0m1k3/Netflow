@@ -86,6 +86,16 @@ export async function plexBackendCollections(sectionKey: string) {
   return { MediaContainer: mc };
 }
 
+export async function plexBackendShowOnDeck(showKey: string) {
+  try {
+    const mc = await backendFetch<any>(`/ondeck/${encodeURIComponent(showKey)}`);
+    return { MediaContainer: mc?.MediaContainer || { Metadata: [] } };
+  } catch (e: any) {
+    console.warn('[plexBackendShowOnDeck] request failed', { showKey, error: String(e?.message || e) });
+    return { MediaContainer: { Metadata: [] } } as any;
+  }
+}
+
 export async function plexBackendFindByGuid(guid: string, type?: 1 | 2) {
   const mc = await backendFetch<any>('/findByGuid', type ? { guid, type } : { guid });
   return { MediaContainer: mc };
