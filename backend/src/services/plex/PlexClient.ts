@@ -252,7 +252,7 @@ export class PlexClient {
     const data = await this.cachedRequest<any>(
       `/library/metadata/${ratingKey}`,
       `${this.server.id}:metadata:${ratingKey}`,
-      3600 // 1 hour cache
+      1 // 1 second cache (effectively no cache for metadata to ensure resume works)
     );
 
     return data.MediaContainer.Metadata[0];
@@ -431,7 +431,7 @@ export class PlexClient {
     }
     const fullPath = `/library/metadata/${ratingKey}${usp.size ? `?${usp.toString()}` : ''}`;
     const key = `${this.server.id}:metadata:${ratingKey}:${usp.toString()}`;
-    const data = await this.cachedRequest<any>(fullPath, key, 3600);
+    const data = await this.cachedRequest<any>(fullPath, key, 1);
     return data.MediaContainer.Metadata?.[0];
   }
 
