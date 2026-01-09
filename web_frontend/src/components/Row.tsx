@@ -4,7 +4,15 @@ import { useSearchParams } from 'react-router-dom';
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type Item = { id: string; title: string; image: string; badge?: string; progress?: number };
+type Item = {
+  id: string;
+  title: string;
+  image: string;
+  badge?: string;
+  progress?: number;
+  tmdbId?: string;
+  itemType?: 'movie' | 'show';
+};
 
 export default function Row({ title, items, variant = 'default', onItemClick, browseKey, gutter = 'row' }: {
   title: string;
@@ -83,7 +91,7 @@ export default function Row({ title, items, variant = 'default', onItemClick, br
                 {uniqueItems.map((i) => variant === 'continue' ? (
                   <ContinueCard key={i.id} id={i.id} title={i.title} image={i.image!} progress={i.progress ?? 0} onClick={(id) => onItemClick?.(id)} />
                 ) : (
-                  <LandscapeCard key={i.id} id={i.id} title={i.title} image={i.image!} badge={i.badge} onClick={() => onItemClick?.(i.id)} />
+                  <LandscapeCard key={i.id} id={i.id} title={i.title} image={i.image!} badge={i.badge} tmdbId={i.tmdbId} itemType={i.itemType} onClick={() => onItemClick?.(i.id)} />
                 ))}
               </div>
             </div>

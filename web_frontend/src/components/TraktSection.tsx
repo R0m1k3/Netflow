@@ -16,7 +16,7 @@ interface TraktSectionProps {
 }
 
 export function TraktSection({ type = 'trending', mediaType, title }: TraktSectionProps) {
-  const [items, setItems] = useState<Array<{ id: string; title: string; image: string }>>([]);
+  const [items, setItems] = useState<Array<{ id: string; title: string; image: string; badge?: string; tmdbId?: string; itemType?: 'movie' | 'show' }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -101,7 +101,7 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
   // Convert Trakt payloads to Row items with best-effort ID mapping
   async function mapTraktToRowItems(list: any[], enforcedType?: 'movies' | 'shows') {
     const s = loadSettings();
-    const out: Array<{ id: string; title: string; image: string }> = [];
+    const out: Array<{ id: string; title: string; image: string; badge?: string; tmdbId?: string; itemType?: 'movie' | 'show' }> = [];
 
     // Helper: best-effort Plex GUID lookup by TMDB id
     async function plexByTmdb(tmdbId: number, mTypeNum: 1 | 2) {
@@ -139,7 +139,15 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
           const rk = String(hit.ratingKey);
           const p = hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb;
           const img = p ? apiClient.getPlexImageNoToken(p) : placeholderImg();
-          out.push({ id: `plex:${rk}`, title, image: img });
+          const badge = hit.rating ? `⭐ ${hit.rating.toFixed(1)}` : hit.contentRating;
+          out.push({
+            id: `plex:${rk}`,
+            title,
+            image: img,
+            badge,
+            tmdbId: String(tmdbId),
+            itemType: isMovie ? 'movie' : 'show'
+          });
           continue;
         }
       }
@@ -148,7 +156,15 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
       if (tmdbId && s.tmdbBearer) {
         let img = '';
         try { img = (await tmdbBestBackdropUrl(s.tmdbBearer!, mediaKey as any, tmdbId, 'en')) || ''; } catch { }
-        out.push({ id: `tmdb:${mediaKey}:${tmdbId}`, title, image: img || placeholderImg() });
+        const badge = media.rating ? `⭐ ${media.rating.toFixed(1)}` : undefined;
+        out.push({
+          id: `tmdb:${mediaKey}:${tmdbId}`,
+          title,
+          image: img || placeholderImg(),
+          badge,
+          tmdbId: String(tmdbId),
+          itemType: isMovie ? 'movie' : 'show'
+        });
         continue;
       }
 
@@ -176,7 +192,15 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
             if (hit) {
               const rk = String(hit.ratingKey);
               const img = (hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb) ? apiClient.getPlexImageNoToken(hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb) : placeholderImg();
-              out.push({ id: `plex:${rk}`, title, image: img });
+              const badge = hit.rating ? `⭐ ${hit.rating.toFixed(1)}` : hit.contentRating;
+              out.push({
+                id: `plex:${rk}`,
+                title,
+                image: img,
+                badge,
+                tmdbId: tmdbId ? String(tmdbId) : undefined,
+                itemType: isMovie ? 'movie' : 'show'
+              });
               continue;
             }
           } catch { }

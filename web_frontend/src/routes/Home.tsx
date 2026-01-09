@@ -15,7 +15,15 @@ import SectionBanner from '@/components/SectionBanner';
 import { TraktSection } from '@/components/TraktSection';
 import { useTranslation } from 'react-i18next';
 
-type Item = { id: string; title: string; image?: string; subtitle?: string; badge?: string };
+type Item = {
+  id: string;
+  title: string;
+  image?: string;
+  subtitle?: string;
+  badge?: string;
+  tmdbId?: string;
+  itemType?: 'movie' | 'show';
+};
 
 export default function Home() {
   const { t } = useTranslation();
@@ -93,6 +101,9 @@ export default function Home() {
             id: `tmdb:tv:${String(r.id)}`,
             title: r.name || r.title,
             image: tmdbImage(r.backdrop_path, 'w780') || tmdbImage(r.poster_path, 'w500'),
+            badge: r.vote_average ? `⭐ ${r.vote_average.toFixed(1)}` : undefined,
+            tmdbId: String(r.id),
+            itemType: 'show'
           })) || [];
           rowsData.push({ title: t('home.popular_plex'), items: items.slice(0, 8) });
           rowsData.push({ title: t('home.trending_now'), items: items.slice(8, 16) });
@@ -119,7 +130,7 @@ export default function Home() {
                 overview: f.overview,
                 poster: tmdbImage(f.poster_path, 'w500') || undefined,
                 backdrop: tmdbImage(f.backdrop_path, 'w1280') || undefined,
-                rating: undefined,
+                rating: f.vote_average ? `⭐ ${f.vote_average.toFixed(1)}` : undefined,
                 ytKey,
                 id: `tmdb:tv:${String(f.id)}`,
                 genres,
@@ -168,6 +179,7 @@ export default function Home() {
                 id: inferIdFromGuid(m) || `${encodeURIComponent(m.tmdbGuid || '')}`,
                 title: m.title || m.grandparentTitle || 'Title',
                 image: m.Image?.find((img: any) => img.type === 'coverArt' || img.type === 'background')?.url,
+                badge: m.rating ? `⭐ ${m.rating.toFixed(1)}` : m.contentRating
               }));
               const row: any = { title: t('home.watchlist'), items: wlItems };
               row.browseKey = '/plextv/watchlist';
@@ -191,7 +203,12 @@ export default function Home() {
                 const items: Item[] = meta.slice(0, 12).map((m: any) => {
                   const p = m.thumb || m.parentThumb || m.grandparentThumb || m.art;
                   const img = apiClient.getPlexImageNoToken(p || '');
-                  return { id: `plex:${m.ratingKey}`, title: m.title || m.grandparentTitle || 'Title', image: img };
+                  return {
+                    id: `plex:${m.ratingKey}`,
+                    title: m.title || m.grandparentTitle || 'Title',
+                    image: img,
+                    badge: m.rating ? `⭐ ${m.rating.toFixed(1)}` : m.contentRating
+                  };
                 });
                 const row: any = { title: gr.label, items };
                 row.browseKey = path;
@@ -232,7 +249,7 @@ export default function Home() {
                 overview: mm.summary,
                 poster,
                 backdrop,
-                rating: mm.contentRating || undefined,
+                rating: mm.rating ? `⭐ ${mm.rating.toFixed(1)}` : mm.contentRating || undefined,
                 videoUrl,
                 id: `plex:${String(mm.ratingKey)}`,
                 genres,

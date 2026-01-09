@@ -21,6 +21,8 @@ type MediaItem = {
   badge?: string;
   rank?: number;
   mediaType?: 'movie' | 'show';
+  tmdbId?: string;
+  itemType?: 'movie' | 'show';
 };
 
 export default function NewPopular() {
@@ -87,7 +89,9 @@ export default function NewPopular() {
       image: m.poster_path ? tmdbImage(m.poster_path, 'w342') : undefined,
       subtitle: m.release_date?.split('-')[0],
       badge: m.vote_average ? `⭐ ${m.vote_average.toFixed(1)}` : undefined,
-      mediaType: 'movie' as const
+      mediaType: 'movie' as const,
+      tmdbId: String(m.id),
+      itemType: 'movie' as const
     })) || [];
     setTrendingMovies(movies);
 
@@ -98,7 +102,9 @@ export default function NewPopular() {
       image: s.poster_path ? tmdbImage(s.poster_path, 'w342') : undefined,
       subtitle: s.first_air_date?.split('-')[0],
       badge: s.vote_average ? `⭐ ${s.vote_average.toFixed(1)}` : undefined,
-      mediaType: 'show' as const
+      mediaType: 'show' as const,
+      tmdbId: String(s.id),
+      itemType: 'show' as const
     })) || [];
     setTrendingShows(shows);
 
@@ -194,7 +200,9 @@ export default function NewPopular() {
             subtitle: m.movie.year?.toString(),
             badge: `#${i + 1}`,
             rank: i + 1,
-            mediaType: 'movie' as const
+            mediaType: 'movie' as const,
+            tmdbId: m.movie.ids?.tmdb ? String(m.movie.ids.tmdb) : undefined,
+            itemType: 'movie' as const
           };
         })
       );
@@ -215,7 +223,9 @@ export default function NewPopular() {
             subtitle: s.show.year?.toString(),
             badge: `#${i + 1}`,
             rank: i + 1,
-            mediaType: 'show' as const
+            mediaType: 'show' as const,
+            tmdbId: s.show.ids?.tmdb ? String(s.show.ids.tmdb) : undefined,
+            itemType: 'show' as const
           };
         })
       );
