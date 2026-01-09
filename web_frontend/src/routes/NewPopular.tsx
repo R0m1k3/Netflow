@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { tmdbTrending, tmdbImage, tmdbUpcoming, tmdbDetails, tmdbVideos, tmdbImages } from '@/services/tmdb';
 import { traktAnticipated, traktMostWatched } from '@/services/trakt';
 import { plexRecentlyAdded, plexImage, plexFindByGuid, plexPopular } from '@/services/plex';
@@ -23,6 +24,7 @@ type MediaItem = {
 };
 
 export default function NewPopular() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const settings = loadSettings();
   const tmdbKey = settings.tmdbBearer || '';
@@ -146,7 +148,7 @@ export default function NewPopular() {
             const hit2 = byGuid2?.MediaContainer?.Metadata?.[0];
             if (hit2?.ratingKey) heroId = `plex:${hit2.ratingKey}`;
           }
-        } catch {}
+        } catch { }
       }
 
       setHero({
@@ -181,7 +183,7 @@ export default function NewPopular() {
             try {
               const details = await tmdbDetails(tmdbKey, 'movie', m.movie.ids.tmdb);
               image = details.poster_path ? tmdbImage(details.poster_path, 'w342') : undefined;
-            } catch {}
+            } catch { }
           }
           return {
             id: m.movie.ids?.tmdb ? `tmdb:movie:${m.movie.ids.tmdb}` : (m.movie.ids?.imdb ? `tmdb:movie:${m.movie.ids.imdb}` : `trakt:movie:${m.movie.ids?.trakt ?? i}`),
@@ -202,7 +204,7 @@ export default function NewPopular() {
             try {
               const details = await tmdbDetails(tmdbKey, 'tv', s.show.ids.tmdb);
               image = details.poster_path ? tmdbImage(details.poster_path, 'w342') : undefined;
-            } catch {}
+            } catch { }
           }
           return {
             id: s.show.ids?.tmdb ? `tmdb:tv:${s.show.ids.tmdb}` : (s.show.ids?.imdb ? `tmdb:tv:${s.show.ids.imdb}` : `trakt:show:${s.show.ids?.trakt ?? i}`),
@@ -224,13 +226,13 @@ export default function NewPopular() {
       if (tmdbKey) {
         const trending = await tmdbTrending(tmdbKey, 'movie', 'day');
         const items = trending.results?.slice(0, 10).map((item: any, i: number) => ({
-        id: item.media_type === 'movie' ? `tmdb:movie:${item.id}` : `tmdb:tv:${item.id}`,
-        title: item.title || item.name,
-        image: item.poster_path ? tmdbImage(item.poster_path, 'w342') : undefined,
-        subtitle: (item.release_date || item.first_air_date)?.split('-')[0],
-        badge: `#${i + 1}`,
-        rank: i + 1,
-        mediaType: item.media_type as 'movie' | 'show'
+          id: item.media_type === 'movie' ? `tmdb:movie:${item.id}` : `tmdb:tv:${item.id}`,
+          title: item.title || item.name,
+          image: item.poster_path ? tmdbImage(item.poster_path, 'w342') : undefined,
+          subtitle: (item.release_date || item.first_air_date)?.split('-')[0],
+          badge: `#${i + 1}`,
+          rank: i + 1,
+          mediaType: item.media_type as 'movie' | 'show'
         })) || [];
         setTop10(items);
       } else {
@@ -249,7 +251,7 @@ export default function NewPopular() {
       try {
         const res = await fetch('https://ipapi.co/country/');
         if (res.ok) return (await res.text()).trim();
-      } catch {}
+      } catch { }
       return 'US';
     });
     const upcoming = await tmdbUpcoming(tmdbKey, region || 'US');
@@ -276,7 +278,7 @@ export default function NewPopular() {
             try {
               const details = await tmdbDetails(tmdbKey, 'movie', item.movie.ids.tmdb);
               image = details.poster_path ? tmdbImage(details.poster_path, 'w342') : undefined;
-            } catch {}
+            } catch { }
           }
           return {
             id: item.movie.ids?.tmdb ? `tmdb:movie:${item.movie.ids.tmdb}` : (item.movie.ids?.imdb ? `tmdb:movie:${item.movie.ids.imdb}` : `trakt:movie:${item.movie.ids?.trakt ?? 0}`),
@@ -323,7 +325,7 @@ export default function NewPopular() {
               itemType={hero.id.includes(':tv:') ? 'show' : 'movie'}
               tmdbId={hero.id.startsWith('tmdb:') ? hero.id.split(':')[2] : undefined}
               variant="button"
-              />
+            />
           )}
         />
       )}
@@ -334,15 +336,15 @@ export default function NewPopular() {
           <div className="mb-6 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
             <div className="flex items-center gap-3">
               <svg className="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
               </svg>
               <div className="text-sm text-yellow-200">
-                TMDB API key not configured. Some content and images may not be available.
+                {t('new_popular.no_key_warning')}
                 <button
                   onClick={() => navigate('/settings')}
                   className="ml-2 text-yellow-400 hover:text-yellow-300 underline"
                 >
-                  Configure in Settings
+                  {t('new_popular.configure_settings')}
                 </button>
               </div>
             </div>
@@ -352,19 +354,18 @@ export default function NewPopular() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-6">
             {[
-              { id: 'trending' as const, label: 'Trending Now' },
-              { id: 'top10' as const, label: 'Top 10' },
-              { id: 'coming-soon' as const, label: 'Coming Soon' },
-              { id: 'worth-wait' as const, label: 'Worth the Wait' }
+              { id: 'trending' as const, label: t('new_popular.tabs.trending') },
+              { id: 'top10' as const, label: t('new_popular.tabs.top10') },
+              { id: 'coming-soon' as const, label: t('new_popular.tabs.coming_soon') },
+              { id: 'worth-wait' as const, label: t('new_popular.tabs.worth_wait') }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
-                  activeTab === tab.id
+                className={`pb-2 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id
                     ? 'text-white border-white'
                     : 'text-white/50 border-transparent hover:text-white/80'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -379,9 +380,9 @@ export default function NewPopular() {
               onChange={(e) => setContentType(e.target.value as any)}
               className="bg-black/50 text-white px-3 py-1.5 rounded-md text-sm border border-white/20"
             >
-              <option value="all">All</option>
-              <option value="movies">Movies</option>
-              <option value="shows">TV Shows</option>
+              <option value="all">{t('new_popular.filters.all')}</option>
+              <option value="movies">{t('new_popular.filters.movies')}</option>
+              <option value="shows">{t('new_popular.filters.shows')}</option>
             </select>
 
             {/* Period Filter */}
@@ -391,9 +392,9 @@ export default function NewPopular() {
                 onChange={(e) => setPeriod(e.target.value as any)}
                 className="bg-black/50 text-white px-3 py-1.5 rounded-md text-sm border border-white/20"
               >
-                <option value="daily">Today</option>
-                <option value="weekly">This Week</option>
-                <option value="monthly">This Month</option>
+                <option value="daily">{t('new_popular.filters.daily')}</option>
+                <option value="weekly">{t('new_popular.filters.weekly')}</option>
+                <option value="monthly">{t('new_popular.filters.monthly')}</option>
               </select>
             )}
           </div>
@@ -419,7 +420,7 @@ export default function NewPopular() {
               <>
                 {recentlyAdded.length > 0 && (
                   <Row
-                    title="New on Plex"
+                    title={t('new_popular.headers.new_on_plex')}
                     items={recentlyAdded}
                     gutter="edge"
                     onItemClick={handleItemClick}
@@ -427,7 +428,7 @@ export default function NewPopular() {
                 )}
                 {popularPlex.length > 0 && (
                   <Row
-                    title="Popular on Plex"
+                    title={t('new_popular.headers.popular_on_plex')}
                     items={popularPlex}
                     gutter="edge"
                     onItemClick={handleItemClick}
@@ -435,7 +436,7 @@ export default function NewPopular() {
                 )}
                 {(contentType === 'all' || contentType === 'movies') && trendingMovies.length > 0 && (
                   <Row
-                    title="Trending Movies"
+                    title={t('new_popular.headers.trending_movies')}
                     items={trendingMovies}
                     gutter="edge"
                     onItemClick={handleItemClick}
@@ -443,7 +444,7 @@ export default function NewPopular() {
                 )}
                 {(contentType === 'all' || contentType === 'shows') && trendingShows.length > 0 && (
                   <Row
-                    title="Trending TV Shows"
+                    title={t('new_popular.headers.trending_shows')}
                     items={trendingShows}
                     gutter="edge"
                     onItemClick={handleItemClick}
@@ -455,7 +456,7 @@ export default function NewPopular() {
             {activeTab === 'top10' && top10.length > 0 && (
               <div>
                 <h2 className="text-xl font-semibold text-white mb-4">
-                  Top 10 {period === 'daily' ? 'Today' : period === 'weekly' ? 'This Week' : 'This Month'}
+                  {t('new_popular.headers.top_10', { period: period === 'daily' ? t('new_popular.periods.today') : period === 'weekly' ? t('new_popular.periods.this_week') : t('new_popular.periods.this_month') })}
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   {top10.map((item, index) => (
@@ -478,7 +479,7 @@ export default function NewPopular() {
                         )}
                         <div className="absolute top-0 left-0 text-6xl font-black text-white px-2 py-1
                                       drop-shadow-[2px_2px_4px_rgba(0,0,0,0.9)]"
-                             style={{ WebkitTextStroke: '2px black' }}>
+                          style={{ WebkitTextStroke: '2px black' }}>
                           {index + 1}
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -495,7 +496,7 @@ export default function NewPopular() {
 
             {activeTab === 'coming-soon' && upcoming.length > 0 && (
               <Row
-                title="Coming Soon"
+                title={t('new_popular.headers.coming_soon')}
                 items={upcoming}
                 gutter="edge"
                 onItemClick={handleItemClick}
@@ -504,7 +505,7 @@ export default function NewPopular() {
 
             {activeTab === 'worth-wait' && anticipated.length > 0 && (
               <Row
-                title="Most Anticipated"
+                title={t('new_popular.headers.most_anticipated')}
                 items={anticipated}
                 gutter="edge"
                 onItemClick={handleItemClick}

@@ -22,6 +22,42 @@
         "my_list": "Ma Liste",
         "new_popular": "Nouveautés"
     },
+    "new_popular": {
+        "title": "Nouveautés & Populaires",
+        "tabs": {
+            "trending": "Tendances",
+            "top10": "Top 10",
+            "coming_soon": "Prochainement",
+            "worth_wait": "À surveiller"
+        },
+        "filters": {
+            "all": "Tout",
+            "movies": "Films",
+            "shows": "Séries",
+            "daily": "Aujourd'hui",
+            "weekly": "Cette semaine",
+            "monthly": "Ce mois-ci"
+        },
+        "headers": {
+            "new_on_plex": "Nouveautés sur Plex",
+            "popular_on_plex": "Populaire sur Plex",
+            "trending_movies": "Films Tendances",
+            "trending_shows": "Séries Tendances",
+            "top_10": "Top 10 {{period}}",
+            "coming_soon": "Prochainement",
+            "most_anticipated": "Les plus attendus"
+        },
+        "no_key_warning": "Clé API TMDB non configurée. Certains contenus peuvent manquer.",
+        "configure_settings": "Configurer dans les paramètres",
+        "periods": {
+            "today": "Aujourd'hui",
+            "this_week": "Cette semaine",
+            "this_month": "Ce mois-ci"
+        }
+    },
+    "row": {
+        "browse": "Voir tout"
+    },
     "auth": {
         "login_plex": "Se connecter avec Plex",
         "login_server_manual": "Connexion Manuelle",

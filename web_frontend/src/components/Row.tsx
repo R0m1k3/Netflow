@@ -1,7 +1,9 @@
 import LandscapeCard from './LandscapeCard';
 import ContinueCard from './ContinueCard';
 import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Item = { id: string; title: string; image: string; badge?: string; progress?: number };
 
@@ -13,6 +15,7 @@ export default function Row({ title, items, variant = 'default', onItemClick, br
   browseKey?: string;
   gutter?: 'row' | 'inherit' | 'edge'; // 'row' = left-only wrapper + edge scroller; 'inherit' = plain; 'edge' = edge scroller only (no wrapper padding)
 }) {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   // Deduplicate by stable item id to avoid React key collisions
   const uniqueItems = useMemo(() => {
@@ -40,7 +43,7 @@ export default function Row({ title, items, variant = 'default', onItemClick, br
                   className="flex items-center gap-1 text-sm text-neutral-300 hover:text-white opacity-0 group-hover:opacity-100 translate-x-0 group-hover:translate-x-1 transition-all duration-500 ease-out"
                   title="Browse"
                 >
-                  <span>Browse</span>
+                  <span title={t('row.browse')}>{t('row.browse')}</span>
                   <span aria-hidden>›</span>
                 </button>
               )}
