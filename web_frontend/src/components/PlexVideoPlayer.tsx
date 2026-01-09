@@ -119,15 +119,16 @@ export default function PlexVideoPlayer({
           debug: { logLevel: 1 },
         });
 
-        // Initialize DASH player
-        dash.initialize(video, src, autoPlay);
-
         // Handle DASH events
         dash.on(dashjs.MediaPlayer.events.MANIFEST_LOADED, () => {
           // console.log('DASH manifest loaded');
           if (!isReady) {
             setIsReady(true);
             onReady?.();
+          }
+          // Seek to startTime after manifest is loaded (video.currentTime doesn't work reliably with DASH)
+          if (startTime && startTime > 0) {
+            dash.seek(startTime);
           }
         });
 
@@ -137,8 +138,8 @@ export default function PlexVideoPlayer({
 
           // Check for Dolby Vision codec mismatch errors
           if (errorMsg.includes('dolbyvision') ||
-              errorMsg.includes('codec') ||
-              errorMsg.includes('CHUNK_DEMUXER_ERROR_APPEND_FAILED')) {
+            errorMsg.includes('codec') ||
+            errorMsg.includes('CHUNK_DEMUXER_ERROR_APPEND_FAILED')) {
             console.warn('Dolby Vision codec error detected, triggering fallback');
             onCodecError?.(errorMsg);
           } else {
@@ -154,11 +155,14 @@ export default function PlexVideoPlayer({
           onBuffering?.(false);
         });
 
+        // Initialize DASH player
+        dash.initialize(video, src, autoPlay);
+
         dashRef.current = dash;
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         // Safari native HLS support
         // console.log('Using native HLS support');
-        try { (video as any).crossOrigin = 'use-credentials'; } catch {}
+        try { (video as any).crossOrigin = 'use-credentials'; } catch { }
         video.src = src;
         video.load();
       } else if (Hls.isSupported()) {
@@ -199,7 +203,7 @@ export default function PlexVideoPlayer({
           if (data.fatal || data.details === 'bufferStalledError') {
             console.error('HLS error:', event, data);
           }
-          
+
           if (data.fatal) {
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
@@ -227,7 +231,7 @@ export default function PlexVideoPlayer({
       } else {
         // Fallback to direct playback
         // console.log('HLS not supported, trying direct playback');
-        try { (video as any).crossOrigin = 'use-credentials'; } catch {}
+        try { (video as any).crossOrigin = 'use-credentials'; } catch { }
         video.src = src;
         video.load();
       }
@@ -265,9 +269,9 @@ export default function PlexVideoPlayer({
 
       // Check for Dolby Vision or codec mismatch errors
       if (errorMsg.includes('dolbyvision') ||
-          errorMsg.includes('codec') ||
-          errorMsg.includes('CHUNK_DEMUXER_ERROR_APPEND_FAILED') ||
-          errorMsg.includes('MEDIA_ERR_SRC_NOT_SUPPORTED')) {
+        errorMsg.includes('codec') ||
+        errorMsg.includes('CHUNK_DEMUXER_ERROR_APPEND_FAILED') ||
+        errorMsg.includes('MEDIA_ERR_SRC_NOT_SUPPORTED')) {
         console.warn('Dolby Vision or codec error detected, triggering fallback');
         onCodecError?.(errorMsg);
       } else {

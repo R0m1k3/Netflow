@@ -19,7 +19,7 @@ export default function BrowseModal() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | ''>('');
-  const [tmdbCtx, setTmdbCtx] = useState<{ kind: 'recs'|'similar'; media: 'movie'|'tv'; id: string; page: number; total?: number } | null>(null);
+  const [tmdbCtx, setTmdbCtx] = useState<{ kind: 'recs' | 'similar'; media: 'movie' | 'tv'; id: string; page: number; total?: number } | null>(null);
 
   useEffect(() => {
     if (!open || !bkey) return;
@@ -29,12 +29,12 @@ export default function BrowseModal() {
       setTmdbCtx(null);
       try {
         if (bkey.startsWith('/plextv/watchlist')) {
-          if (!s.plexTvToken) throw new Error('Plex Account Token missing. Add it in Settings.');
-          const wl: any = await plexTvWatchlist(s.plexTvToken);
+          // Token check removed as backend proxy handles auth
+          const wl: any = await plexTvWatchlist();
           const meta = wl?.MediaContainer?.Metadata || [];
           setTitle('Watchlist');
           const rows: Item[] = meta.map((m: any) => ({
-            id: inferIdFromGuid(m) || `guid:${encodeURIComponent(m.guid||'')}`,
+            id: inferIdFromGuid(m) || `guid:${encodeURIComponent(m.guid || '')}`,
             title: m.title || m.grandparentTitle || 'Title',
             image: m.thumb || m.parentThumb || m.grandparentThumb,
           }));
@@ -45,7 +45,7 @@ export default function BrowseModal() {
         if (bkey.startsWith('tmdb:')) {
           const parts = bkey.split(':'); // tmdb:<kind>:<media>:<id>
           const kind = parts[1];
-          const media = parts[2] as 'movie'|'tv';
+          const media = parts[2] as 'movie' | 'tv';
           const tmdbId = parts[3];
           if (!s.tmdbBearer) throw new Error('TMDB key not configured');
           setTitle(kind === 'recs' ? 'Recommendations' : 'More Like This');
