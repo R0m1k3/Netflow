@@ -48,7 +48,7 @@ export type TmdbTrendingItem = {
 /**
  * Get trending content (uses backend proxy)
  */
-export async function tmdbTrending(key: string, media: 'movie'|'tv' = 'movie', window: 'day'|'week' = 'week') {
+export async function tmdbTrending(key: string, media: 'movie' | 'tv' | 'all' = 'movie', window: 'day' | 'week' = 'week') {
   // Note: key parameter is kept for compatibility but not used (backend handles auth)
   return cached(`tmdb:trending:${media}:${window}`, 30 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/trending/${media}/${window}`);
@@ -58,14 +58,14 @@ export async function tmdbTrending(key: string, media: 'movie'|'tv' = 'movie', w
 /**
  * Get image URL (client-side helper)
  */
-export function tmdbImage(path?: string, size: 'w500'|'w780'|'w1280'|'original' = 'w780') {
+export function tmdbImage(path?: string, size: 'w500' | 'w780' | 'w1280' | 'original' = 'w780') {
   return path ? `${IMG}/${size}${path}` : undefined;
 }
 
 /**
  * Get movie or TV details
  */
-export async function tmdbDetails(key: string, media: 'movie'|'tv', id: string | number) {
+export async function tmdbDetails(key: string, media: 'movie' | 'tv', id: string | number) {
   return cached(`tmdb:details:${media}:${id}`, 24 * 60 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/${media}/${id}`);
   });
@@ -74,7 +74,7 @@ export async function tmdbDetails(key: string, media: 'movie'|'tv', id: string |
 /**
  * Get credits
  */
-export async function tmdbCredits(key: string, media: 'movie'|'tv', id: string | number) {
+export async function tmdbCredits(key: string, media: 'movie' | 'tv', id: string | number) {
   return cached(`tmdb:credits:${media}:${id}`, 24 * 60 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/${media}/${id}/credits`);
   });
@@ -83,7 +83,7 @@ export async function tmdbCredits(key: string, media: 'movie'|'tv', id: string |
 /**
  * Get external IDs
  */
-export async function tmdbExternalIds(key: string, media: 'movie'|'tv', id: string | number) {
+export async function tmdbExternalIds(key: string, media: 'movie' | 'tv', id: string | number) {
   return cached(`tmdb:external:${media}:${id}`, 24 * 60 * 60 * 1000, async () => {
     const details = await tmdbBackendFetch(`/${media}/${id}`, {
       append_to_response: 'external_ids'
@@ -95,8 +95,8 @@ export async function tmdbExternalIds(key: string, media: 'movie'|'tv', id: stri
 /**
  * Get recommendations
  */
-export async function tmdbRecommendations(key: string, media: 'movie'|'tv', id: string | number, page?: number) {
-  return cached(`tmdb:recs:${media}:${id}:${page||1}`, 6 * 60 * 60 * 1000, async () => {
+export async function tmdbRecommendations(key: string, media: 'movie' | 'tv', id: string | number, page?: number) {
+  return cached(`tmdb:recs:${media}:${id}:${page || 1}`, 6 * 60 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/${media}/${id}/recommendations`, { page });
   });
 }
@@ -104,8 +104,8 @@ export async function tmdbRecommendations(key: string, media: 'movie'|'tv', id: 
 /**
  * Get similar content
  */
-export async function tmdbSimilar(key: string, media: 'movie'|'tv', id: string | number, page?: number) {
-  return cached(`tmdb:similar:${media}:${id}:${page||1}`, 6 * 60 * 60 * 1000, async () => {
+export async function tmdbSimilar(key: string, media: 'movie' | 'tv', id: string | number, page?: number) {
+  return cached(`tmdb:similar:${media}:${id}:${page || 1}`, 6 * 60 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/${media}/${id}/similar`, { page });
   });
 }
@@ -113,8 +113,8 @@ export async function tmdbSimilar(key: string, media: 'movie'|'tv', id: string |
 /**
  * Search for titles
  */
-export async function tmdbSearchTitle(key: string, media: 'movie'|'tv', query: string, year?: string | number) {
-  return cached(`tmdb:search:${media}:${query}:${year||''}`, 6 * 60 * 60 * 1000, async () => {
+export async function tmdbSearchTitle(key: string, media: 'movie' | 'tv', query: string, year?: string | number) {
+  return cached(`tmdb:search:${media}:${query}:${year || ''}`, 6 * 60 * 60 * 1000, async () => {
     const endpoint = media === 'movie' ? '/search/movie' : '/search/tv';
     return tmdbBackendFetch(endpoint, { query, year });
   });
@@ -161,7 +161,7 @@ export async function tmdbPersonCombined(key: string, personId: string | number)
 /**
  * Get videos
  */
-export async function tmdbVideos(key: string, media: 'movie'|'tv', id: string | number) {
+export async function tmdbVideos(key: string, media: 'movie' | 'tv', id: string | number) {
   return cached(`tmdb:videos:${media}:${id}`, 6 * 60 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/${media}/${id}/videos`);
   });
@@ -179,7 +179,7 @@ export async function tmdbSearchMulti(key: string, query: string) {
 /**
  * Get popular content
  */
-export async function tmdbPopular(key: string, media: 'movie'|'tv' = 'movie') {
+export async function tmdbPopular(key: string, media: 'movie' | 'tv' = 'movie') {
   return cached(`tmdb:popular:${media}`, 6 * 60 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/${media}/popular`);
   });
@@ -188,7 +188,7 @@ export async function tmdbPopular(key: string, media: 'movie'|'tv' = 'movie') {
 /**
  * Get images
  */
-export async function tmdbImages(key: string, media: 'movie'|'tv', id: string | number, includeImageLanguage = 'en,null') {
+export async function tmdbImages(key: string, media: 'movie' | 'tv', id: string | number, includeImageLanguage = 'en,null') {
   return cached(`tmdb:images:${media}:${id}:${includeImageLanguage}`, 24 * 60 * 60 * 1000, async () => {
     return tmdbBackendFetch(`/${media}/${id}/images`, { language: includeImageLanguage });
   });
@@ -197,7 +197,7 @@ export async function tmdbImages(key: string, media: 'movie'|'tv', id: string | 
 /**
  * Get best backdrop URL
  */
-export async function tmdbBestBackdropUrl(key: string, media: 'movie'|'tv', id: string | number, lang: string = 'en'): Promise<string | undefined> {
+export async function tmdbBestBackdropUrl(key: string, media: 'movie' | 'tv', id: string | number, lang: string = 'en'): Promise<string | undefined> {
   try {
     const imgs = await tmdbImages(key, media, id, `${lang},null`);
     const list = (imgs as any).backdrops || [];

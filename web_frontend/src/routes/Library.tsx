@@ -25,6 +25,7 @@ export default function Library() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'movies' | 'shows'>('all');
   const [needsPlex, setNeedsPlex] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     const s = loadSettings();
@@ -141,30 +142,42 @@ export default function Library() {
               overscan={3}
               hasMore={hasMore}
               loadMore={() => {
-                if (!hasMore) return;
+                if (!hasMore || loadingMore) return;
                 const s = loadSettings();
                 if (!s.plexBaseUrl || !s.plexToken || !active) return;
+
+                setLoadingMore(true);
                 // load next page
                 (async () => {
-                  const base = '?sort=addedAt:desc';
-                  const size = 100;
-                  const all: any = await plexBackendLibraryAll(active, { sort: 'addedAt:desc', offset: start, limit: size });
-                  const mc = all?.MediaContainer?.Metadata || [];
-                  const mapped: Item[] = mc.map((m: any, i: number) => {
-                    const p = m.thumb || m.parentThumb || m.grandparentThumb;
-                    const img = apiClient.getPlexImageNoToken(p || '');
-                    return {
-                      id: String(m.ratingKey || i),
-                      title: m.title || m.grandparentTitle,
-                      image: img,
-                      subtitle: m.year ? String(m.year) : undefined,
-                    };
-                  });
-                  setItems((prev) => [...prev, ...mapped]);
-                  const total = all?.MediaContainer?.totalSize ?? (start + mapped.length);
-                  const newStart = start + mapped.length;
-                  setStart(newStart);
-                  setHasMore(newStart < total);
+                  try {
+                    const base = '?sort=addedAt:desc';
+                    const size = 100;
+                    const all: any = await plexBackendLibraryAll(active, { sort: 'addedAt:desc', offset: start, limit: size });
+                    const mc = all?.MediaContainer?.Metadata || [];
+                    const mapped: Item[] = mc.map((m: any, i: number) => {
+                      const p = m.thumb || m.parentThumb || m.grandparentThumb;
+                      const img = apiClient.getPlexImageNoToken(p || '');
+                      return {
+                        id: String(m.ratingKey || i),
+                        title: m.title || m.grandparentTitle,
+                        image: img,
+                        subtitle: m.year ? String(m.year) : undefined,
+                        badge: 'Plex',
+                      };
+                    });
+                    setItems((prev) => {
+                      // Deduplicate just in case
+                      const existing = new Set(prev.map(p => p.id));
+                      const novel = mapped.filter(m => !existing.has(m.id));
+                      return [...prev, ...novel];
+                    });
+                    const total = all?.MediaContainer?.totalSize ?? (start + mapped.length);
+                    const newStart = start + mapped.length;
+                    setStart(newStart);
+                    setHasMore(newStart < total);
+                  } finally {
+                    setLoadingMore(false);
+                  }
                 })();
               }}
               render={(it) => <PosterCard title={it.title} image={it.image} onClick={() => nav(`/details/plex:${it.id}`)} />}

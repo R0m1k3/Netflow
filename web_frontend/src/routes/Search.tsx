@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { loadSettings } from '@/state/settings';
 import { plexSearch } from '@/services/plex';
 import { apiClient } from '@/services/api';
-import { plexBackendLibraries, plexBackendSearch } from '@/services/plex_backend';
+import { plexBackendLibraries, plexBackendSearch, plexBackendCollections } from '@/services/plex_backend';
 import { tmdbSearchMulti, tmdbTrending, tmdbImage, tmdbPopular } from '@/services/tmdb';
 import SearchInput from '@/components/SearchInput';
 import SearchResults from '@/components/SearchResults';
@@ -32,6 +32,7 @@ export default function Search() {
   const [loading, setLoading] = useState(false);
   const [searchMode, setSearchMode] = useState<'idle' | 'searching' | 'results'>('idle');
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastSearchIdRef = useRef(0);
 
   // Load initial content on mount
   useEffect(() => {
@@ -43,7 +44,51 @@ export default function Search() {
     if (query) {
       setSearchParams({ q: query });
       setSearchMode('searching');
-      performSearch(query);
+      // performSearch is debounced, so we don't need to call it immediately here if we trust the debounce.
+      // However, the original code called it immediately AND had a debounce.
+      // This causes double calls. The SearchInput often debounces its onChange, or user typing triggers many changes.
+      // We should rely on the debounce in handleSearch.
+      // BUT, checking line 46, previously it called performSearch(query) immediately.
+      // If we remove it, the URL sync happens but search might not start until debounce fires?
+      // Actually, handleSearch calls setQuery, which triggers this useEffect.
+      // AND handleSearch sets a timeout to call performSearch.
+      // So we have TWO calls. 
+      // The fix is to remove performSearch(query) from this useEffect, OR remove the timeout from handleSearch.
+      // Since handleSearch is the input handler, it's better to manage debounce there.
+      // BUT if the user navigates directly to /search?q=foo, we need to search.
+      // So we should keep performSearch here, but only if it's not being handled by handleSearch?
+      // No, simpler: Rely on this useEffect for ALL searches. 
+      // But we need to debounce the *Query State Update*? No, we update query state instantly for UI.
+      // We need to debounce the *Search Execution*.
+      // So let's use a debounced effect?
+      // Current architecture: handleSearch sets timeout to call performSearch. useEffect calls performSearch.
+      // If we remove the timeout in handleSearch, and just setQuery. Then useEffect runs immediately? That's not debounced.
+      // If we remove useEffect call, then URL params q update only triggers... wait.
+      // Best approach:
+      // 1. handleSearch sets Query state only. (And clears any previous timeout if it was doing that).
+      // 2. useEffect on [query] sets a timeout to perform search? That's debouncing within useEffect.
+
+      // Let's stick to the current plan: Use lastSearchId to ignore stale.
+      // But we should also avoid double calling.
+      // The easiest way to avoid double calling is to `cancel` the previous one if possible, but identifying it is hard.
+      // If I remove `performSearch(query)` from here, initial load from URL works?
+      // Initial load uses `useState(searchParams.get('q'))`. So `query` has value. `useEffect` runs on mount. Search happens.
+      // When user types, `handleSearch` runs, sets `query`. `useEffect` runs. Search happens instantly (no debounce).
+      // AND `handleSearch` sets timeout. Search happens again later.
+      // So the "debounce" in handleSearch is useless because useEffect triggers instantly.
+
+      // I will remove the immediate call in useEffect IF the change came from user typing (which implies handleSearch).
+      // But we can't know that easily.
+
+      // Let's make useEffect debounce.
+      const timer = setTimeout(() => {
+        performSearch(query);
+      }, 300);
+      return () => clearTimeout(timer);
+
+      // But handleSearch ALSO had logic.
+      // I'll fix handleSearch to NOT call performSearch, just setQuery.
+      // And I will replace this useEffect body to use debounce.
     } else {
       setSearchParams({});
       setSearchMode('idle');
@@ -127,7 +172,7 @@ export default function Search() {
                 overview: col.summary
               });
             });
-          } catch {}
+          } catch { }
         }
 
         setCollections(collectionsList);
@@ -138,15 +183,21 @@ export default function Search() {
   }
 
   const performSearch = useCallback(async (searchQuery: string) => {
+    // Increment search ID to identify the latest request
+    const searchId = ++lastSearchIdRef.current;
+
     if (!searchQuery.trim()) {
-      setResults([]);
-      setSearchMode('idle');
+      if (searchId === lastSearchIdRef.current) {
+        setResults([]);
+        setSearchMode('idle');
+      }
       return;
     }
 
     setLoading(true);
     const s = loadSettings();
     const searchResults: SearchResult[] = [];
+    const seenIds = new Set<string>();
 
     try {
       // Search Plex first
@@ -154,11 +205,19 @@ export default function Search() {
         try {
           // Search movies
           const plexMovies: any = await plexBackendSearch(searchQuery, 1);
+          // Check if this is still the latest search
+          if (searchId !== lastSearchIdRef.current) return;
+
           const movieResults = plexMovies?.MediaContainer?.Metadata || [];
 
           movieResults.slice(0, 10).forEach((item: any) => {
+            // Deduplicate by ratingKey
+            const uniqueId = `plex:${item.ratingKey}`;
+            if (seenIds.has(uniqueId)) return;
+            seenIds.add(uniqueId);
+
             searchResults.push({
-              id: `plex:${item.ratingKey}`,
+              id: uniqueId,
               title: item.title,
               type: 'movie',
               image: apiClient.getPlexImageNoToken((item.art || item.thumb || item.parentThumb || item.grandparentThumb) || ''),
@@ -170,11 +229,18 @@ export default function Search() {
 
           // Search TV shows
           const plexShows: any = await plexBackendSearch(searchQuery, 2);
+          // Check if this is still the latest search
+          if (searchId !== lastSearchIdRef.current) return;
+
           const showResults = plexShows?.MediaContainer?.Metadata || [];
 
           showResults.slice(0, 10).forEach((item: any) => {
+            const uniqueId = `plex:${item.ratingKey}`;
+            if (seenIds.has(uniqueId)) return;
+            seenIds.add(uniqueId);
+
             searchResults.push({
-              id: `plex:${item.ratingKey}`,
+              id: uniqueId,
               title: item.title,
               type: 'tv',
               image: apiClient.getPlexImageNoToken((item.art || item.thumb || item.parentThumb || item.grandparentThumb) || ''),
@@ -192,17 +258,32 @@ export default function Search() {
       if (s.tmdbBearer) {
         try {
           const tmdbResults: any = await tmdbSearchMulti(s.tmdbBearer, searchQuery);
+          // Check if this is still the latest search
+          if (searchId !== lastSearchIdRef.current) return;
+
           const tmdbItems = tmdbResults?.results || [];
 
           tmdbItems.slice(0, 20).forEach((item: any) => {
-            // Skip if already in Plex results
+            // Deduplicate logic
+            // 1. Check if ID already seen
+            const uniqueId = `tmdb:${item.media_type}:${item.id}`;
+            if (seenIds.has(uniqueId)) return;
+
+            // 2. Check by title (fuzzy match against existing Plex results)
+            // This prevents "Batman" (Plex) and "Batman" (TMDB) from showing up as separate if they are the same.
+            // But we should only skip if we are SURE it's the same. 
+            // The existing code used a simple title match. Let's keep it but make it smarter?
+            // User compliant: "same movie or series", so better to filter out TMDB ones if Plex has it.
             const plexMatch = searchResults.find(r =>
-              r.title.toLowerCase() === (item.title || item.name || '').toLowerCase()
+              r.available && r.title.toLowerCase() === (item.title || item.name || '').toLowerCase() &&
+              // Maybe check year too?
+              (!item.release_date || !r.year || item.release_date.startsWith(r.year))
             );
 
             if (!plexMatch && item.media_type !== 'person') {
+              seenIds.add(uniqueId);
               searchResults.push({
-                id: `tmdb:${item.media_type}:${item.id}`,
+                id: uniqueId,
                 title: item.title || item.name,
                 type: item.media_type as 'movie' | 'tv',
                 image: tmdbImage(item.backdrop_path, 'w780') || tmdbImage(item.poster_path, 'w500'),
@@ -217,28 +298,21 @@ export default function Search() {
         }
       }
 
-      setResults(searchResults);
-      setSearchMode('results');
+      if (searchId === lastSearchIdRef.current) {
+        setResults(searchResults);
+        setSearchMode('results');
+      }
     } finally {
-      setLoading(false);
+      if (searchId === lastSearchIdRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
   const handleSearch = useCallback((value: string) => {
-    // Clear existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
     setQuery(value);
-
-    // Debounce search
-    if (value) {
-      searchTimeoutRef.current = setTimeout(() => {
-        performSearch(value);
-      }, 300);
-    }
-  }, [performSearch]);
+    // Debounce is now handled by useEffect on query change
+  }, []);
 
   const handleItemClick = (item: SearchResult) => {
     if (item.type === 'collection') {
@@ -310,7 +384,7 @@ export default function Search() {
             {collections.length > 0 && (
               <div className="mt-6 mb-12">
                 <SearchCollections
-                  collections={collections}
+                  collections={collections as any}
                   onItemClick={handleItemClick}
                 />
               </div>
