@@ -6,7 +6,7 @@ import { plexLibs, plexSectionAll, plexImage, withContainer } from '@/services/p
 import { plexBackendLibraries, plexBackendLibraryAll } from '@/services/plex_backend';
 import SectionBanner from '@/components/SectionBanner';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { apiClient } from '@/services/api';
 
 type Item = { id: string; title: string; image?: string; subtitle?: string; badge?: string };
@@ -25,7 +25,7 @@ export default function Library() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'movies' | 'shows'>('all');
   const [needsPlex, setNeedsPlex] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const loadingMoreRef = useRef(false);
 
   useEffect(() => {
     const s = loadSettings();
@@ -142,15 +142,14 @@ export default function Library() {
               overscan={3}
               hasMore={hasMore}
               loadMore={() => {
-                if (!hasMore || loadingMore) return;
+                if (!hasMore || loadingMoreRef.current) return;
                 const s = loadSettings();
                 if (!s.plexBaseUrl || !s.plexToken || !active) return;
 
-                setLoadingMore(true);
+                loadingMoreRef.current = true;
                 // load next page
                 (async () => {
                   try {
-                    const base = '?sort=addedAt:desc';
                     const size = 100;
                     const all: any = await plexBackendLibraryAll(active, { sort: 'addedAt:desc', offset: start, limit: size });
                     const mc = all?.MediaContainer?.Metadata || [];
@@ -165,18 +164,27 @@ export default function Library() {
                         badge: 'Plex',
                       };
                     });
-                    setItems((prev) => {
-                      // Deduplicate just in case
-                      const existing = new Set(prev.map(p => p.id));
-                      const novel = mapped.filter(m => !existing.has(m.id));
-                      return [...prev, ...novel];
-                    });
-                    const total = all?.MediaContainer?.totalSize ?? (start + mapped.length);
-                    const newStart = start + mapped.length;
-                    setStart(newStart);
-                    setHasMore(newStart < total);
+
+                    if (mapped.length > 0) {
+                      setItems((prev) => {
+                        const existing = new Set(prev.map(p => p.id));
+                        const novel = mapped.filter(m => !existing.has(m.id));
+                        if (novel.length < mapped.length) {
+                          console.log(`[Library] Ignored ${mapped.length - novel.length} duplicates`);
+                        }
+                        return [...prev, ...novel];
+                      });
+                      const total = all?.MediaContainer?.totalSize ?? (start + mapped.length);
+                      const newStart = start + mapped.length;
+                      setStart(newStart);
+                      setHasMore(newStart < total);
+                    } else {
+                      setHasMore(false);
+                    }
+                  } catch (err) {
+                    console.error('Page load failed', err);
                   } finally {
-                    setLoadingMore(false);
+                    loadingMoreRef.current = false;
                   }
                 })();
               }}
