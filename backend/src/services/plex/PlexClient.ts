@@ -19,6 +19,7 @@ interface PlexServer {
   owned: boolean;
   publicAddress?: string;
   localAddresses?: string[];
+  preferredUri?: string;
 }
 
 interface PlexLibrary {
@@ -63,7 +64,13 @@ export class PlexClient {
       32
     );
 
-    const baseURL = `${server.protocol}://${server.host}:${server.port}`;
+    // Use preferredUri if available, otherwise construct from host/port
+    let baseURL: string;
+    if (server.preferredUri) {
+      baseURL = server.preferredUri;
+    } else {
+      baseURL = `${server.protocol}://${server.host}:${server.port}`;
+    }
 
     this.axiosClient = axios.create({
       baseURL,
@@ -702,6 +709,7 @@ export async function getPlexClient(userId: string, serverId?: string): Promise<
       owned: (server as any).owned,
       publicAddress: (server as any).publicAddress,
       localAddresses: (server as any).localAddresses,
+      preferredUri: (server as any).preferredUri,
     } as any as PlexServer;
     clientMap.set(cacheKey, new PlexClient(normalized, userId));
   }
