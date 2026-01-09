@@ -463,8 +463,9 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
           const durSec = meta.duration ? Math.floor(meta.duration / 1000) : undefined;
           // If item was fully watched (>=95%), start from beginning
           const fromStart = (start !== undefined && durSec && durSec > 0 && start / durSec >= 0.95) ? 0 : start;
+          console.log('[AdvancedPlayer] Resume logic:', { viewOffsetMs: meta.viewOffset, startSec: start, durSec, fromStart });
           setInitialStartAt(fromStart);
-        } catch { }
+        } catch (e) { console.error('Resume logic error', e); }
 
         // Fetch markers (intro/credits) if available from Plex for this item (backend session avoids token issues)
         try {
