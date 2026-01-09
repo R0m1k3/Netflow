@@ -1092,16 +1092,15 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
       console.log('Retrying with transcoded quality:', maxQuality);
 
       // Use HLS for fallback as it is often more robust for transcoding than DASH
-      // Simplify parameters to let Plex decide best transcode options
+      // Use standard parameters to ensure compatibility
       const url = plexStreamUrl(plexConfig, itemId, {
         maxVideoBitrate: Number(maxQuality),
         protocol: 'hls',
-        autoAdjustQuality: true,
+        autoAdjustQuality: false,
         directPlay: false,
         directStream: false, // Force transcode
-        // Remove stream selections to let Plex choose compatible default for transcode
-        // audioStreamID: selectedAudioStream || undefined,
-        // subtitleStreamID: selectedSubtitleStream || undefined,
+        audioStreamID: selectedAudioStream || undefined,
+        subtitleStreamID: selectedSubtitleStream || '0', // Explicitly set subtitle '0' (none) if no stream selected to avoid 'burn' default
         forceReload: true,
       });
 
@@ -1128,6 +1127,30 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   const handlePlayingChange = useCallback((isPlaying: boolean) => {
     setPlaying(isPlaying);
   }, []);
+
+  // Compute poster URL with optional backend proxy
+  const posterUrl = metadata?.thumb
+    ? apiClient.getPlexImageNoToken(metadata.thumb)
+    : undefined;
+
+  // Compute credits trigger start for movies
+  const creditsStartSec = useMemo(() => {
+    if (metadata?.type !== 'movie') return undefined;
+    if (!duration || duration <= 0) return undefined;
+    const credits = metadata?.Marker?.find(m => m.type === 'credits');
+    const start = credits ? (credits.startTimeOffset / 1000) : Math.max(0, duration - 30);
+    return start;
+  }, [metadata, duration]);
+
+  // Proactive movie exit at credits start (no loop/retry)
+  useEffect(() => {
+    if (exiting) return;
+    if (metadata?.type !== 'movie') return;
+    if (creditsStartSec === undefined) return;
+    if (currentTime > 1 && currentTime >= creditsStartSec) {
+      goToDetails();
+    }
+  }, [metadata, creditsStartSec, currentTime, goToDetails, exiting]);
 
   if (error) {
     return (
@@ -1160,30 +1183,6 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
   const canPlayDirect = metadata ? canDirectPlay(metadata) : false;
   const canStreamDirect = metadata ? canDirectStream(metadata) : false;
   const hasDV = metadata ? hasDolbyVision(metadata) : false;
-
-  // Compute poster URL with optional backend proxy
-  const posterUrl = metadata?.thumb
-    ? apiClient.getPlexImageNoToken(metadata.thumb)
-    : undefined;
-
-  // Compute credits trigger start for movies
-  const creditsStartSec = useMemo(() => {
-    if (metadata?.type !== 'movie') return undefined;
-    if (!duration || duration <= 0) return undefined;
-    const credits = metadata?.Marker?.find(m => m.type === 'credits');
-    const start = credits ? (credits.startTimeOffset / 1000) : Math.max(0, duration - 30);
-    return start;
-  }, [metadata, duration]);
-
-  // Proactive movie exit at credits start (no loop/retry)
-  useEffect(() => {
-    if (exiting) return;
-    if (metadata?.type !== 'movie') return;
-    if (creditsStartSec === undefined) return;
-    if (currentTime > 1 && currentTime >= creditsStartSec) {
-      goToDetails();
-    }
-  }, [metadata, creditsStartSec, currentTime, goToDetails, exiting]);
 
   console.log('[AdvancedPlayer] Render:', { loading, hasStream: !!streamUrl, initialStartAt });
 
