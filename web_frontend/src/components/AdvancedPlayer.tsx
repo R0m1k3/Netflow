@@ -1091,16 +1091,17 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
 
       console.log('Retrying with transcoded quality:', maxQuality);
 
-      // Force transcode with maximum quality
       // Use HLS for fallback as it is often more robust for transcoding than DASH
+      // Simplify parameters to let Plex decide best transcode options
       const url = plexStreamUrl(plexConfig, itemId, {
         maxVideoBitrate: Number(maxQuality),
         protocol: 'hls',
-        autoAdjustQuality: false,
+        autoAdjustQuality: true,
         directPlay: false,
         directStream: false, // Force transcode
-        audioStreamID: selectedAudioStream || undefined,
-        subtitleStreamID: selectedSubtitleStream || undefined,
+        // Remove stream selections to let Plex choose compatible default for transcode
+        // audioStreamID: selectedAudioStream || undefined,
+        // subtitleStreamID: selectedSubtitleStream || undefined,
         forceReload: true,
       });
 
