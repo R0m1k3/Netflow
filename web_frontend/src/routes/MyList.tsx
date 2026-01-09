@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { plexTvWatchlist, plexTvRemoveFromWatchlist } from '@/services/plextv';
 import { traktGetWatchlist, traktAddToWatchlist, traktRemoveFromWatchlist, isTraktAuthenticated, getTraktTokens } from '@/services/trakt';
@@ -28,6 +29,7 @@ type SortBy = 'dateAdded' | 'title' | 'year' | 'rating';
 type FilterType = 'all' | 'movies' | 'shows';
 
 export default function MyList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const settings = loadSettings();
   const tmdbKey = settings.tmdbBearer || '';
@@ -88,9 +90,9 @@ export default function MyList() {
           const g = String(item.guid || '');
           const m = g.match(/(?:tmdb|themoviedb):\/\/(\d+)/i);
           if (m) tmdbId = m[1];
-        } catch {}
+        } catch { }
         return ({
-          id: item.ratingKey ? `plex:${item.ratingKey}` : (tmdbId ? `tmdb:${item.type==='movie'?'movie':'tv'}:${tmdbId}` : `plex-${item.guid}`),
+          id: item.ratingKey ? `plex:${item.ratingKey}` : (tmdbId ? `tmdb:${item.type === 'movie' ? 'movie' : 'tv'}:${tmdbId}` : `plex-${item.guid}`),
           title: item.title,
           year: item.year?.toString(),
           image: item.thumb ? apiClient.getPlexImageNoToken(item.thumb) : undefined,
@@ -134,7 +136,7 @@ export default function MyList() {
           try {
             const details = await tmdbDetails(tmdbKey, 'movie', movie.ids.tmdb);
             image = details.poster_path ? tmdbImage(details.poster_path, 'w342') : undefined;
-          } catch {}
+          } catch { }
         }
 
         const tmdbId = movie.ids?.tmdb ? String(movie.ids.tmdb) : undefined;
@@ -164,7 +166,7 @@ export default function MyList() {
           try {
             const details = await tmdbDetails(tmdbKey, 'tv', show.ids.tmdb);
             image = details.poster_path ? tmdbImage(details.poster_path, 'w342') : undefined;
-          } catch {}
+          } catch { }
         }
 
         const tmdbIdS = show.ids?.tmdb ? String(show.ids.tmdb) : undefined;
@@ -284,10 +286,10 @@ export default function MyList() {
       <div className="px-4 md:px-8 lg:px-12 xl:px-16 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">My List</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('mylist.title')}</h1>
           <p className="text-white/60">
-            {items.length} {items.length === 1 ? 'title' : 'titles'}
-            {isTraktAuthenticated() && ' • Synced with Trakt'}
+            {t(items.length === 1 ? 'mylist.count_one' : 'mylist.count_other', { count: items.length })}
+            {isTraktAuthenticated() && ` ${t('mylist.synced_trakt')}`}
           </p>
         </div>
 
@@ -296,15 +298,15 @@ export default function MyList() {
           <div className="mb-6 p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
             <div className="flex items-center gap-3">
               <svg className="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
               </svg>
               <div className="text-sm text-yellow-200">
-                Some Trakt items are missing images. Configure TMDB API key to load poster images.
+                {t('mylist.missing_images')}
                 <button
                   onClick={() => navigate('/settings')}
                   className="ml-2 text-yellow-400 hover:text-yellow-300 underline"
                 >
-                  Configure in Settings
+                  {t('mylist.config_settings')}
                 </button>
               </div>
             </div>
@@ -319,10 +321,11 @@ export default function MyList() {
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as FilterType)}
               className="bg-black/50 text-white px-3 py-1.5 rounded-md text-sm border border-white/20"
+              title={t('mylist.filter')}
             >
-              <option value="all">All</option>
-              <option value="movies">Movies</option>
-              <option value="shows">TV Shows</option>
+              <option value="all">{t('mylist.all')}</option>
+              <option value="movies">{t('mylist.movies')}</option>
+              <option value="shows">{t('mylist.shows')}</option>
             </select>
 
             {/* Sort */}
@@ -330,11 +333,12 @@ export default function MyList() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortBy)}
               className="bg-black/50 text-white px-3 py-1.5 rounded-md text-sm border border-white/20"
+              title={t('mylist.sort')}
             >
-              <option value="dateAdded">Date Added</option>
-              <option value="title">Title</option>
-              <option value="year">Year</option>
-              <option value="rating">Rating</option>
+              <option value="dateAdded">{t('mylist.date_added')}</option>
+              <option value="title">{t('mylist.title_sort')}</option>
+              <option value="year">{t('mylist.year')}</option>
+              <option value="rating">{t('mylist.rating')}</option>
             </select>
           </div>
 
@@ -345,7 +349,8 @@ export default function MyList() {
                 onClick={removeBulkItems}
                 className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors"
               >
-                Remove {selectedItems.size} {selectedItems.size === 1 ? 'item' : 'items'}
+              >
+                {t(selectedItems.size === 1 ? 'mylist.remove_count_one' : 'mylist.remove_count', { count: selectedItems.size })}
               </button>
             )}
             <button
@@ -355,7 +360,7 @@ export default function MyList() {
               }}
               className="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-md transition-colors"
             >
-              {bulkMode ? 'Cancel' : 'Select'}
+              {bulkMode ? t('mylist.cancel') : t('mylist.select')}
             </button>
           </div>
         </div>
@@ -370,15 +375,15 @@ export default function MyList() {
         ) : sortedAndFiltered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="text-6xl mb-4">📺</div>
-            <h2 className="text-xl font-semibold text-white mb-2">Your list is empty</h2>
+            <h2 className="text-xl font-semibold text-white mb-2">{t('mylist.empty')}</h2>
             <p className="text-white/60 text-center max-w-md mb-6">
-              Start building your watchlist by adding movies and TV shows you want to watch later.
+              {t('mylist.empty_desc')}
             </p>
             <button
               onClick={() => navigate('/browse')}
               className="px-6 py-2.5 bg-white text-black font-semibold rounded-md hover:bg-white/90 transition-colors"
             >
-              Browse Content
+              {t('mylist.browse_content')}
             </button>
           </div>
         ) : (
@@ -387,9 +392,8 @@ export default function MyList() {
               <div
                 key={item.id}
                 onClick={() => handleItemClick(item)}
-                className={`relative group cursor-pointer transition-all ${
-                  bulkMode && selectedItems.has(item.id) ? 'ring-2 ring-white scale-95' : ''
-                }`}
+                className={`relative group cursor-pointer transition-all ${bulkMode && selectedItems.has(item.id) ? 'ring-2 ring-white scale-95' : ''
+                  }`}
               >
                 <div className="relative aspect-[2/3] bg-neutral-800 rounded-lg overflow-hidden ring-1 ring-white/15 group-hover:ring-2 group-hover:ring-white/90 group-hover:ring-offset-2 group-hover:ring-offset-transparent transition-all">
                   {item.image ? (
@@ -402,7 +406,7 @@ export default function MyList() {
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-white/30">
                       <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/>
+                        <path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z" />
                       </svg>
                     </div>
                   )}
@@ -424,7 +428,7 @@ export default function MyList() {
                           className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-neutral-200"
                           title="Play"
                         >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                         </button>
                       )}
                     </div>
@@ -433,14 +437,13 @@ export default function MyList() {
                   {/* Bulk selection checkbox */}
                   {bulkMode && (
                     <div className="absolute top-2 left-2 z-10">
-                      <div className={`w-6 h-6 rounded border-2 ${
-                        selectedItems.has(item.id)
+                      <div className={`w-6 h-6 rounded border-2 ${selectedItems.has(item.id)
                           ? 'bg-white border-white'
                           : 'bg-black/50 border-white/50'
-                      } flex items-center justify-center`}>
+                        } flex items-center justify-center`}>
                         {selectedItems.has(item.id) && (
                           <svg className="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                           </svg>
                         )}
                       </div>
@@ -474,7 +477,7 @@ export default function MyList() {
                   <div className="text-sm font-medium text-white truncate">{item.title}</div>
                   {item.dateAdded && (
                     <div className="text-xs text-white/50">
-                      Added {item.dateAdded.toLocaleDateString()}
+                      {t('mylist.added_date', { date: item.dateAdded.toLocaleDateString() })}
                     </div>
                   )}
                 </div>

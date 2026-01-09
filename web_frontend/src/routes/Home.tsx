@@ -326,7 +326,7 @@ export default function Home() {
         <TraktSection type="trending" mediaType="shows" />
         {isTraktAuthenticated() && (
           <>
-            <TraktSection type="watchlist" mediaType="movies" />
+            <TraktSection type="watchlist" />
             <TraktSection type="history" mediaType="shows" />
             <TraktSection type="recommendations" mediaType="movies" />
           </>
