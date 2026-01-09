@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+
 import { VideoSeekSlider } from 'react-video-seek-slider';
 import PlexVideoPlayer from './PlexVideoPlayer';
 import { apiClient } from '@/services/api';
@@ -146,6 +148,7 @@ const QUALITY_LEVELS = {
 
 export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: AdvancedPlayerProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const seekSliderRef = useRef<any>(null);
@@ -512,39 +515,59 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
           setTimeout(() => setCodecErrorMessage(null), 5000);
         }
 
-        // Build stream URL using the same logic as commit 147b572 (direct, not proxied)
-        const decision = getStreamDecision(meta, {
-          quality: effectiveQuality,
-          directPlay: effectiveQuality === 'original' && !hasDV,
-          audioStreamId: selectedAudioStream || undefined,
-          subtitleStreamId: selectedSubtitleStream || undefined,
-        });
-
-        // Call decision API to see what Plex will actually do
-        const plexDecision = await plexUniversalDecision(plexConfig, itemId, {
-          maxVideoBitrate: effectiveQuality === 'original' ? undefined : Number(effectiveQuality),
-          protocol: 'dash',
-          autoAdjustQuality: false,
-          directPlay: decision.directPlay,
-          directStream: decision.directStream,
-          audioStreamID: selectedAudioStream || undefined,
-          subtitleStreamID: selectedSubtitleStream || undefined,
-        });
-
-        // Generate stream URL based on actual Plex decision
-        let url: string;
-        if (plexDecision.canDirectPlay && meta.Media?.[0]?.Part?.[0]?.key && !hasDV) {
-          url = plexPartUrl(plexConfig.baseUrl, plexConfig.token, meta.Media[0].Part[0].key);
-        } else {
+        if (hasDV) {
+          // PROACTIVE OPTIMIZATION: Dolby Vision - Force HLS Transcoding immediately.
+          // Skip plexUniversalDecision to save time (it often incorrectly suggests Direct Play for DV).
+          console.log('[AdvancedPlayer] Dolby Vision content: Proactively forcing HLS transcode.');
           url = plexStreamUrl(plexConfig, itemId, {
+            maxVideoBitrate: effectiveQuality === 'original' ? 20000 : Number(effectiveQuality),
+            protocol: 'hls',
+            autoAdjustQuality: false,
+            directPlay: false, // Force transcode
+            directStream: false,
+            audioStreamID: selectedAudioStream || undefined,
+            subtitleStreamID: selectedSubtitleStream || '0',
+            forceReload: true,
+          });
+          // Ensure we set quality to match the forced transcode
+          if (effectiveQuality === 'original') {
+            setQuality(20000);
+            effectiveQuality = 20000;
+          }
+        } else {
+          // Standard Flow: Check with Plex Decision for non-DV content
+          const decision = getStreamDecision(meta, {
+            quality: effectiveQuality,
+            directPlay: effectiveQuality === 'original',
+            audioStreamId: selectedAudioStream || undefined,
+            subtitleStreamId: selectedSubtitleStream || undefined,
+          });
+
+          // Call decision API to see what Plex will actually do
+          const plexDecision = await plexUniversalDecision(plexConfig, itemId, {
             maxVideoBitrate: effectiveQuality === 'original' ? undefined : Number(effectiveQuality),
             protocol: 'dash',
             autoAdjustQuality: false,
-            directPlay: false,
-            directStream: plexDecision.willDirectStream || false,
+            directPlay: decision.directPlay,
+            directStream: decision.directStream,
             audioStreamID: selectedAudioStream || undefined,
             subtitleStreamID: selectedSubtitleStream || undefined,
           });
+
+          // Generate stream URL based on actual Plex decision
+          if (plexDecision.canDirectPlay && meta.Media?.[0]?.Part?.[0]?.key) {
+            url = plexPartUrl(plexConfig.baseUrl, plexConfig.token, meta.Media[0].Part[0].key);
+          } else {
+            url = plexStreamUrl(plexConfig, itemId, {
+              maxVideoBitrate: effectiveQuality === 'original' ? undefined : Number(effectiveQuality),
+              protocol: 'dash',
+              autoAdjustQuality: false,
+              directPlay: false,
+              directStream: plexDecision.willDirectStream || false,
+              audioStreamID: selectedAudioStream || undefined,
+              subtitleStreamID: selectedSubtitleStream || undefined,
+            });
+          }
         }
         setStreamUrl(url);
 
@@ -1288,19 +1311,17 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
             <button
               className="p-2 rounded-full transition-colors"
               onClick={() => {
-                backendUpdateProgress(metadata!.ratingKey, currentTime * 1000, duration * 1000, 'stopped')
-                  .catch(() => {
-                    try { plexTimelineUpdate(plexConfig, metadata!.ratingKey, currentTime * 1000, duration * 1000, 'stopped'); } catch { }
-                  })
-                  .finally(() => {
-                    if (metadata?.type === 'episode' && metadata.grandparentRatingKey) {
-                      window.location.href = `/details/${encodeURIComponent(`plex:${metadata.grandparentRatingKey}`)}`;
-                    } else if (metadata?.type === 'movie') {
-                      window.location.href = `/details/${encodeURIComponent(`plex:${metadata.ratingKey}`)}`;
-                    } else {
-                      onBack?.();
-                    }
-                  });
+                // Fire and forget update - do not block UI
+                backendUpdateProgress(metadata!.ratingKey, currentTime * 1000, duration * 1000, 'stopped').catch(console.warn);
+                try { plexTimelineUpdate(plexConfig, metadata!.ratingKey, currentTime * 1000, duration * 1000, 'stopped').catch(() => { }); } catch { }
+
+                if (metadata?.type === 'episode' && metadata.grandparentRatingKey) {
+                  navigate(`/details/${encodeURIComponent(`plex:${metadata.grandparentRatingKey}`)}`);
+                } else if (metadata?.type === 'movie') {
+                  navigate(`/details/${encodeURIComponent(`plex:${metadata.ratingKey}`)}`);
+                } else {
+                  onBack?.();
+                }
               }}
             >
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
