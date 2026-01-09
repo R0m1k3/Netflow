@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { VideoSeekSlider } from 'react-video-seek-slider';
 import PlexVideoPlayer from './PlexVideoPlayer';
 import { apiClient } from '@/services/api';
+import { loadSettings } from '@/state/settings';
 import '../styles/player.css';
 import { Replay10Icon, Forward10Icon } from '@/components/icons/Replay10';
 import {
@@ -548,7 +549,10 @@ export default function AdvancedPlayer({ plexConfig, itemId, onBack, onNext }: A
         // Load play queue and season episodes for TV content
         if (meta.type === 'episode') {
           try {
-            const queue = await plexPlayQueue(plexConfig, itemId);
+            // Get the serverId (clientIdentifier) from settings for playQueue URI
+            const settings = loadSettings();
+            const serverId = settings.plexServer?.clientIdentifier;
+            const queue = await plexPlayQueue(plexConfig, itemId, serverId);
             if (queue.MediaContainer?.Metadata) {
               setPlayQueue(queue.MediaContainer.Metadata);
             }

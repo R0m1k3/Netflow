@@ -427,10 +427,12 @@ export async function plexUpdateSubtitleStream(cfg: PlexConfig, partId: string, 
   return res;
 }
 
-export async function plexPlayQueue(cfg: PlexConfig, itemId: string) {
+export async function plexPlayQueue(cfg: PlexConfig, itemId: string, serverId?: string) {
+  // Use serverId if provided, otherwise use wildcard (may cause 400 on some setups)
+  const serverPart = serverId || '*';
   const params = new URLSearchParams({
     type: 'video',
-    uri: `server://*/com.plexapp.plugins.library/library/metadata/${itemId}`,
+    uri: `server://${serverPart}/com.plexapp.plugins.library/library/metadata/${itemId}`,
     includeChapters: '1',
     includeMarkers: '1',
     includeRelated: '1',
