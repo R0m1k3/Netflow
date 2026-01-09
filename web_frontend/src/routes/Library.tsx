@@ -115,7 +115,7 @@ export default function Library() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('library.search_placeholder')}
-              className="w-full bg-neutral-800 text-white px-4 py-2 pl-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-64 bg-neutral-800 text-white px-4 py-2 pl-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600"
             />
             <svg
               className="absolute left-3 top-2.5 w-5 h-5 text-neutral-400"
