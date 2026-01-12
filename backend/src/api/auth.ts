@@ -461,8 +461,40 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 // Get Plex servers for authenticated user
 router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const userRepository = AppDataSource.getRepository(User);
     const settingsRepository = AppDataSource.getRepository(UserSettings);
+    const settings = await settingsRepository.findOne({ where: { userId: req.user!.id } });
+    const savedServers = (settings?.plexServers || []) as any[];
+
+    // If we have cached servers, return them directly (much faster than hitting Plex.tv)
+    if (savedServers.length > 0) {
+      const servers = savedServers.map((server: any) => {
+        // Decrypt access token if encrypted
+        let token = server.accessToken;
+        if (token && isEncrypted(token)) {
+          try {
+            token = decryptForUser(req.user!.id, token);
+          } catch { /* keep encrypted form if decryption fails */ }
+        }
+
+        // Build baseUrl from preferredUri or host/port/protocol
+        let baseUrl = server.preferredUri;
+        if (!baseUrl && server.host) {
+          baseUrl = `${server.protocol || 'https'}://${server.host}:${server.port || 32400}`;
+        }
+
+        return {
+          name: server.name,
+          clientIdentifier: server.id,
+          baseUrl,
+          token,
+          connections: server.connections || [],
+        };
+      });
+      return res.json(servers);
+    }
+
+    // Fallback: fetch from Plex.tv if no cached servers (e.g. new user)
+    const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
       where: { id: req.user!.id },
       select: ['plexToken'],
@@ -472,10 +504,6 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
       throw new AppError('User not found', 404);
     }
 
-    // Load user settings to get any configured preferredUri
-    const settings = await settingsRepository.findOne({ where: { userId: req.user!.id } });
-    const savedServers = settings?.plexServers || [];
-
     const accountToken = isEncrypted(user.plexToken)
       ? decryptForUser(req.user!.id, user.plexToken)
       : user.plexToken;
@@ -484,29 +512,23 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
       `${PLEX_TV_URL}/api/v2/resources?includeHttps=1&includeRelay=1`,
       {
         headers: getPlexHeaders(req.body.clientId || 'web', accountToken),
+        timeout: 10000, // 10s timeout for external call
       }
     );
 
     const servers = response.data
       .filter((r: any) => r.product === 'Plex Media Server')
       .map((server: any) => {
-        // Find best connection
         const connections = server.connections || [];
         const local = connections.find((c: any) => c.local);
         const remote = connections.find((c: any) => !c.local && !c.relay);
         const relay = connections.find((c: any) => c.relay);
-
         const bestConnection = local || remote || relay;
-
-        // Check if user has configured a preferredUri for this server
-        const savedServer = savedServers.find((s: any) => s.id === server.clientIdentifier);
-        const preferredUri = savedServer?.preferredUri;
 
         return {
           name: server.name,
           clientIdentifier: server.clientIdentifier,
-          // Use preferredUri if configured, otherwise fall back to auto-detected URI
-          baseUrl: preferredUri || bestConnection?.uri,
+          baseUrl: bestConnection?.uri,
           token: server.accessToken,
           connections: connections.map((c: any) => ({
             uri: c.uri,
