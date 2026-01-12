@@ -11,10 +11,10 @@ const logger = createLogger('trakt-api');
 // Public endpoints (no auth)
 router.get('/:type(trending|popular)/:media(movies|shows)', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const media = req.params.media as 'movies'|'shows';
-    const type = req.params.type as 'trending'|'popular';
+    const media = req.params.media as 'movies' | 'shows';
+    const type = req.params.type as 'trending' | 'popular';
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
-    const key = `trakt:${type}:${media}:${limit||'all'}`;
+    const key = `trakt:${type}:${media}:${limit || 'all'}`;
     const data = await cacheManager.getOrSet('trakt', key, async () => {
       const c = new TraktClient();
       return type === 'trending' ? c.trending(media, limit) : c.popular(media, limit);
@@ -31,10 +31,10 @@ router.get('/:type(trending|popular)/:media(movies|shows)', async (req: Request,
 // Charts: most watched (public)
 router.get('/:media(movies|shows)/watched/:period(daily|weekly|monthly|yearly|all)', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const media = req.params.media as 'movies'|'shows';
-    const period = req.params.period as 'daily'|'weekly'|'monthly'|'yearly'|'all';
+    const media = req.params.media as 'movies' | 'shows';
+    const period = req.params.period as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all';
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
-    const key = `trakt:watched:${media}:${period}:${limit||'all'}`;
+    const key = `trakt:watched:${media}:${period}:${limit || 'all'}`;
     const data = await cacheManager.getOrSet('trakt', key, async () => {
       const c = new TraktClient();
       return c.mostWatched(media, period, limit);
@@ -49,9 +49,9 @@ router.get('/:media(movies|shows)/watched/:period(daily|weekly|monthly|yearly|al
 // Anticipated (public)
 router.get('/:media(movies|shows)/anticipated', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const media = req.params.media as 'movies'|'shows';
+    const media = req.params.media as 'movies' | 'shows';
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
-    const key = `trakt:anticipated:${media}:${limit||'all'}`;
+    const key = `trakt:anticipated:${media}:${limit || 'all'}`;
     const data = await cacheManager.getOrSet('trakt', key, async () => {
       const c = new TraktClient();
       return c.anticipated(media, limit);
@@ -97,49 +97,56 @@ router.post('/oauth/device/token', requireAuth, async (req: AuthenticatedRequest
 // Recommendations (auth)
 router.get('/recommendations/:media(movies|shows)', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const media = req.params.media as 'movies'|'shows';
+    const media = req.params.media as 'movies' | 'shows';
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
     const c = new TraktClient(req.user!.id);
     const data = await c.recommendations(media, limit);
     res.json(data);
   } catch (e: any) {
-    logger.error('Trakt recommendations failed', e);
-    next(new AppError('Failed to fetch recommendations', 500));
+    const status = e?.response?.status;
+    const data = e?.response?.data;
+    logger.error('Trakt recommendations failed', { status, data, message: e?.message });
+    const statusCode = (status && status >= 400 && status < 600) ? status : 500;
+    next(new AppError(data?.error_description || 'Failed to fetch recommendations', statusCode));
   }
 });
 
 // Watchlist (auth)
 router.get('/users/me/watchlist/:media?', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const media = req.params.media as ('movies'|'shows'|undefined);
+    const media = req.params.media as ('movies' | 'shows' | undefined);
     const c = new TraktClient(req.user!.id);
     const data = await c.watchlist(media);
     res.json(data);
   } catch (e: any) {
     const status = e?.response?.status;
+    const data = e?.response?.data;
     if (status === 401 || status === 403) {
       return next(new AppError('Trakt not authenticated', 401));
     }
-    logger.error('Trakt watchlist failed', e);
-    next(new AppError('Failed to fetch watchlist', 500));
+    logger.error('Trakt watchlist failed', { status, data, message: e?.message });
+    const statusCode = (status && status >= 400 && status < 600) ? status : 500;
+    next(new AppError(data?.error_description || 'Failed to fetch watchlist', statusCode));
   }
 });
 
 // History (auth)
 router.get('/users/me/history/:media?', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const media = req.params.media as ('movies'|'shows'|undefined);
+    const media = req.params.media as ('movies' | 'shows' | undefined);
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
     const c = new TraktClient(req.user!.id);
     const data = await c.history(media, limit);
     res.json(data);
   } catch (e: any) {
     const status = e?.response?.status;
+    const data = e?.response?.data;
     if (status === 401 || status === 403) {
       return next(new AppError('Trakt not authenticated', 401));
     }
-    logger.error('Trakt history failed', e);
-    next(new AppError('Failed to fetch history', 500));
+    logger.error('Trakt history failed', { status, data, message: e?.message });
+    const statusCode = (status && status >= 400 && status < 600) ? status : 500;
+    next(new AppError(data?.error_description || 'Failed to fetch history', statusCode));
   }
 });
 
@@ -151,11 +158,13 @@ router.get('/users/me', requireAuth, async (req: AuthenticatedRequest, res: Resp
     res.json(data);
   } catch (e: any) {
     const status = e?.response?.status;
+    const data = e?.response?.data;
     if (status === 401 || status === 403) {
       return next(new AppError('Trakt not authenticated', 401));
     }
-    logger.error('Trakt user profile failed', e);
-    next(new AppError('Failed to fetch user profile', 500));
+    logger.error('Trakt user profile failed', { status, data, message: e?.message });
+    const statusCode = (status && status >= 400 && status < 600) ? status : 500;
+    next(new AppError(data?.error_description || 'Failed to fetch user profile', statusCode));
   }
 });
 
@@ -166,8 +175,11 @@ router.post('/watchlist', requireAuth, async (req: AuthenticatedRequest, res: Re
     const result = await c.watchlistAdd(req.body);
     res.json(result);
   } catch (e: any) {
-    logger.error('Trakt watchlist add failed', e);
-    next(new AppError('Failed to modify watchlist', 500));
+    const status = e?.response?.status;
+    const data = e?.response?.data;
+    logger.error('Trakt watchlist add failed', { status, data, message: e?.message });
+    const statusCode = (status && status >= 400 && status < 600) ? status : 500;
+    next(new AppError(data?.error_description || 'Failed to modify watchlist', statusCode));
   }
 });
 
@@ -177,8 +189,11 @@ router.post('/watchlist/remove', requireAuth, async (req: AuthenticatedRequest, 
     const result = await c.watchlistRemove(req.body);
     res.json(result);
   } catch (e: any) {
-    logger.error('Trakt watchlist remove failed', e);
-    next(new AppError('Failed to modify watchlist', 500));
+    const status = e?.response?.status;
+    const data = e?.response?.data;
+    logger.error('Trakt watchlist remove failed', { status, data, message: e?.message });
+    const statusCode = (status && status >= 400 && status < 600) ? status : 500;
+    next(new AppError(data?.error_description || 'Failed to modify watchlist', statusCode));
   }
 });
 
@@ -189,8 +204,11 @@ router.post('/signout', requireAuth, async (req: AuthenticatedRequest, res: Resp
     await c.clearTokens();
     res.json({ ok: true, message: 'Signed out from Trakt' });
   } catch (e: any) {
-    logger.error('Trakt signout failed', e);
-    next(new AppError('Failed to sign out', 500));
+    const status = e?.response?.status;
+    const data = e?.response?.data;
+    logger.error('Trakt signout failed', { status, data, message: e?.message });
+    const statusCode = (status && status >= 400 && status < 600) ? status : 500;
+    next(new AppError('Failed to sign out', statusCode));
   }
 });
 
