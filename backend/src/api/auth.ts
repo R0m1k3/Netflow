@@ -54,7 +54,10 @@ async function normalizeAndPersistServers(userId: string, clientId: string): Pro
 
   const res = await axios.get(
     `${PLEX_TV_URL}/api/v2/resources?includeHttps=1&includeRelay=1`,
-    { headers: getPlexHeaders(clientId || 'web', accountToken) }
+    {
+      headers: getPlexHeaders(clientId || 'web', accountToken),
+      timeout: 30000, // 30s timeout
+    }
   );
 
   const servers = (res.data || [])
