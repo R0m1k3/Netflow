@@ -121,7 +121,8 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
     }
 
     // Map each item
-    for (const it of list) {
+    // Map each item in parallel
+    const promises = list.map(async (it) => {
       const media = it.movie || it.show || it; // normalize
       // Determine type from item if not enforced
       const isMovie = it.movie ? true : (it.show ? false : (enforcedType === 'movies'));
@@ -140,15 +141,14 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
           const p = hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb;
           const img = p ? apiClient.getPlexImageNoToken(p) : placeholderImg();
           const badge = hit.rating ? `⭐ ${hit.rating.toFixed(1)}` : hit.contentRating;
-          out.push({
+          return {
             id: `plex:${rk}`,
             title,
             image: img,
             badge,
             tmdbId: String(tmdbId),
             itemType: isMovie ? 'movie' : 'show'
-          });
-          continue;
+          };
         }
       }
 
@@ -157,15 +157,14 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
         let img = '';
         try { img = (await tmdbBestBackdropUrl(s.tmdbBearer!, mediaKey as any, tmdbId, 'en')) || ''; } catch { }
         const badge = media.rating ? `⭐ ${media.rating.toFixed(1)}` : undefined;
-        out.push({
+        return {
           id: `tmdb:${mediaKey}:${tmdbId}`,
           title,
           image: img || placeholderImg(),
           badge,
           tmdbId: String(tmdbId),
           itemType: isMovie ? 'movie' : 'show'
-        });
-        continue;
+        };
       }
 
       // Try Plex mapping via other external IDs (IMDb/TVDB)
@@ -180,8 +179,7 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
               const rk = String(hit.ratingKey);
               const p = hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb;
               const img = p ? apiClient.getPlexImageNoToken(p) : placeholderImg();
-              out.push({ id: `plex:${rk}`, title, image: img });
-              continue;
+              return { id: `plex:${rk}`, title, image: img };
             }
           } catch { }
         }
@@ -193,24 +191,26 @@ export function TraktSection({ type = 'trending', mediaType, title }: TraktSecti
               const rk = String(hit.ratingKey);
               const img = (hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb) ? apiClient.getPlexImageNoToken(hit.art || hit.thumb || hit.parentThumb || hit.grandparentThumb) : placeholderImg();
               const badge = hit.rating ? `⭐ ${hit.rating.toFixed(1)}` : hit.contentRating;
-              out.push({
+              return {
                 id: `plex:${rk}`,
                 title,
                 image: img,
                 badge,
                 tmdbId: tmdbId ? String(tmdbId) : undefined,
                 itemType: isMovie ? 'movie' : 'show'
-              });
-              continue;
+              };
             }
           } catch { }
         }
       }
 
-      // If we can't map to Plex or TMDB, skip to keep row interactions consistent
-      // (Trakt items without TMDB IDs are rare)
-      continue;
-    }
+      return null;
+    });
+
+    const results = await Promise.all(promises);
+    results.forEach(r => {
+      if (r) out.push(r as any);
+    });
 
     // Keep rows concise like the rest of Home
     return out.slice(0, 12);
