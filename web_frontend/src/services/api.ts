@@ -7,7 +7,7 @@ const defaultApiBase = (() => {
   try {
     // In dev, default to same-origin '/api' (proxied to backend by Vite)
     if ((import.meta as any).env?.DEV) return '/api';
-  } catch {}
+  } catch { }
   // In production, assume same-origin reverse proxy
   return '/api';
 })();
@@ -17,20 +17,34 @@ const BACKEND_BASE: string = API_BASE.replace(/\/?api\/?$/, '');
 
 class ApiClient {
   private async request(path: string, options?: RequestInit) {
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      credentials: 'include', // Include cookies for session
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-    if (!response.ok && response.status !== 401) {
-      throw new Error(`API Error: ${response.status}`);
+    try {
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        signal: controller.signal,
+        credentials: 'include', // Include cookies for session
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok && response.status !== 401) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (e: any) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        console.warn(`Request timed out: ${path}`);
+        throw new Error('Request timed out');
+      }
+      throw e;
     }
-
-    return response.json();
   }
 
   // Auth endpoints
