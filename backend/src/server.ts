@@ -122,11 +122,21 @@ async function startServer() {
     app.use('/api/plextv', plextvRoutes);
 
     // 404 handler
-    app.use((req, res) => {
-      res.status(404).json({
-        error: 'Not Found',
-        message: `Cannot ${req.method} ${req.path}`,
-      });
+    // Serve static files from frontend
+    const frontendDist = path.join(__dirname, '../../web_frontend/dist');
+    app.use(express.static(frontendDist));
+
+    // Handle client-side routing by serving index.html for all other routes
+    app.get('*', (req: express.Request, res: express.Response) => {
+      // Don't serve index.html for API requests that weren't caught
+      if (req.path.startsWith('/api')) {
+        res.status(404).json({
+          error: 'Not Found',
+          message: `Cannot ${req.method} ${req.path}`,
+        });
+        return;
+      }
+      res.sendFile(path.join(frontendDist, 'index.html'));
     });
 
     // Error handling middleware (must be last)

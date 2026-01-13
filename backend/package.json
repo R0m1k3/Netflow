@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "prestart": "npm run build && cd ../web_frontend && npm run build",
     "start": "node dist/server.js",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d src/db/data-source.ts",

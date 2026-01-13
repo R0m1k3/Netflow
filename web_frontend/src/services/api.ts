@@ -12,7 +12,7 @@ const defaultApiBase = (() => {
   return '/api';
 })();
 
-const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || defaultApiBase;
+const API_BASE: string = '/api';
 const BACKEND_BASE: string = API_BASE.replace(/\/?api\/?$/, '');
 
 class ApiClient {
