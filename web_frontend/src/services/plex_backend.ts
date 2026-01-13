@@ -13,7 +13,10 @@ async function backendFetch<T = any>(path: string, params?: Record<string, any>)
     const q = qs.toString();
     if (q) url += (url.includes('?') ? '&' : '?') + q;
   }
-  const res = await fetch(url, { credentials: 'include' });
+  const res = await fetch(url, {
+    credentials: 'include',
+    headers: { 'Accept': 'application/json' }
+  });
   if (!res.ok) {
     if (res.status === 401) {
       // Session invalid - force re-login
