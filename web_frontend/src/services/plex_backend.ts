@@ -66,11 +66,19 @@ export async function plexBackendLibrarySecondary(sectionKey: string, directory:
 
 export async function plexBackendDir(path: string, params?: Record<string, any>) {
   const p = path.startsWith('/') ? path.slice(1) : path;
+
+  // Validate ratingKey - skip requests with suspicious low ratingKeys (likely corrupted data)
+  const ratingKeyMatch = path.match(/\/library\/metadata\/(\d+)/);
+  if (ratingKeyMatch && parseInt(ratingKeyMatch[1], 10) < 10) {
+    console.warn('[plexBackendDir] skipping request with invalid low ratingKey:', ratingKeyMatch[1]);
+    return { MediaContainer: { Metadata: [], Directory: [] } } as any;
+  }
+
   try {
     const mc = await backendFetch<any>(`/dir/${p}`, params);
     return { MediaContainer: mc };
   } catch (e: any) {
-    // Graceful fallback for 404/500 so Details page doesn’t crash
+    // Graceful fallback for 404/500 so Details page does not crash
     console.warn('[plexBackendDir] request failed', { path, error: String(e?.message || e) });
     return { MediaContainer: { Metadata: [], Directory: [] } } as any;
   }
