@@ -97,6 +97,7 @@ async function traktFetch(url: string, options?: RequestInit): Promise<Response>
   if (response.status === 401) {
     console.warn('Trakt request 401 Unauthorized - clearing tokens');
     saveTraktTokens(null);
+    window.location.href = '/login';
   }
 
   return response;
