@@ -887,22 +887,35 @@ router.get('/proxy/*',
         method: 'GET',
         url: urlWithToken,
         responseType: 'stream',
+        validateStatus: () => true, // Don't throw on error status
         headers: {
           'Range': req.headers.range,
           'Accept': req.headers.accept,
-        }
+        },
+        decompress: false // Try to get raw stream if possible (axios >= 0.20)
       });
 
+      // Set status
+      res.status(response.status);
+
       // Forward headers
+      // Filter out headers that might cause issues with proxying
+      const unsafeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding', 'content-encoding'];
+
       Object.keys(response.headers).forEach(key => {
-        res.setHeader(key, response.headers[key]);
+        if (!unsafeHeaders.includes(key.toLowerCase())) {
+          res.setHeader(key, response.headers[key]);
+        }
       });
 
       // Pipe the stream
       response.data.pipe(res);
     } catch (error: any) {
       logger.error('Failed to proxy media', error);
-      next(new AppError('Failed to proxy media stream', 500));
+      // Only send error if headers haven't been sent
+      if (!res.headersSent) {
+        next(new AppError(`Failed to proxy media stream: ${error.message}`, 500));
+      }
     }
   }
 );

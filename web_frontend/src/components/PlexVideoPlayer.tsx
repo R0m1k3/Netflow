@@ -136,6 +136,16 @@ export default function PlexVideoPlayer({
           debug: { logLevel: 1 },
         });
 
+        // IMPORTANT: enable credentials for backend proxy authentication
+        // Set for both Manifest (MPD) and Segments
+        dash.setXHRWithCredentialsForType('MPD', true);
+        dash.setXHRWithCredentialsForType('MediaSegment', true);
+        dash.setXHRWithCredentialsForType('InitializationSegment', true);
+        dash.setXHRWithCredentialsForType('IndexSegment', true);
+        dash.setXHRWithCredentialsForType('BitstreamSwitchingSegment', true);
+        dash.setXHRWithCredentialsForType('other', true);
+
+
         // Handle DASH events
         dash.on(dashjs.MediaPlayer.events.PLAYBACK_METADATA_LOADED, () => {
           const st = startTimeRef.current;
@@ -415,7 +425,7 @@ export default function PlexVideoPlayer({
       poster={poster}
       playsInline
       controls={false} // We'll use custom controls
-      crossOrigin="anonymous"
+      crossOrigin="use-credentials"
     />
   );
 }
