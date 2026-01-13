@@ -54,7 +54,7 @@ volumes:
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `SESSION_SECRET` | Secret key for session encryption. Must be a long random string. | **Yes** | - |
+| `SESSION_SECRET` | Secret key for session encryption. Leave empty to auto-generate a persistent secret in `/app/config/secret.key`. | No | Auto-generated |
 | `PORT` | Internal port for the backend. | No | 3001 |
 | `NODE_ENV` | Environment mode (`production` or `development`). | No | production |
 
