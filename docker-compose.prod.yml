@@ -1,8 +1,10 @@
 # Netflow Production Docker Compose
-# Single container with nginx + backend (all-in-one)
+# Single container running backend (serves frontend)
 
 services:
   netflow:
+    # Use pre-built image from GitHub Container Registry
+    # Or build locally by uncommenting the build section
     # build:
     #   context: .
     #   dockerfile: docker/Dockerfile
@@ -10,9 +12,11 @@ services:
     container_name: netflow
     environment:
       - NODE_ENV=production
+      - PORT=3001
+      - HOST=0.0.0.0
       - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET is required}
     ports:
-      - "8080:80"
+      - "3001:3001"
     volumes:
       - netflow-config:/app/config
       - netflow-cache:/app/cache
