@@ -68,7 +68,7 @@ export class TMDBClient {
     // Create axios instance
     this.axiosClient = axios.create({
       baseURL: TMDB_BASE_URL,
-      timeout: 10000,
+      timeout: 30000,
       params: {
         api_key: this.apiKey
       },
