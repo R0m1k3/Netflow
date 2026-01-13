@@ -1,66 +1,59 @@
-# Flixor Production Dockerfile
-# Multi-stage build: Backend (Node.js) + Frontend (Vite) + Nginx
+# Unified Dockerfile: Frontend + Backend in one container
 
-# =============================================================================
-# Stage 1: Build Backend
-# =============================================================================
-FROM node:20-slim AS backend-builder
-WORKDIR /app/backend
-
-COPY backend/package*.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
-
-COPY backend/ .
-RUN npm run build && npm prune --omit=dev
-
-# =============================================================================
-# Stage 2: Build Frontend
-# =============================================================================
+# ========================================
+# Stage 1: Build Frontend
+# ========================================
 FROM node:20-slim AS frontend-builder
-WORKDIR /app/frontend
+WORKDIR /app/web_frontend
 
+# Copy frontend package files
 COPY web_frontend/package*.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 
-COPY web_frontend/ .
+# Copy frontend source and build
+COPY web_frontend/ ./
 RUN npm run build
 
-# =============================================================================
-# Stage 3: Production Runtime
-# =============================================================================
-FROM node:20-slim AS production
+# ========================================
+# Stage 2: Build Backend
+# ========================================
+FROM node:20-slim AS backend-builder
+WORKDIR /app/backend
 
-LABEL org.opencontainers.image.source=https://github.com/R0m1k3/Netflow
+# Copy backend package files
+COPY backend/package*.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
 
-# Install nginx and supervisord
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx \
-    supervisor \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm /etc/nginx/sites-enabled/default
+# Copy backend source and build
+COPY backend/ ./
+RUN npm run build
 
+# Prune dev dependencies
+RUN npm prune --omit=dev
+
+# ========================================
+# Stage 3: Runtime (Single Container)
+# ========================================
+FROM node:20-slim AS runner
+ENV NODE_ENV=production
 WORKDIR /app
 
-# Create directories for config and cache
-RUN mkdir -p /app/config/db /app/cache/images
+# Create directories for DB and caches
+RUN mkdir -p /app/config/db && mkdir -p /app/cache/images
 
-# Copy backend build
+# Copy backend artifacts
 COPY --from=backend-builder /app/backend/dist ./backend/dist
 COPY --from=backend-builder /app/backend/node_modules ./backend/node_modules
 COPY --from=backend-builder /app/backend/package*.json ./backend/
 
-# Copy frontend build to nginx html directory
-COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
+# Copy frontend build (served by backend)
+COPY --from=frontend-builder /app/web_frontend/dist ./web_frontend/dist
 
-# Copy configuration files
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+WORKDIR /app/backend
 
-# Environment defaults
-ENV NODE_ENV=production \
-    PORT=3001 \
-    HOST=127.0.0.1
+EXPOSE 3001
 
-EXPOSE 80
+ENV PORT=3001
+ENV HOST=0.0.0.0
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["node", "dist/server.js"]

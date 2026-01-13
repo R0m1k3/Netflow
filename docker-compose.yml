@@ -1,36 +1,25 @@
-# Netflow Development Docker Compose
-# Runs backend and frontend as separate services for development
+# Netflow Docker Compose - Single Container
+# Frontend + Backend unified
 
 services:
-  backend:
+  netflow:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: netflow-backend
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: netflow
     environment:
       - NODE_ENV=production
       - PORT=3001
       - HOST=0.0.0.0
-      - FRONTEND_URL=http://localhost:8080
-      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-dev}
+      - FRONTEND_URL=http://localhost:3001
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
     ports:
       - "3001:3001"
     volumes:
-      - backend-config:/app/config
-      - backend-cache:/app/cache
-    restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./web_frontend
-      dockerfile: docker/frontend.Dockerfile
-    container_name: netflow-frontend
-    depends_on:
-      - backend
-    ports:
-      - "8080:80"
+      - netflow-config:/app/config
+      - netflow-cache:/app/cache
     restart: unless-stopped
 
 volumes:
-  backend-config:
-  backend-cache:
+  netflow-config:
+  netflow-cache:
