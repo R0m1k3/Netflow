@@ -14,7 +14,13 @@ async function backendFetch<T = any>(path: string, params?: Record<string, any>)
     if (q) url += (url.includes('?') ? '&' : '?') + q;
   }
   const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error(`Plex backend error ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 401) {
+      // Session invalid - force re-login
+      window.location.href = '/login';
+    }
+    throw new Error(`Plex backend error ${res.status}`);
+  }
   return res.json();
 }
 

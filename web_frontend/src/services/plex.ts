@@ -359,6 +359,11 @@ export async function plexUniversalDecision(cfg: PlexConfig, itemId: string, opt
       headers: { 'Accept': 'application/json' },
       credentials: isRemoteDomain ? 'include' : 'omit'
     });
+
+    if (response.status === 401 && isRemoteDomain) {
+      window.location.href = '/login';
+      return { canDirectPlay: false, willTranscode: false, willDirectStream: false } as any;
+    }
     const data = await response.json();
     const c = data.MediaContainer;
     const decision = {
