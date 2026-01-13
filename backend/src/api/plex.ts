@@ -900,7 +900,7 @@ router.get('/proxy/*',
 
       // Forward headers
       // Filter out headers that might cause issues with proxying
-      const unsafeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding', 'content-encoding'];
+      const unsafeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding'];
 
       Object.keys(response.headers).forEach(key => {
         if (!unsafeHeaders.includes(key.toLowerCase())) {
