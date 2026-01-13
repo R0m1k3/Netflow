@@ -108,3 +108,48 @@ export async function plexBackendFindByGuid(guid: string, type?: 1 | 2) {
   const mc = await backendFetch<any>('/findByGuid', type ? { guid, type } : { guid });
   return { MediaContainer: mc };
 }
+
+/**
+ * Get streaming URL via backend (returns proxied URL)
+ */
+export async function plexBackendStreamUrl(ratingKey: string, options?: {
+  maxVideoBitrate?: number;
+  protocol?: 'dash' | 'hls';
+  autoAdjustQuality?: boolean;
+  directPlay?: boolean;
+  directStream?: boolean;
+  audioStreamID?: string;
+  subtitleStreamID?: string;
+}): Promise<{ url: string; ratingKey: string }> {
+  const params: Record<string, any> = {};
+  if (options?.maxVideoBitrate !== undefined) params.maxVideoBitrate = options.maxVideoBitrate;
+  if (options?.protocol) params.protocol = options.protocol;
+  if (options?.autoAdjustQuality !== undefined) params.autoAdjustQuality = options.autoAdjustQuality ? '1' : '0';
+  if (options?.directPlay !== undefined) params.directPlay = options.directPlay ? '1' : '0';
+  if (options?.directStream !== undefined) params.directStream = options.directStream ? '1' : '0';
+  if (options?.audioStreamID) params.audioStreamID = options.audioStreamID;
+  if (options?.subtitleStreamID) params.subtitleStreamID = options.subtitleStreamID;
+
+  const result = await backendFetch<{ url: string; ratingKey: string }>(`/stream/${encodeURIComponent(ratingKey)}`, params);
+  return result;
+}
+
+/**
+ * Build a proxied URL through the backend for any Plex path
+ * Use this when you need to access Plex media directly from the browser via backend proxy
+ */
+export function plexBackendProxyUrl(plexPath: string, params?: Record<string, any>): string {
+  const base = API_BASE.replace(/\/$/, '');
+  const p = plexPath.startsWith('/') ? plexPath.slice(1) : plexPath;
+  let url = `${base}/proxy/${p}`;
+  if (params) {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) qs.append(k, String(v));
+    });
+    const q = qs.toString();
+    if (q) url += `?${q}`;
+  }
+  return url;
+}
+

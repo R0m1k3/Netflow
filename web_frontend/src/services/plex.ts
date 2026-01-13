@@ -340,9 +340,25 @@ export async function plexUniversalDecision(cfg: PlexConfig, itemId: string, opt
   const params = new URLSearchParams();
   Object.entries(props).forEach(([k, v]) => params.set(k, String(v)));
   Object.entries(headers).forEach(([k, v]) => params.set(k, String(v)));
-  const url = `${cfg.baseUrl}/video/:/transcode/universal/decision?${params}`;
+
+  // Check if we're running on a remote domain
+  const isRemoteDomain = typeof window !== 'undefined' && !cfg.baseUrl.includes(window.location.hostname);
+
+  let url: string;
+  if (isRemoteDomain) {
+    // Use backend proxy to avoid CORS issues
+    const apiBase = '/api/plex';
+    url = `${apiBase}/proxy/video/:/transcode/universal/decision?${params}`;
+  } else {
+    url = `${cfg.baseUrl}/video/:/transcode/universal/decision?${params}`;
+  }
+
   try {
-    const response = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json', 'X-Plex-Token': cfg.token } });
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      credentials: isRemoteDomain ? 'include' : 'omit'
+    });
     const data = await response.json();
     const c = data.MediaContainer;
     const decision = {
@@ -375,6 +391,19 @@ export function plexStreamUrl(cfg: PlexConfig, itemId: string, options?: { maxVi
   Object.entries(headers).forEach(([k, v]) => params.set(k, String(v)));
   if (options?.forceReload) params.set('_t', Date.now().toString());
   const ext = options?.protocol === 'hls' ? 'm3u8' : 'mpd';
+
+  // Check if we're running on a remote domain (not same origin as Plex server)
+  // In this case, direct connections will fail due to CORS, so we need to use backend proxy
+  const isRemoteDomain = typeof window !== 'undefined' && !cfg.baseUrl.includes(window.location.hostname);
+
+  if (isRemoteDomain) {
+    // Use backend proxy to avoid CORS issues
+    // Import the proxy URL builder dynamically to avoid circular deps
+    const apiBase = '/api/plex';
+    const streamPath = `video/:/transcode/universal/start.${ext}`;
+    return `${apiBase}/proxy/${streamPath}?${params}`;
+  }
+
   return `${cfg.baseUrl}/video/:/transcode/universal/start.${ext}?${params}`;
 }
 
@@ -391,8 +420,16 @@ export async function plexTimelineUpdate(cfg: PlexConfig, itemId: string, time: 
     context: 'library',
     ...headers,
   });
-  const url = `${cfg.baseUrl}/:/timeline?${params}`;
-  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+  const isRemoteDomain = typeof window !== 'undefined' && !cfg.baseUrl.includes(window.location.hostname);
+  const url = isRemoteDomain
+    ? `/api/plex/proxy/:/timeline?${params}`
+    : `${cfg.baseUrl}/:/timeline?${params}`;
+
+  const res = await fetch(url, {
+    headers: { 'Accept': 'application/json' },
+    credentials: isRemoteDomain ? 'include' : 'omit'
+  });
   if (!res.ok) console.warn('Timeline update failed:', res.status);
   return res;
 }
@@ -426,7 +463,11 @@ export async function plexStopTranscodeSession(cfg: PlexConfig, sessionKey?: str
     session: sessionKey || getPlexSessionId(),
     'X-Plex-Token': cfg.token,
   });
-  const url = `${cfg.baseUrl}/video/:/transcode/universal/stop?${params}`;
+
+  const isRemoteDomain = typeof window !== 'undefined' && !cfg.baseUrl.includes(window.location.hostname);
+  const url = isRemoteDomain
+    ? `/api/plex/proxy/video/:/transcode/universal/stop?${params}`
+    : `${cfg.baseUrl}/video/:/transcode/universal/stop?${params}`;
   try {
     const res = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
     if (!res.ok) console.warn('Failed to stop transcode session:', res.status);
