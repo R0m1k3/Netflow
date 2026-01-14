@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import TopNav from '@/components/TopNav';
 import GlobalToast from '@/components/GlobalToast';
 import { useAuth } from '@/services/auth';
+import api from '@/services/api';
+import { saveSettings } from '@/state/settings';
 
 export default function App() {
   const location = useLocation();
@@ -18,6 +20,33 @@ export default function App() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Pre-load settings when authenticated to ensure localStorage is populated
+  useEffect(() => {
+    if (isAuthenticated) {
+      api.get('/settings/plex').then(res => {
+        // Handle both response formats seen in SettingsPage
+        const data = res.value || res; // Handle Promise.allSettled style or direct
+        const cfg = data.config || (data.configured ? data.config : null);
+
+        if (cfg) {
+          console.log('[App] Pre-loaded Plex settings', cfg);
+          saveSettings({
+            plexBaseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
+            plexToken: cfg.token,
+            plexServer: {
+              name: 'Manual',
+              clientIdentifier: 'manual',
+              baseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
+              token: cfg.token
+            }
+          });
+          // Dispatch event to update listeners
+          window.dispatchEvent(new Event('plex-server-changed'));
+        }
+      }).catch(e => console.error('[App] Failed to pre-load settings', e));
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isAuthRoute) {
