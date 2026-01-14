@@ -1,36 +1,32 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiClient, checkAuth } from '@/services/api';
+import { apiClient } from '@/services/api'; // Removed checkAuth import
+import { useAuth } from '@/services/auth'; // Added useAuth import
 import { useTranslation } from 'react-i18next';
 
 export default function Login() {
   const { t } = useTranslation();
   const nav = useNavigate();
+  // Use global auth state to ensure App.tsx and Login.tsx are in sync
+  const { isAuthenticated, checkAuth } = useAuth();
+
   const [status, setStatus] = useState('Initializing...');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [pinId, setPinId] = useState<number | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
 
+  // Redirect if already authenticated
   useEffect(() => {
-    checkExistingAuth();
-  }, []);
-
-  async function checkExistingAuth() {
-    try {
-      // Check if already authenticated
-      const isAuthenticated = await checkAuth();
-      if (isAuthenticated) {
-        nav('/');
-        return;
-      }
-
-      setStatus('Ready to sign in');
-    } catch (err) {
-      console.error('Auth check failed:', err);
+    if (isAuthenticated) {
+      nav('/');
+    } else {
+      // If we landed here but might be valid, check (e.g. refresh)
+      // But App.tsx already checks on mount.
+      // Just set status to ready.
       setStatus('Ready to sign in');
     }
-  }
+  }, [isAuthenticated, nav]);
 
   async function startPlexAuth() {
     try {
@@ -67,12 +63,13 @@ export default function Login() {
 
           if (result.authenticated) {
             clearInterval(pollInterval);
-            setStatus('Authentication successful! Redirecting...');
+            setStatus('Authentication successful! Syncing session...');
 
-            // Wait a moment for session to be established
-            setTimeout(() => {
-              nav('/');
-            }, 1000);
+            // CRITICAL: Update global auth store before redirecting
+            await checkAuth();
+
+            // Redirect will happen automatically via useEffect when isAuthenticated becomes true
+            // status update just for visual feedback until redirect happens
           }
         } catch (err) {
           console.error('Poll error:', err);
