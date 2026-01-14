@@ -199,7 +199,7 @@ export class PlexClient {
         }
       }
 
-      logger.error(`[Plex] All ${candidates.length} fallback attempts failed for: ${path}`);
+      logger.error(`[Plex] All ${candidates.size} fallback attempts failed for: ${path}`);
       throw err;
     }
   }
