@@ -7,7 +7,7 @@ function classNames(...classes: string[]) {
 }
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState<'general' | 'plex' | 'trakt' | 'security'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'plex' | 'tmdb' | 'trakt' | 'security'>('general');
 
     // Configs
     const [config, setConfig] = useState({
@@ -175,7 +175,12 @@ export default function SettingsPage() {
         try {
             const servers = await api.getServers();
             console.log('Discovered servers:', servers);
-            setPlexServers(servers);
+            if (Array.isArray(servers)) {
+                setPlexServers(servers);
+            } else {
+                console.warn('Scan returned non-array:', servers);
+                setPlexServers([]);
+            }
         } catch (e) { console.error('Failed to scan servers:', e); }
     };
 
