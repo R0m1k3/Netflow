@@ -19,7 +19,7 @@ router.get('/plex', requireAuth, async (req: AuthenticatedRequest, res: Response
         });
 
         if (!user?.plexConfig) {
-            return res.json({ configured: false });
+            return res.json({ configured: false, config: {} });
         }
 
         // Decrypt token if needed (if we decide to encrypt it in plexConfig)
@@ -36,9 +36,12 @@ router.get('/plex', requireAuth, async (req: AuthenticatedRequest, res: Response
             }
         }
 
+        // Check if fully configured
+        const isConfigured = !!(config.host && config.port && config.token);
+
         res.json({
-            configured: true,
-            config
+            configured: isConfigured,
+            config: config // Return whatever we have
         });
     } catch (error) {
         logger.error('Failed to get plex config:', error);

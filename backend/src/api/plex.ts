@@ -439,7 +439,7 @@ router.get('/libraries',
       try {
         client = await getPlexClient(req.user!.id);
       } catch (e) {
-        return res.json({ MediaContainer: { Directory: [] } });
+        return res.json([]);
       }
       const libraries = await client.getLibraries();
       res.json(libraries);

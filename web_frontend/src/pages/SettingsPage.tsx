@@ -62,8 +62,13 @@ export default function SettingsPage() {
                 api.getTraktStatus()
             ]);
 
-            if (plexRes.status === 'fulfilled' && plexRes.value.configured) {
-                setConfig({ ...plexRes.value.config, manual: true });
+            if (plexRes.status === 'fulfilled') {
+                console.log('Loaded Plex settings:', plexRes.value);
+                if (plexRes.value.config) {
+                    setConfig(prev => ({ ...prev, ...plexRes.value.config, manual: true }));
+                } else if (plexRes.value.configured) {
+                    setConfig({ ...plexRes.value.config, manual: true });
+                }
             }
 
             if (prefRes.status === 'fulfilled') {
@@ -567,6 +572,24 @@ export default function SettingsPage() {
                                             className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded transition-colors disabled:opacity-50"
                                         >
                                             {saving ? 'Validation...' : 'Valider & Sauvegarder'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={async (e) => {
+                                                e.preventDefault();
+                                                if (!tmdbKey) return;
+                                                setSaving(true);
+                                                try {
+                                                    const res = await api.validateTmdbKey(tmdbKey);
+                                                    if (res.valid) toast.success('Test réussi ! Clé valide.');
+                                                    else toast.error('Test échoué : Clé invalide.');
+                                                } catch (e) { toast.error('Erreur test connexion'); }
+                                                finally { setSaving(false); }
+                                            }}
+                                            disabled={saving || !tmdbKey}
+                                            className="px-6 bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 rounded transition-colors disabled:opacity-50"
+                                        >
+                                            Tester
                                         </button>
                                         {tmdbKeyInfo?.hasCustomKey && (
                                             <button
