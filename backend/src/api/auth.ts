@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { AppDataSource } from '../db/data-source';
 import { User, UserSettings } from '../db/entities';
 import { AppError } from '../middleware/errorHandler';

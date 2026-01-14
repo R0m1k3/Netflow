@@ -27,7 +27,7 @@ import plextvRoutes from './api/plextv';
 import { settingsRouter } from './api/settings';
 import { errorHandler } from './middleware/errorHandler';
 // Import dependencies for seeding
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { User, UserSettings } from './db/entities';
 import { requestLogger } from './middleware/requestLogger';
 

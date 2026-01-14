@@ -15,7 +15,7 @@ if (!fs.existsSync(dataDir)) {
 const databasePath = process.env.DATABASE_PATH || path.join(dataDir, 'netflow.db');
 
 export const AppDataSource = new DataSource({
-  type: 'sqlite',
+  type: 'better-sqlite3',
   database: databasePath,
   synchronize: process.env.NODE_ENV === 'development',
   logging: process.env.NODE_ENV === 'development' ? ['query', 'error'] : ['error'],
