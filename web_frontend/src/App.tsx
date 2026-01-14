@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { saveTraktTokens } from '@/services/trakt';
 import TopNav from '@/components/TopNav';
 import GlobalToast from '@/components/GlobalToast';
 import { useAuth } from '@/services/auth';
@@ -24,6 +25,7 @@ export default function App() {
   // Pre-load settings when authenticated to ensure localStorage is populated
   useEffect(() => {
     if (isAuthenticated) {
+      // 1. Load Plex Settings
       api.get('/settings/plex').then(res => {
         // Handle both response formats seen in SettingsPage
         const data = res.value || res; // Handle Promise.allSettled style or direct
@@ -45,6 +47,24 @@ export default function App() {
           window.dispatchEvent(new Event('plex-server-changed'));
         }
       }).catch(e => console.error('[App] Failed to pre-load settings', e));
+
+      // 2. Load Trakt Status (Fix for configuration persistence)
+      api.getTraktStatus().then(res => {
+        if (res.connected) {
+          console.log('[App] Pre-loaded Trakt status: connected');
+          // Synthesize dummy token for frontend UI toggle (actual requests use backend cookies)
+          saveTraktTokens({
+            access_token: 'backend_managed',
+            token_type: 'bearer',
+            expires_in: 999999999,
+            refresh_token: 'backend_managed',
+            scope: 'public',
+            created_at: Math.floor(Date.now() / 1000)
+          });
+        } else {
+          saveTraktTokens(null);
+        }
+      }).catch(e => console.error('[App] Failed to pre-load Trakt status', e));
     }
   }, [isAuthenticated]);
 
