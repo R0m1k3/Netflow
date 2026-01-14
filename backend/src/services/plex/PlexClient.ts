@@ -75,7 +75,7 @@ export class PlexClient {
 
     this.axiosClient = axios.create({
       baseURL,
-      timeout: 30000,
+      timeout: 10000,
       httpsAgent: new https.Agent({ rejectUnauthorized: false }),
       headers: {
         'Accept': 'application/json',
@@ -163,10 +163,10 @@ export class PlexClient {
         isTimeout: err.code === 'ECONNABORTED'
       });
 
-      const candidates: string[] = [];
+      const candidates = new Set<string>();
       const port = this.server.port || 32400;
       const protos: Array<'https' | 'http'> = this.server.protocol === 'https' ? ['https', 'http'] : ['http', 'https'];
-      const push = (proto: string, host?: string) => { if (host) candidates.push(`${proto}://${host}:${port}`); };
+      const push = (proto: string, host?: string) => { if (host) candidates.add(`${proto}://${host}:${port}`); };
       // Original
       push(this.server.protocol, this.server.host);
       // Public
@@ -174,15 +174,18 @@ export class PlexClient {
       // Locals
       (this.server.localAddresses || []).forEach(addr => protos.forEach(p => push(p, addr)));
 
-      logger.info(`[Plex] Trying ${candidates.length} fallback URLs for: ${path}`, { candidates });
+      // Convert Set to Array
+      const uniqueCandidates = Array.from(candidates);
 
-      for (const base of candidates) {
+      logger.info(`[Plex] Trying ${uniqueCandidates.length} fallback URLs for: ${path}`, { candidates: uniqueCandidates });
+
+      for (const base of uniqueCandidates) {
         try {
           const fallbackUrl = `${base}${path}`;
           logger.info(`[Plex] Trying fallback: ${fallbackUrl}`);
           const alt = axios.create({
             baseURL: base,
-            timeout: 10000,
+            timeout: 5000,
             headers: this.axiosClient.defaults.headers.common,
           });
           const res = await alt.get<T>(path);
