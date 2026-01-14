@@ -71,12 +71,11 @@ router.post('/plex', requireAuth, async (req: AuthenticatedRequest, res: Respons
             port: Number(port),
             protocol: protocol || 'http',
             token: encryptedToken,
-            manual: manual !== false // Default to true if not specified
+            manual: manual !== false
         };
 
-        // Also update plexToken column for backward compatibility if needed, 
-        // but we generally rely on plexConfig for manual mode.
-        // user.plexToken = encryptedToken; 
+        // Also update the main plexToken so discovery works
+        user.plexToken = encryptedToken;
 
         await userRepository.save(user);
 

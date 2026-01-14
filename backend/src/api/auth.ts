@@ -725,42 +725,60 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
       return res.json([]);
     }
 
-    const accountToken = isEncrypted(user.plexToken)
-      ? decryptForUser(req.user!.id, user.plexToken)
-      : user.plexToken;
+    let accountToken: string | undefined;
+    try {
+      accountToken = isEncrypted(user.plexToken)
+        ? decryptForUser(req.user!.id, user.plexToken)
+        : user.plexToken;
+    } catch (e) {
+      logger.warn(`Failed to decrypt plexToken for user ${req.user!.id}, cannot fetch servers from Plex.tv`);
+      return res.json([]);
+    }
 
-    const response = await axios.get(
-      `${PLEX_TV_URL}/api/v2/resources?includeHttps=1&includeRelay=1`,
-      {
-        headers: getPlexHeaders(req.body.clientId || 'web', accountToken),
-        timeout: 10000, // 10s timeout for external call
-      }
-    );
+    try {
+      const clientId = (req.query.clientId as string) || 'web';
+      const response = await axios.get(
+        `${PLEX_TV_URL}/api/v2/resources?includeHttps=1&includeRelay=1`,
+        {
+          headers: getPlexHeaders(clientId, accountToken),
+          timeout: 10000, // 10s timeout for external call
+        }
+      );
 
-    const servers = response.data
-      .filter((r: any) => r.product === 'Plex Media Server')
-      .map((server: any) => {
-        const connections = server.connections || [];
-        const local = connections.find((c: any) => c.local);
-        const remote = connections.find((c: any) => !c.local && !c.relay);
-        const relay = connections.find((c: any) => c.relay);
-        const bestConnection = local || remote || relay;
+      const servers = response.data
+        .filter((r: any) => r.product === 'Plex Media Server')
+        .map((server: any) => {
+          const connections = server.connections || [];
+          const local = connections.find((c: any) => c.local);
+          const remote = connections.find((c: any) => !c.local && !c.relay);
+          const relay = connections.find((c: any) => c.relay);
+          const bestConnection = local || remote || relay;
 
-        return {
-          name: server.name,
-          clientIdentifier: server.clientIdentifier,
-          baseUrl: bestConnection?.uri,
-          token: server.accessToken,
-          connections: connections.map((c: any) => ({
-            uri: c.uri,
-            local: c.local,
-            relay: c.relay,
-            protocol: c.protocol,
-          })),
-        };
+          return {
+            name: server.name,
+            clientIdentifier: server.clientIdentifier,
+            baseUrl: bestConnection?.uri,
+            token: server.accessToken,
+            connections: connections.map((c: any) => ({
+              uri: c.uri,
+              local: c.local,
+              relay: c.relay,
+              protocol: c.protocol,
+            })),
+          };
+        });
+
+      res.json(servers);
+    } catch (axiosError: any) {
+      logger.warn('Failed to fetch servers from Plex.tv', {
+        status: axiosError?.response?.status,
+        message: axiosError?.message
       });
+      // Return empty list instead of 500 if Plex is unreachable or token invalid
+      res.json([]);
+    }
 
-    res.json(servers);
+
   } catch (error) {
     logger.error('Failed to get Plex servers:', error);
     next(new AppError('Failed to get servers', 500));

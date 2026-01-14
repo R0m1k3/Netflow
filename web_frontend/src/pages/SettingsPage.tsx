@@ -90,7 +90,7 @@ export default function SettingsPage() {
         try {
             await api.post('/settings/plex', config);
             toast.success('Configuration Plex sauvegardée');
-            await api.get('/auth/servers'); // Trigger sync
+            await scanPlexServers(); // Trigger sync and update UI
         } catch (error) {
             console.error(error);
             toast.error('Erreur sauvegarde Plex');
