@@ -8,6 +8,10 @@ export default function LoginPage() {
     const location = useLocation();
     const { login, register } = useAuth();
     const [isRegistering, setIsRegistering] = useState(false);
+
+    // Generic identifier for login (email or username)
+    const [identifier, setIdentifier] = useState('');
+    // Specific email for registration
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [username, setUsername] = useState('');
@@ -25,7 +29,7 @@ export default function LoginPage() {
                 toast.success('Compte créé ! Veuillez vous connecter.');
                 setIsRegistering(false);
             } else {
-                await login(email, password);
+                await login(identifier, password);
                 toast.success('Connexion réussie');
                 navigate(from, { replace: true });
             }
@@ -38,55 +42,69 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-black/90 relative overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 z-0" />
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-home-gradient">
+            {/* Global background layer */}
+            <div className="app-bg-fixed bg-home-gradient" />
 
-            <div className="w-full max-w-md p-8 rounded-2xl bg-zinc-900/80 backdrop-blur-xl border border-white/5 z-10 shadow-2xl">
+            <div className="w-full max-w-md p-8 sm:p-12 rounded-xl bg-black/70 backdrop-blur-md border border-white/5 shadow-2xl relative z-10">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
-                        Netflow
+                    {/* Consistent Branding */}
+                    <h1 className="text-4xl font-extrabold tracking-tight text-red-600 mb-6 drop-shadow-md">
+                        NETFLOW
                     </h1>
-                    <p className="text-zinc-400 mt-2">
-                        {isRegistering ? 'Créez votre compte' : 'Bon retour parmi nous'}
-                    </p>
+                    <h2 className="text-xl font-medium text-white mb-2">
+                        {isRegistering ? 'Créer un compte' : 'S\'identifier'}
+                    </h2>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {isRegistering && (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {isRegistering ? (
+                        <>
+                            <div>
+                                <label className="hidden">Nom d'utilisateur</label>
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="w-full bg-neutral-700/50 border border-transparent rounded px-4 py-3 text-white placeholder-neutral-400 focus:outline-none focus:bg-neutral-700 focus:ring-2 focus:ring-neutral-500 transition-colors"
+                                    placeholder="Nom d'utilisateur"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="hidden">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full bg-neutral-700/50 border border-transparent rounded px-4 py-3 text-white placeholder-neutral-400 focus:outline-none focus:bg-neutral-700 focus:ring-2 focus:ring-neutral-500 transition-colors"
+                                    placeholder="Email"
+                                    required
+                                />
+                            </div>
+                        </>
+                    ) : (
                         <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-1">Nom d'utilisateur</label>
+                            <label className="hidden">Email ou Nom d'utilisateur</label>
                             <input
                                 type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
-                                placeholder="Votre nom"
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
+                                className="w-full bg-neutral-700/50 border border-transparent rounded px-4 py-3 text-white placeholder-neutral-400 focus:outline-none focus:bg-neutral-700 focus:ring-2 focus:ring-neutral-500 transition-colors"
+                                placeholder="Email ou nom d'utilisateur"
                                 required
                             />
                         </div>
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Email</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
-                            placeholder="nom@exemple.com"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Mot de passe</label>
+                        <label className="hidden">Mot de passe</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all"
-                            placeholder="••••••••"
+                            className="w-full bg-neutral-700/50 border border-transparent rounded px-4 py-3 text-white placeholder-neutral-400 focus:outline-none focus:bg-neutral-700 focus:ring-2 focus:ring-neutral-500 transition-colors"
+                            placeholder="Mot de passe"
                             required
                         />
                     </div>
@@ -94,19 +112,20 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium py-3 rounded-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded transition-colors disabled:opacity-50 mt-4"
                     >
-                        {loading ? 'Chargement...' : (isRegistering ? 'S\'inscrire' : 'Se connecter')}
+                        {loading ? 'Chargement...' : (isRegistering ? 'S\'inscrire' : 'S\'identifier')}
                     </button>
                 </form>
 
-                <div className="mt-6 text-center">
+                <div className="mt-8 text-center text-zinc-400 text-sm">
+                    {isRegistering ? 'Déjà inscrit ?' : 'Première visite sur Netflow ?'}{' '}
                     <button
                         type="button"
                         onClick={() => setIsRegistering(!isRegistering)}
-                        className="text-sm text-zinc-400 hover:text-white transition-colors"
+                        className="text-white hover:underline transition-colors ml-1 font-medium"
                     >
-                        {isRegistering ? 'Déjà un compte ? Se connecter' : 'Pas encore de compte ? S\'inscrire'}
+                        {isRegistering ? 'S\'identifier' : 'Inscrivez-vous'}
                     </button>
                 </div>
             </div>

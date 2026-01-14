@@ -84,15 +84,21 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 // Standard Login
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
+    const email = req.body.email || identifier; // Backward compatibility
 
     if (!email || !password) {
-      throw new AppError('Email and password are required', 400);
+      throw new AppError('Identifier and password are required', 400);
     }
 
     const userRepository = AppDataSource.getRepository(User);
+
+    // Find by email OR username
     const user = await userRepository.findOne({
-      where: { email },
+      where: [
+        { email: email },
+        { username: email }
+      ],
       select: ['id', 'username', 'email', 'password', 'plexId', 'hasPassword', 'thumb', 'subscription']
     });
 
