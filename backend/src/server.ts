@@ -193,25 +193,25 @@ async function startServer() {
     // Error handling middleware (must be last)
     app.use(errorHandler);
 
-  });
 
-  // Graceful shutdown
-  process.on('SIGTERM', async () => {
-    serverLogger.info('SIGTERM signal received: closing server');
-    await AppDataSource.destroy();
-    process.exit(0);
-  });
 
-  process.on('SIGINT', async () => {
-    serverLogger.info('SIGINT signal received: closing server');
-    await AppDataSource.destroy();
-    process.exit(0);
-  });
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      serverLogger.info('SIGTERM signal received: closing server');
+      await AppDataSource.destroy();
+      process.exit(0);
+    });
 
-} catch (error) {
-  serverLogger.error('Failed to start server:', error);
-  process.exit(1);
-}
+    process.on('SIGINT', async () => {
+      serverLogger.info('SIGINT signal received: closing server');
+      await AppDataSource.destroy();
+      process.exit(0);
+    });
+
+  } catch (error) {
+    serverLogger.error('Failed to start server:', error);
+    process.exit(1);
+  }
 }
 
 // Start the server
