@@ -677,8 +677,21 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 // Get Plex servers for authenticated user
 router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    // Defensive check: ensure user exists
+    if (!req.user?.id) {
+      logger.warn('GET /servers called without valid user');
+      return res.json([]);
+    }
+
     const settingsRepository = AppDataSource.getRepository(UserSettings);
-    const settings = await settingsRepository.findOne({ where: { userId: req.user!.id } });
+    let settings: UserSettings | null = null;
+    try {
+      settings = await settingsRepository.findOne({ where: { userId: req.user.id } });
+    } catch (e) {
+      logger.warn('Failed to query user settings', { error: e });
+      return res.json([]);
+    }
+
     const savedServers = (settings?.plexServers || []) as any[];
 
     // If we have cached servers, return them directly (much faster than hitting Plex.tv)
