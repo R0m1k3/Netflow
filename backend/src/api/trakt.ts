@@ -160,7 +160,9 @@ router.get('/users/me', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const status = e?.response?.status;
     const data = e?.response?.data;
     if (status === 401 || status === 403) {
-      return next(new AppError('Trakt not authenticated', 401));
+      // Return 404 to indicate "Trakt Profile Not Found" (not connected)
+      // instead of 401 which might trigger a global app logout in the frontend
+      return next(new AppError('Trakt not authenticated', 404));
     }
     logger.error('Trakt user profile failed', { status, data, message: e?.message });
     const statusCode = (status && status >= 400 && status < 600) ? status : 500;

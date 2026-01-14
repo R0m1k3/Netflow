@@ -65,18 +65,20 @@ export function TraktAuth({ onAuthComplete, onAuthError }: TraktAuthProps) {
 
   const checkExistingAuth = async () => {
     try {
-      const token = await ensureValidToken();
-      if (token) {
-        const profile = await traktGetUserProfile(token);
+      // Check backend status directly (via session cookie), ignoring local token state
+      const profile = await traktGetUserProfile('');
+
+      if (profile) {
         setUserProfile(profile);
+      } else {
+        // Backend says not connected (404)
+        setUserProfile(null);
+        saveTraktTokens(null); // Ensure local state matches backend
       }
     } catch (err: any) {
       console.error('Failed to check existing auth:', err);
-      // If unauthorized, clear local state to prevent loop
-      if (err.message && err.message.includes('401')) {
-        saveTraktTokens(null);
-        setUserProfile(null);
-      }
+      // If network error or other issue, keep loading state? Or fail safely?
+      // For now, assume disconnected on error to avoid UI stuck
     } finally {
       setIsLoading(false);
     }

@@ -216,9 +216,13 @@ export async function traktRevokeToken(accessToken: string): Promise<void> {
 }
 
 // User
-export async function traktGetUserProfile(_accessToken: string): Promise<TraktUser> {
+export async function traktGetUserProfile(_accessToken: string): Promise<TraktUser | null> {
   // Use backend + session cookie
   const response = await traktFetch(`${TRAKT}/users/me`, { credentials: 'include' });
+
+  if (response.status === 404) {
+    return null;
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to get user profile: ${response.status}`);
