@@ -10,7 +10,7 @@ import Details from './routes/Details';
 import Person from './routes/Person';
 import Player from './routes/Player';
 import SettingsPage from './pages/SettingsPage';
-import LoginPage from './pages/LoginPage';
+import Login from './routes/Login';
 import NewPopular from './routes/NewPopular';
 import MyList from './routes/MyList';
 import Search from './routes/Search';
@@ -26,7 +26,7 @@ const router = createBrowserRouter([
       { path: 'person/:id', element: <Person /> },
       { path: 'player/:id', element: <Player /> },
       { path: 'settings', element: <SettingsPage /> },
-      { path: 'login', element: <LoginPage /> },
+      { path: 'login', element: <Login /> },
       { path: 'new-popular', element: <NewPopular /> },
       { path: 'my-list', element: <MyList /> },
       { path: 'search', element: <Search /> },
