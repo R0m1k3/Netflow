@@ -48,6 +48,11 @@ export default function App() {
     return <div className="min-h-screen app-bg-fixed bg-black flex items-center justify-center text-zinc-500">Chargement...</div>;
   }
 
+  // Prevent rendering protected routes while redirecting
+  if (!isAuthenticated && !isAuthRoute) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Global fixed background layer */}

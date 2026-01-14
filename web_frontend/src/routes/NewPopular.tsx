@@ -114,7 +114,6 @@ export default function NewPopular() {
       title: item.title,
       image: item.thumb ? apiClient.getPlexImageNoToken(item.thumb) : undefined,
       subtitle: item.year?.toString(),
-      subtitle: item.year?.toString(),
       badge: t('new_popular.badges.new'),
       mediaType: item.type === 'movie' ? 'movie' : 'show' as const
     }));
@@ -125,7 +124,6 @@ export default function NewPopular() {
       id: `plex:${item.ratingKey}`,
       title: item.title || item.grandparentTitle,
       image: item.thumb ? apiClient.getPlexImageNoToken((item.thumb || item.parentThumb || item.grandparentThumb) || '') : undefined,
-      subtitle: item.year?.toString(),
       subtitle: item.year?.toString(),
       badge: t('new_popular.badges.popular'),
       mediaType: item.type === 'movie' ? 'movie' : 'show' as const

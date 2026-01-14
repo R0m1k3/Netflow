@@ -43,6 +43,11 @@ export default function SettingsPage() {
     const [traktStatus, setTraktStatus] = useState({ connected: false, username: '' });
     const [isTraktAuthenticating, setIsTraktAuthenticating] = useState(false);
     const [traktAuthStatus, setTraktAuthStatus] = useState('');
+    const [traktDeviceCode, setTraktDeviceCode] = useState('');
+
+    // Plex Servers (Discovered)
+    const [plexServers, setPlexServers] = useState<any[]>([]);
+    const [startPlexScan, setStartPlexScan] = useState(false);
 
     useEffect(() => {
         loadAllSettings();
@@ -133,6 +138,8 @@ export default function SettingsPage() {
                         toast.success('Token récupéré !');
                         setIsPlexAuthenticating(false);
                         setPlexAuthStatus('');
+                        // Trigger scan after token
+                        setStartPlexScan(true);
                     }
                 } catch (err) { }
             }, 2000);
@@ -151,6 +158,50 @@ export default function SettingsPage() {
         }
     };
 
+    // --- PLEX DISCOVERY ---
+    useEffect(() => {
+        if (startPlexScan) {
+            scanPlexServers();
+            setStartPlexScan(false);
+        }
+    }, [startPlexScan]);
+
+    const scanPlexServers = async () => {
+        try {
+            const servers = await api.plexServers(); // This usually gets cached servers or fetches new
+            setPlexServers(servers);
+        } catch (e) { console.error(e); }
+    };
+
+    const handleSelectServerConnection = (server: any, connection: any) => {
+        // Auto-fill config from selected connection
+        let protocol = 'http';
+        let host = '';
+        let port = 32400;
+
+        if (connection.uri) {
+            try {
+                const u = new URL(connection.uri);
+                protocol = u.protocol.replace(':', '');
+                host = u.hostname;
+                port = parseInt(u.port || '32400');
+            } catch { }
+        } else {
+            host = connection.address;
+            port = connection.port;
+            protocol = connection.protocol;
+        }
+
+        setConfig({
+            host,
+            port,
+            protocol: protocol as any,
+            token: server.token || config.token, // Use server token if available
+            manual: true
+        });
+        toast.success(`Configuré: ${server.name} via ${host}`);
+    };
+
     // --- TRAKT HANDLERS ---
 
     const handleConnectTrakt = async () => {
@@ -162,13 +213,12 @@ export default function SettingsPage() {
             // Show code to user logic (Trakt device flow requires user to visit url and enter code)
             const { user_code, verification_url, device_code, interval } = codeData;
 
-            // For better UX we should show a modal, but for now let's use prompt/alert or simple UI update?
-            // Since this is a specialized agentic response, let's just create a nice UI area for it.
-            // But we are inside handler. Let's redirect user or show link.
-
+            // Open verification URL
             window.open(verification_url, '_blank');
-            toast('Entrez le code: ' + user_code, { duration: 10000, icon: '🔑' });
-            setTraktAuthStatus(`Entrez le code: ${user_code} sur la page ouverte`);
+
+            // Set code for UI display
+            setTraktDeviceCode(user_code);
+            setTraktAuthStatus(`Entrez ce code sur la page Trakt`);
 
             const pollInterval = setInterval(async () => {
                 const res = await api.pollTraktDeviceToken(device_code);
@@ -177,11 +227,13 @@ export default function SettingsPage() {
                     toast.success('Compte Trakt connecté !');
                     setTraktStatus({ connected: true, username: 'Connecté' });
                     setTraktAuthStatus('');
+                    setTraktDeviceCode('');
                     setIsTraktAuthenticating(false);
                 } else if (res.error === 'expired_token' || res.error === 'access_denied') {
                     clearInterval(pollInterval);
                     setIsTraktAuthenticating(false);
                     setTraktAuthStatus('Échec ou expiré');
+                    setTraktDeviceCode('');
                 }
                 // allow pending...
             }, (interval || 5) * 1000);
@@ -309,6 +361,46 @@ export default function SettingsPage() {
                             <p className="text-zinc-400 mb-6">Connexion directe à votre serveur Plex Media Server.</p>
 
                             <form onSubmit={handleSavePlex} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+
+                                {/* Server Discovery Section */}
+                                <div className="md:col-span-2 bg-black/40 p-4 rounded-lg border border-white/5 mb-4">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className="text-white font-medium">Serveurs Découverts</h3>
+                                        <button
+                                            type="button"
+                                            onClick={scanPlexServers}
+                                            className="text-xs bg-zinc-700 px-2 py-1 rounded text-white hover:bg-zinc-600"
+                                        >
+                                            Actualiser
+                                        </button>
+                                    </div>
+
+                                    {plexServers.length === 0 ? (
+                                        <p className="text-sm text-zinc-500 italic">Aucun serveur détecté. Assurez-vous d'avoir un token valide.</p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {plexServers.map(srv => (
+                                                <div key={srv.clientIdentifier} className="border-l-2 border-red-500 pl-3">
+                                                    <div className="text-white font-bold">{srv.name}</div>
+                                                    <div className="flex flex-wrap gap-2 mt-1">
+                                                        {srv.connections?.map((conn: any, idx: number) => (
+                                                            <button
+                                                                key={idx}
+                                                                type="button"
+                                                                onClick={() => handleSelectServerConnection(srv, conn)}
+                                                                className="text-xs bg-zinc-800 hover:bg-red-900 border border-zinc-700 px-2 py-1 rounded text-zinc-300 transition-colors"
+                                                                title={conn.uri}
+                                                            >
+                                                                {conn.local ? '🏠 Local' : '☁️ Distant'} ({conn.protocol})
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-zinc-400 mb-1">Protocole</label>
                                     <select
@@ -402,7 +494,22 @@ export default function SettingsPage() {
 
                                 {traktAuthStatus && (
                                     <div className="bg-blue-900/30 p-4 rounded mb-6 text-blue-200 text-center animate-pulse">
-                                        {traktAuthStatus}
+                                        <p className="mb-2">{traktAuthStatus}</p>
+                                        {traktDeviceCode && (
+                                            <div className="flex items-center justify-center gap-2 mt-2">
+                                                <code className="bg-black/40 px-3 py-1 rounded text-xl font-mono tracking-widest">{traktDeviceCode}</code>
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(traktDeviceCode);
+                                                        toast.success('Code copié !');
+                                                    }}
+                                                    className="bg-white/10 hover:bg-white/20 p-2 rounded transition-colors"
+                                                    title="Copier le code"
+                                                >
+                                                    📋
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
