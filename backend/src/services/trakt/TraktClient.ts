@@ -25,7 +25,7 @@ export class TraktClient {
     this.userId = userId;
     this.axios = axios.create({
       baseURL: 'https://api.trakt.tv',
-      timeout: 15000,
+      timeout: 5000,
       headers: {
         'trakt-api-version': '2',
         'trakt-api-key': this.clientId,
@@ -92,7 +92,7 @@ export class TraktClient {
           headers['Authorization'] = `Bearer ${refreshed.access_token}`;
           return headers;
         }
-      } catch {}
+      } catch { }
       headers['Authorization'] = `Bearer ${tokens.access_token}`;
     }
     return headers;
@@ -128,46 +128,46 @@ export class TraktClient {
   }
 
   // Public endpoints
-  async trending(type: 'movies'|'shows', limit?: number) {
+  async trending(type: 'movies' | 'shows', limit?: number) {
     const url = `/${type}/trending${limit ? `?limit=${limit}` : ''}`;
     const res = await this.axios.get(url);
     return res.data;
   }
 
-  async popular(type: 'movies'|'shows', limit?: number) {
+  async popular(type: 'movies' | 'shows', limit?: number) {
     const url = `/${type}/popular${limit ? `?limit=${limit}` : ''}`;
     const res = await this.axios.get(url);
     return res.data;
   }
 
   // Charts: Most Watched over a period (public)
-  async mostWatched(type: 'movies'|'shows', period: 'daily'|'weekly'|'monthly'|'yearly'|'all' = 'weekly', limit?: number) {
+  async mostWatched(type: 'movies' | 'shows', period: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'all' = 'weekly', limit?: number) {
     const url = `/${type}/watched/${period}${limit ? `?limit=${limit}` : ''}`;
     const res = await this.axios.get(url);
     return res.data;
   }
 
   // Anticipated (public)
-  async anticipated(type: 'movies'|'shows', limit?: number) {
+  async anticipated(type: 'movies' | 'shows', limit?: number) {
     const url = `/${type}/anticipated${limit ? `?limit=${limit}` : ''}`;
     const res = await this.axios.get(url);
     return res.data;
   }
 
   // Authenticated endpoints
-  async recommendations(type: 'movies'|'shows', limit?: number) {
+  async recommendations(type: 'movies' | 'shows', limit?: number) {
     const url = `/recommendations/${type}${limit ? `?limit=${limit}` : ''}`;
     const res = await this.axios.get(url, { headers: await this.authHeaders() });
     return res.data;
   }
 
-  async watchlist(type?: 'movies'|'shows') {
+  async watchlist(type?: 'movies' | 'shows') {
     const url = `/users/me/watchlist${type ? `/${type}` : ''}`;
     const res = await this.axios.get(url, { headers: await this.authHeaders() });
     return res.data;
   }
 
-  async history(type?: 'movies'|'shows', limit?: number) {
+  async history(type?: 'movies' | 'shows', limit?: number) {
     let url = `/users/me/history`;
     if (type) url += `/${type}`;
     if (limit) url += `?limit=${limit}`;

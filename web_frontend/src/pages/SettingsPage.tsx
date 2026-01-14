@@ -55,36 +55,36 @@ export default function SettingsPage() {
 
     const loadAllSettings = async () => {
         setLoading(true);
-        try { // Use parallel loading
-            const [plexRes, prefRes, traktRes] = await Promise.allSettled([
-                api.get('/settings/plex'),
-                api.getPreferences(),
-                api.getTraktStatus()
-            ]);
 
-            if (plexRes.status === 'fulfilled') {
-                console.log('Loaded Plex settings:', plexRes.value);
-                if (plexRes.value.config) {
-                    setConfig(prev => ({ ...prev, ...plexRes.value.config, manual: true }));
-                } else if (plexRes.value.configured) {
-                    setConfig({ ...plexRes.value.config, manual: true });
-                }
+        // Load Plex settings (Critical)
+        api.get('/settings/plex').then(res => {
+            console.log('Loaded Plex settings:', res);
+            if (res.config) {
+                setConfig(prev => ({ ...prev, ...res.config, manual: true }));
+            } else if (res.configured) {
+                setConfig({ ...res.config, manual: true });
             }
+        }).catch(err => {
+            console.error('Failed to load Plex settings', err);
+            toast.error('Erreur chargement Plex');
+        });
 
-            if (prefRes.status === 'fulfilled') {
-                setPreferences(prev => ({ ...prev, ...prefRes.value }));
-            }
+        // Load Preferences (UI)
+        api.getPreferences().then(res => {
+            setPreferences(prev => ({ ...prev, ...res }));
+        }).catch(err => console.error('Failed to load preferences', err));
 
-            if (traktRes.status === 'fulfilled') {
-                setTraktStatus(traktRes.value);
-            }
+        // Load Trakt (Optional / Slow)
+        api.getTraktStatus().then(res => {
+            setTraktStatus(res);
+        }).catch(err => console.error('Failed to load Trakt status', err));
 
-        } catch (error) {
-            console.error('Failed to load settings', error);
-            toast.error('Erreur chargement paramètres');
-        } finally {
+        // We don't wait for everything to finish to show the UI, 
+        // but we unset "loading" quickly for the main parts.
+        // Actually, let's keep loading true only for Plex config which is critical.
+        api.get('/settings/plex').finally(() => {
             setLoading(false);
-        }
+        });
     };
 
     // --- PLEX HANDLERS ---
