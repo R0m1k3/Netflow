@@ -690,16 +690,34 @@ export async function getPlexClient(userId: string, serverId?: string): Promise<
   const settingsRepo = AppDataSource.getRepository(UserSettings);
   const settings = await settingsRepo.findOne({ where: { userId } });
 
+  logger.info('[getPlexClient] Checking settings', {
+    userId,
+    requestedServerId: serverId,
+    hasSettings: !!settings,
+    plexServersCount: settings?.plexServers?.length || 0,
+    currentServerId: settings?.currentServerId || 'NOT_SET',
+    plexServerIds: settings?.plexServers?.map((s: any) => s.id) || [],
+  });
+
   if (!settings?.plexServers || settings.plexServers.length === 0) {
-    throw new Error('No Plex servers configured');
+    logger.warn('[getPlexClient] No Plex servers configured for user', { userId });
+    throw new Error('No Plex servers configured. Please add a Plex server in Settings.');
   }
 
-  // Use specified server or current server
-  const targetServerId = serverId || settings.currentServerId;
+  // Use specified server or current server or fallback to first server
+  const targetServerId = serverId || settings.currentServerId || settings.plexServers[0]?.id;
   const server = settings.plexServers.find((s: any) => s.id === targetServerId);
 
+  logger.info('[getPlexClient] Server lookup', {
+    userId,
+    targetServerId,
+    serverFound: !!server,
+    serverName: server?.name || 'NOT_FOUND',
+  });
+
   if (!server) {
-    throw new Error('Server not found');
+    logger.warn('[getPlexClient] Server not found', { userId, targetServerId, availableServers: settings.plexServers.map((s: any) => ({ id: s.id, name: s.name })) });
+    throw new Error(`Plex server not found. Please select a server in Settings.`);
   }
 
   const cacheKey = `${userId}:${server.id}`;
