@@ -19,6 +19,7 @@ backend/cache/images/plex/
 build
 *.dylib
 *.sqlite*
+backend/data/
 deps/
 Pods/
 *.xcodeproj

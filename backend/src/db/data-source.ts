@@ -4,14 +4,15 @@ import { User, UserSettings, Session, CacheEntry } from './entities';
 import path from 'path';
 import fs from 'fs';
 
-// Ensure config directory exists
-const configDir = process.env.CONFIG_DIRECTORY || './config';
-const dbDir = path.join(configDir, 'db');
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Ensure data directory exists
+const rootDir = path.resolve(__dirname, '../../'); // Resolve to backend root
+const dataDir = process.env.DATA_DIRECTORY || path.join(rootDir, 'data');
+
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const databasePath = process.env.DATABASE_PATH || path.join(configDir, 'db', 'app.sqlite');
+const databasePath = process.env.DATABASE_PATH || path.join(dataDir, 'netflow.db');
 
 export const AppDataSource = new DataSource({
   type: 'sqlite',
