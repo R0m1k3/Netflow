@@ -79,6 +79,46 @@ router.post('/plex', requireAuth, async (req: AuthenticatedRequest, res: Respons
 
         await userRepository.save(user);
 
+        // SYNC TO USER SETTINGS so getPlexClient works
+        const settingsRepository = AppDataSource.getRepository(UserSettings);
+        let settings = await settingsRepository.findOne({ where: { userId: user.id } });
+
+        if (!settings) {
+            settings = settingsRepository.create({ userId: user.id });
+        }
+
+        // Create a manual server entry
+        const manualServerId = 'manual-server';
+        const manualServer = {
+            id: manualServerId,
+            name: `Manual (${host})`,
+            host: host,
+            port: Number(port),
+            protocol: protocol || 'http',
+            owned: true,
+            accessToken: encryptedToken,
+            publicAddress: host,
+            localAddresses: [host],
+            preferredUri: `${protocol || 'http'}://${host}:${port}`,
+            connections: [{
+                uri: `${protocol || 'http'}://${host}:${port}`,
+                address: host,
+                port: Number(port),
+                protocol: protocol || 'http',
+                local: true
+            }]
+        };
+
+        // Update or add to plexServers
+        const existingServers = settings.plexServers || [];
+        const otherServers = existingServers.filter((s: any) => s.id !== manualServerId);
+        settings.plexServers = [manualServer, ...otherServers];
+
+        // Auto-select manual server
+        settings.currentServerId = manualServerId;
+
+        await settingsRepository.save(settings);
+
         logger.info(`Updated manual Plex config for user ${user.username}`);
 
         res.json({ success: true });
