@@ -1,6 +1,7 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
+import axios from 'axios';
 import { AppDataSource } from '../db/data-source';
-import { User } from '../db/entities';
+import { User, UserSettings } from '../db/entities';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { createLogger } from '../utils/logger';
 import { encryptForUser, decryptForUser, isEncrypted } from '../utils/crypto';
@@ -85,6 +86,95 @@ router.post('/plex', requireAuth, async (req: AuthenticatedRequest, res: Respons
     } catch (error) {
         logger.error('Failed to save plex config:', error);
         res.status(500).json({ error: 'Failed to save configuration' });
+    }
+});
+
+// Update generic preferences
+router.post('/preferences', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { listProvider, language, theme, autoPlay, quality, subtitles } = req.body;
+
+        const settingsRepository = AppDataSource.getRepository(UserSettings);
+        let settings = await settingsRepository.findOne({ where: { userId: req.user!.id } });
+
+        if (!settings) {
+            settings = settingsRepository.create({ userId: req.user!.id });
+        }
+
+        settings.preferences = {
+            ...settings.preferences,
+            ...(language && { language }),
+            ...(theme && { theme }),
+            ...(typeof autoPlay === 'boolean' && { autoPlay }),
+            ...(quality && { quality }),
+            ...(typeof subtitles === 'boolean' && { subtitles }),
+            ...(listProvider && { listProvider }), // Add custom fields
+        } as any;
+
+        await settingsRepository.save(settings);
+        res.json({ success: true, preferences: settings.preferences });
+    } catch (error) {
+        logger.error('Failed to save preferences:', error);
+        res.status(500).json({ error: 'Failed to save preferences' });
+    }
+});
+
+// Get generic preferences
+router.get('/preferences', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const settingsRepository = AppDataSource.getRepository(UserSettings);
+        const settings = await settingsRepository.findOne({ where: { userId: req.user!.id } });
+        res.json(settings?.preferences || {});
+    } catch (error) {
+        logger.error('Failed to get preferences:', error);
+        res.status(500).json({ error: 'Failed to retrieve preferences' });
+    }
+});
+
+// Test Plex Configuration
+router.post('/test/plex', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const { host, port, protocol, token } = req.body;
+        if (!host || !port || !token) {
+            return res.status(400).json({ error: 'Missing parameters' });
+        }
+
+        // Simple test: try to fetch identity or server info
+        const url = `${protocol}://${host}:${port}/identity`;
+        const response = await axios.get(url, {
+            headers: { 'X-Plex-Token': token },
+            timeout: 5000
+        });
+
+        res.json({ success: true, data: response.data });
+    } catch (error: any) {
+        logger.warn('Plex connection test failed:', error.message);
+        res.status(400).json({ success: false, error: 'Connection failed', details: error.message });
+    }
+});
+
+// Get Trakt Status
+router.get('/trakt/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { TraktClient } = await import('../services/trakt/TraktClient');
+        const client = new TraktClient(req.user!.id);
+
+        // Try to get profile or tokens check
+        try {
+            const profile = await client.userProfile();
+            res.json({ connected: true, username: profile.username });
+        } catch (e: any) {
+            // 404/401 means not connected or invalid
+            const isAuthError = e?.response?.status === 401 || e?.response?.status === 403 || e?.response?.status === 404;
+            if (isAuthError) {
+                res.json({ connected: false });
+            } else {
+                throw e;
+            }
+        }
+    } catch (error) {
+        logger.error('Failed to check trakt status:', error);
+        res.json({ connected: false });
     }
 });
 

@@ -161,6 +161,46 @@ class ApiClient {
     const path = bucket ? `/cache/flush?bucket=${bucket}` : '/cache/flush';
     return this.request(path, { method: 'POST' });
   }
+
+  // Preferences
+  async getPreferences() {
+    return this.request('/settings/preferences');
+  }
+
+  async savePreferences(prefs: any) {
+    return this.request('/settings/preferences', {
+      method: 'POST',
+      body: JSON.stringify(prefs)
+    });
+  }
+
+  // Trakt
+  async getTraktStatus() {
+    return this.request('/settings/trakt/status');
+  }
+
+  async getTraktDeviceCode() {
+    return this.request('/trakt/oauth/device/code', { method: 'POST' });
+  }
+
+  async pollTraktDeviceToken(code: string) {
+    return this.request('/trakt/oauth/device/token', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+  }
+
+  async signOutTrakt() {
+    return this.request('/trakt/signout', { method: 'POST' });
+  }
+
+  // Test Connection
+  async testPlexConnection(config: { host: string; port: number; protocol: string; token: string }) {
+    return this.request('/settings/test/plex', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    });
+  }
 }
 
 export const apiClient = new ApiClient();

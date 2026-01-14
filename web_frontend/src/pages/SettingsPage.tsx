@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '@/services/api';
 
+function classNames(...classes: string[]) {
+    return classes.filter(Boolean).join(' ');
+}
+
 export default function SettingsPage() {
+    const [activeTab, setActiveTab] = useState<'general' | 'plex' | 'trakt' | 'security'>('general');
+
+    // Configs
     const [config, setConfig] = useState({
         host: '',
         port: 32400,
@@ -10,115 +17,126 @@ export default function SettingsPage() {
         token: '',
         manual: true
     });
+
+    const [preferences, setPreferences] = useState({
+        listProvider: 'plex',
+        language: 'fr',
+        theme: 'dark'
+    });
+
     const [passwords, setPasswords] = useState({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
     });
+
+    // States
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [changingPassword, setChangingPassword] = useState(false);
 
-    // Plex Auth State
+    // Plex Auth
     const [isPlexAuthenticating, setIsPlexAuthenticating] = useState(false);
     const [plexAuthStatus, setPlexAuthStatus] = useState('');
+    const [testingPlex, setTestingPlex] = useState(false);
+
+    // Trakt Auth
+    const [traktStatus, setTraktStatus] = useState({ connected: false, username: '' });
+    const [isTraktAuthenticating, setIsTraktAuthenticating] = useState(false);
+    const [traktAuthStatus, setTraktAuthStatus] = useState('');
 
     useEffect(() => {
-        loadConfig();
+        loadAllSettings();
     }, []);
 
-    const loadConfig = async () => {
-        try {
-            const res = await api.get('/settings/plex');
-            if (res.data.configured) {
-                setConfig({ ...res.data.config, manual: true });
+    const loadAllSettings = async () => {
+        setLoading(true);
+        try { // Use parallel loading
+            const [plexRes, prefRes, traktRes] = await Promise.allSettled([
+                api.get('/settings/plex'),
+                api.getPreferences(),
+                api.getTraktStatus()
+            ]);
+
+            if (plexRes.status === 'fulfilled' && plexRes.value.configured) {
+                setConfig({ ...plexRes.value.config, manual: true });
             }
+
+            if (prefRes.status === 'fulfilled') {
+                setPreferences(prev => ({ ...prev, ...prefRes.value }));
+            }
+
+            if (traktRes.status === 'fulfilled') {
+                setTraktStatus(traktRes.value);
+            }
+
         } catch (error) {
             console.error('Failed to load settings', error);
-            toast.error('Erreur lors du chargement des paramètres');
+            toast.error('Erreur chargement paramètres');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSave = async (e: React.FormEvent) => {
+    // --- PLEX HANDLERS ---
+
+    const handleSavePlex = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         try {
             await api.post('/settings/plex', config);
-            toast.success('Configuration sauvegardée');
-            // Optionally trigger a sync or reload servers
-            await api.get('/auth/servers');
+            toast.success('Configuration Plex sauvegardée');
+            await api.get('/auth/servers'); // Trigger sync
         } catch (error) {
-            console.error('Failed to save settings', error);
-            toast.error('Erreur lors de la sauvegarde');
+            console.error(error);
+            toast.error('Erreur sauvegarde Plex');
         } finally {
             setSaving(false);
         }
     };
 
-    const handleChangePassword = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (passwords.newPassword !== passwords.confirmPassword) {
-            toast.error('Les nouveaux mots de passe ne correspondent pas');
-            return;
-        }
-
-        setChangingPassword(true);
+    const handleTestPlex = async () => {
+        setTestingPlex(true);
         try {
-            await api.post('/auth/password', {
-                currentPassword: passwords.currentPassword,
-                newPassword: passwords.newPassword
-            });
-            toast.success('Mot de passe mis à jour');
-            setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        } catch (error: any) {
-            console.error('Failed to change password', error);
-            toast.error(error.message || 'Erreur lors du changement de mot de passe');
+            const res = await api.testPlexConnection(config as any);
+            if (res.success) {
+                toast.success('Connexion Plex réussie !');
+            } else {
+                toast.error('Échec connexion Plex');
+            }
+        } catch (error) {
+            toast.error('Erreur test connexion');
         } finally {
-            setChangingPassword(false);
+            setTestingPlex(false);
         }
     };
 
     const handleGetPlexToken = async () => {
         try {
-            // Open placeholder for popup blocker
             const placeholder = window.open('about:blank', '_blank');
-
             setIsPlexAuthenticating(true);
             setPlexAuthStatus('Initialisation...');
 
             const pinData = await api.createPlexPin();
             const { id, code, clientId, authUrl } = pinData;
 
-            if (placeholder) {
-                placeholder.location.href = authUrl;
-            } else {
-                setPlexAuthStatus('Popup bloquée. Veuillez autoriser les popups.');
-                // Fallback link?
-            }
+            if (placeholder) placeholder.location.href = authUrl;
 
             setPlexAuthStatus('En attente de connexion Plex...');
 
             const pollInterval = setInterval(async () => {
                 try {
-                    // Pass retrieveToken=true to just get the token back
                     const result = await api.checkPlexPin(id, clientId, true);
                     if (result.authenticated && result.token) {
                         clearInterval(pollInterval);
                         placeholder?.close();
-
                         setConfig(prev => ({ ...prev, token: result.token }));
-                        toast.success('Token Plex récupéré avec succès');
+                        toast.success('Token récupéré !');
                         setIsPlexAuthenticating(false);
                         setPlexAuthStatus('');
                     }
-                } catch (err) {
-                    console.error('Polling error', err);
-                }
+                } catch (err) { }
             }, 2000);
 
-            // Timeout 2 mins
             setTimeout(() => {
                 clearInterval(pollInterval);
                 if (isPlexAuthenticating) {
@@ -128,148 +146,335 @@ export default function SettingsPage() {
             }, 120000);
 
         } catch (error) {
-            console.error('Failed to start Plex auth', error);
-            toast.error('Erreur initialisation Plex Auth');
+            toast.error('Erreur auth Plex');
             setIsPlexAuthenticating(false);
         }
     };
 
+    // --- TRAKT HANDLERS ---
+
+    const handleConnectTrakt = async () => {
+        try {
+            setIsTraktAuthenticating(true);
+            setTraktAuthStatus('Récupération code...');
+            const codeData = await api.getTraktDeviceCode();
+
+            // Show code to user logic (Trakt device flow requires user to visit url and enter code)
+            const { user_code, verification_url, device_code, interval } = codeData;
+
+            // For better UX we should show a modal, but for now let's use prompt/alert or simple UI update?
+            // Since this is a specialized agentic response, let's just create a nice UI area for it.
+            // But we are inside handler. Let's redirect user or show link.
+
+            window.open(verification_url, '_blank');
+            toast('Entrez le code: ' + user_code, { duration: 10000, icon: '🔑' });
+            setTraktAuthStatus(`Entrez le code: ${user_code} sur la page ouverte`);
+
+            const pollInterval = setInterval(async () => {
+                const res = await api.pollTraktDeviceToken(device_code);
+                if (res.ok) {
+                    clearInterval(pollInterval);
+                    toast.success('Compte Trakt connecté !');
+                    setTraktStatus({ connected: true, username: 'Connecté' });
+                    setTraktAuthStatus('');
+                    setIsTraktAuthenticating(false);
+                } else if (res.error === 'expired_token' || res.error === 'access_denied') {
+                    clearInterval(pollInterval);
+                    setIsTraktAuthenticating(false);
+                    setTraktAuthStatus('Échec ou expiré');
+                }
+                // allow pending...
+            }, (interval || 5) * 1000);
+
+        } catch (error) {
+            toast.error('Erreur connexion Trakt');
+            setIsTraktAuthenticating(false);
+        }
+    };
+
+    const handleDisconnectTrakt = async () => {
+        try {
+            await api.signOutTrakt();
+            setTraktStatus({ connected: false, username: '' });
+            toast.success('Déconnecté de Trakt');
+        } catch (e) { toast.error('Erreur déconnexion'); }
+    };
+
+    // --- PREFS HANDLERS ---
+    const handleSavePrefs = async () => {
+        setSaving(true);
+        try {
+            await api.savePreferences(preferences);
+            toast.success('Préférences sauvegardées');
+        } catch (e) { toast.error('Erreur sauvegarde'); }
+        finally { setSaving(false); }
+    };
+
+    // --- SECURITY HANDLERS ---
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passwords.newPassword !== passwords.confirmPassword) {
+            toast.error('Mots de passe différents');
+            return;
+        }
+        try {
+            await api.post('/auth/password', {
+                currentPassword: passwords.currentPassword,
+                newPassword: passwords.newPassword
+            });
+            toast.success('Mot de passe changé');
+            setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (e: any) { toast.error(e.response?.data?.message || 'Erreur'); }
+    };
+
     if (loading) return <div className="p-8 text-center text-zinc-400">Chargement...</div>;
 
+    const TabButton = ({ id, label, icon }: any) => (
+        <button
+            onClick={() => setActiveTab(id)}
+            className={classNames(
+                'flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all w-full md:w-auto justify-center md:justify-start',
+                activeTab === id
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-900/20'
+                    : 'bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white'
+            )}
+        >
+            {icon}
+            {label}
+        </button>
+    );
+
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+            <h1 className="text-3xl font-bold text-white mb-8">Paramètres</h1>
 
-            {/* Plex Server Config */}
-            <div className="bg-zinc-900/50 rounded-xl border border-white/5 p-6 h-fit">
-                <h2 className="text-xl font-semibold mb-4 text-purple-400">Configuration Serveur</h2>
-                <p className="text-zinc-400 text-sm mb-6">
-                    Configurez manuellement votre serveur Plex pour garantir une connexion stable.
-                </p>
+            <div className="flex flex-col md:flex-row gap-8">
+                {/* Sidebar Navigation */}
+                <div className="md:w-64 flex flex-col gap-2 shrink-0">
+                    <TabButton id="general" label="Général" icon={<span className="text-lg">⚙️</span>} />
+                    <TabButton id="plex" label="Plex" icon={<span className="text-lg">🎬</span>} />
+                    <TabButton id="trakt" label="Trakt" icon={<span className="text-lg">📅</span>} />
+                    <TabButton id="security" label="Sécurité" icon={<span className="text-lg">🔒</span>} />
+                </div>
 
-                <form onSubmit={handleSave} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-1">Protocole</label>
-                            <select
-                                value={config.protocol}
-                                onChange={(e) => setConfig({ ...config, protocol: e.target.value as 'http' | 'https' })}
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none"
-                            >
-                                <option value="http">HTTP</option>
-                                <option value="https">HTTPS</option>
-                            </select>
+                {/* Content Area */}
+                <div className="flex-1 bg-zinc-900/50 rounded-xl border border-white/5 p-6 md:p-8 min-h-[500px]">
+
+                    {/* GENERAL TAB */}
+                    {activeTab === 'general' && (
+                        <div className="space-y-8 animate-fade-in">
+                            <h2 className="text-2xl font-bold text-white mb-6">Préférences Générales</h2>
+
+                            <div className="max-w-md space-y-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-2">Fournisseur de listes principal</label>
+                                    <select
+                                        value={preferences.listProvider}
+                                        onChange={(e) => setPreferences({ ...preferences, listProvider: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                    >
+                                        <option value="plex">Plex Media Server</option>
+                                        <option value="trakt">Trakt.tv</option>
+                                    </select>
+                                    <p className="text-xs text-zinc-500 mt-2">Définit la source utilisée pour les sections "Tendances" et "Populaires".</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-2">Langue de l'interface</label>
+                                    <select
+                                        value={preferences.language}
+                                        onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                    >
+                                        <option value="fr">Français</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={handleSavePrefs}
+                                    disabled={saving}
+                                    className="bg-white text-black px-6 py-2 rounded font-bold hover:bg-gray-200 transition-colors"
+                                >
+                                    {saving ? '...' : 'Enregistrer'}
+                                </button>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-zinc-400 mb-1">Port</label>
-                            <input
-                                type="number"
-                                value={config.port}
-                                onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value) })}
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none"
-                            />
+                    )}
+
+                    {/* PLEX TAB */}
+                    {activeTab === 'plex' && (
+                        <div className="space-y-6 animate-fade-in">
+                            <h2 className="text-2xl font-bold text-white mb-6">Configuration Plex</h2>
+                            <p className="text-zinc-400 mb-6">Connexion directe à votre serveur Plex Media Server.</p>
+
+                            <form onSubmit={handleSavePlex} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Protocole</label>
+                                    <select
+                                        value={config.protocol}
+                                        onChange={(e) => setConfig({ ...config, protocol: e.target.value as any })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                    >
+                                        <option value="http">HTTP</option>
+                                        <option value="https">HTTPS</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Port</label>
+                                    <input
+                                        type="number"
+                                        value={config.port}
+                                        onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value) })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">IP / Hostname</label>
+                                    <input
+                                        type="text"
+                                        value={config.host}
+                                        onChange={(e) => setConfig({ ...config, host: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                        placeholder="ex: 192.168.1.50"
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Token (X-Plex-Token)</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="password"
+                                            value={config.token}
+                                            onChange={(e) => setConfig({ ...config, token: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleGetPlexToken}
+                                            disabled={isPlexAuthenticating}
+                                            className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 rounded-lg whitespace-nowrap"
+                                        >
+                                            {isPlexAuthenticating ? '...' : 'Obtenir'}
+                                        </button>
+                                    </div>
+                                    {plexAuthStatus && <p className="text-sm text-yellow-500 mt-2">{plexAuthStatus}</p>}
+                                </div>
+
+                                <div className="md:col-span-2 flex gap-4 pt-4">
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded font-bold transition-colors"
+                                    >
+                                        {saving ? '...' : 'Sauvegarder'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleTestPlex}
+                                        disabled={testingPlex}
+                                        className="bg-zinc-700 hover:bg-zinc-600 text-white px-6 py-2 rounded font-bold transition-colors"
+                                    >
+                                        {testingPlex ? 'Test...' : 'Tester connexion'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                    </div>
+                    )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">IP ou Nom d'hôte</label>
-                        <input
-                            type="text"
-                            value={config.host}
-                            onChange={(e) => setConfig({ ...config, host: e.target.value })}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none"
-                            placeholder="192.168.1.50"
-                            required
-                        />
-                    </div>
+                    {/* TRAKT TAB */}
+                    {activeTab === 'trakt' && (
+                        <div className="space-y-6 animate-fade-in">
+                            <h2 className="text-2xl font-bold text-white mb-6">Connexion Trakt.tv</h2>
+                            <p className="text-zinc-400 mb-6">Synchronisez votre historique et vos listes de lecture.</p>
 
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Token Plex (X-Plex-Token)</label>
-                        <div className="flex gap-2">
-                            <input
-                                type="password"
-                                value={config.token}
-                                onChange={(e) => setConfig({ ...config, token: e.target.value })}
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none"
-                                placeholder="Votre token"
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={handleGetPlexToken}
-                                disabled={isPlexAuthenticating}
-                                className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 rounded-lg text-sm whitespace-nowrap transition-colors"
-                                title="Récupérer via connexion Plex"
-                            >
-                                {isPlexAuthenticating ? '...' : 'Obtenir'}
-                            </button>
+                            <div className="bg-black/40 p-6 rounded-xl border border-white/5 max-w-xl">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h3 className="text-lg font-medium text-white">Statut</h3>
+                                        <p className={classNames('text-sm mt-1 font-medium', traktStatus.connected ? 'text-green-500' : 'text-zinc-500')}>
+                                            {traktStatus.connected ? `Connecté en tant que ${traktStatus.username}` : 'Non connecté'}
+                                        </p>
+                                    </div>
+                                    <div className="text-4xl">
+                                        {traktStatus.connected ? '✅' : '⚪'}
+                                    </div>
+                                </div>
+
+                                {traktAuthStatus && (
+                                    <div className="bg-blue-900/30 p-4 rounded mb-6 text-blue-200 text-center animate-pulse">
+                                        {traktAuthStatus}
+                                    </div>
+                                )}
+
+                                {!traktStatus.connected ? (
+                                    <button
+                                        onClick={handleConnectTrakt}
+                                        disabled={isTraktAuthenticating}
+                                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded transition-colors"
+                                    >
+                                        {isTraktAuthenticating ? 'Connexion en cours...' : 'Connecter Trakt'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleDisconnectTrakt}
+                                        className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded transition-colors"
+                                    >
+                                        Déconnecter
+                                    </button>
+                                )}
+
+                                <p className="text-xs text-zinc-500 mt-4 text-center">
+                                    Nous utiliserons un code temporaire pour authentifier l'application.
+                                </p>
+                            </div>
                         </div>
-                        {plexAuthStatus && <p className="text-xs text-yellow-500 mt-1">{plexAuthStatus}</p>}
-                        <p className="text-xs text-zinc-500 mt-1">Vous pouvez trouver votre token dans le XML d'un média sur Plex Web.</p>
-                    </div>
+                    )}
 
-                    <div className="pt-4 flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                        >
-                            {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-                        </button>
-                    </div>
-                </form>
+                    {/* SECURITY TAB */}
+                    {activeTab === 'security' && (
+                        <div className="space-y-6 animate-fade-in">
+                            <h2 className="text-2xl font-bold text-white mb-6">Sécurité</h2>
+
+                            <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Mot de passe actuel</label>
+                                    <input
+                                        type="password"
+                                        value={passwords.currentPassword}
+                                        onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Nouveau mot de passe</label>
+                                    <input
+                                        type="password"
+                                        value={passwords.newPassword}
+                                        onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-zinc-400 mb-1">Confirmer nouveau</label>
+                                    <input
+                                        type="password"
+                                        value={passwords.confirmPassword}
+                                        onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="bg-white text-black px-6 py-2 rounded font-bold hover:bg-gray-200 transition-colors mt-4"
+                                >
+                                    Modifier mot de passe
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                </div>
             </div>
-
-            {/* Security Config */}
-            <div className="bg-zinc-900/50 rounded-xl border border-white/5 p-6 h-fit">
-                <h2 className="text-xl font-semibold mb-4 text-purple-400">Sécurité</h2>
-                <p className="text-zinc-400 text-sm mb-6">
-                    Modifiez votre mot de passe administrateur.
-                </p>
-
-                <form onSubmit={handleChangePassword} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Mot de passe actuel</label>
-                        <input
-                            type="password"
-                            value={passwords.currentPassword}
-                            onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none"
-                            placeholder="••••••••"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Nouveau mot de passe</label>
-                        <input
-                            type="password"
-                            value={passwords.newPassword}
-                            onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none"
-                            placeholder="••••••••"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-1">Confirmer</label>
-                        <input
-                            type="password"
-                            value={passwords.confirmPassword}
-                            onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 outline-none"
-                            placeholder="••••••••"
-                        />
-                    </div>
-
-                    <div className="pt-4 flex justify-end">
-                        <button
-                            type="submit"
-                            disabled={changingPassword}
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                        >
-                            {changingPassword ? 'Modification...' : 'Modifier'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-
         </div>
     );
 }
