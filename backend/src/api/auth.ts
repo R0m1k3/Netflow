@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { AppDataSource } from '../db/data-source';
 import { User, UserSettings } from '../db/entities';
 import { AppError } from '../middleware/errorHandler';
@@ -12,6 +13,136 @@ import { getSecret } from '../utils/secret';
 
 const router = Router();
 const logger = createLogger('auth');
+
+// Register new user
+router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, password, username } = req.body;
+
+    if (!email || !password || !username) {
+      throw new AppError('Email, password and username are required', 400);
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+    const usersCount = await userRepository.count();
+
+    if (usersCount > 0) {
+      throw new AppError('Registration is disabled. Only one user is allowed.', 403);
+    }
+
+    const existingUser = await userRepository.findOne({ where: { email } });
+
+    if (existingUser) {
+      throw new AppError('User already exists', 400);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    let user = userRepository.create({
+      username,
+      email,
+      password: hashedPassword,
+      hasPassword: true,
+      // Create empty settings
+      settings: new UserSettings()
+    });
+
+    // Initialize default settings through relation or manual creation if needed
+    // But easiest is to save user then settings
+    user = await userRepository.save(user);
+
+    const settingsRepository = AppDataSource.getRepository(UserSettings);
+    const settings = settingsRepository.create({
+      userId: user.id,
+      preferences: {
+        language: 'en',
+        autoPlay: true,
+        quality: 'auto',
+        subtitles: false,
+        theme: 'dark',
+      },
+    });
+    await settingsRepository.save(settings);
+
+    // Auto login
+    req.session.userId = user.id as any;
+    (req.session as any).username = user.username;
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Standard Login
+router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      throw new AppError('Email and password are required', 400);
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({
+      where: { email },
+      select: ['id', 'username', 'email', 'password', 'plexId', 'hasPassword', 'thumb', 'subscription']
+    });
+
+    if (!user || !user.password) {
+      throw new AppError('Invalid credentials', 401);
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      throw new AppError('Invalid credentials', 401);
+    }
+
+    // Regenerate session
+    await new Promise<void>((resolve, reject) => {
+      req.session.regenerate((err) => err ? reject(err) : resolve());
+    });
+
+    req.session.userId = user.id as any;
+    (req.session as any).username = user.username;
+    if (user.plexId) {
+      (req.session as any).plexId = user.plexId;
+    }
+
+    // Issue JWT for mobile if requested
+    const wantsMobile = String(req.query.mobile || req.headers['x-mobile'] || '') === '1';
+    let token;
+    if (wantsMobile) {
+      const secret = getSecret();
+      token = jwt.sign(
+        { sub: user.id, username: user.username, email: user.email },
+        secret,
+        { expiresIn: '7d' }
+      );
+    }
+
+    res.json({
+      authenticated: true,
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        thumb: user.thumb,
+        subscription: user.subscription,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Plex.tv API endpoints
 const PLEX_TV_URL = 'https://plex.tv';
@@ -243,6 +374,11 @@ router.get('/plex/pin/:id', async (req: Request, res: Response, next: NextFuncti
       // PIN has been authenticated
       const token = response.data.authToken;
 
+      // If purely retrieving token for manual config (settings page)
+      if (req.query.retrieve_token === '1') {
+        return res.json({ authenticated: true, token });
+      }
+
       // Get user info
       let userResponse: any;
       try {
@@ -263,6 +399,34 @@ router.get('/plex/pin/:id', async (req: Request, res: Response, next: NextFuncti
       // Save or update user in database
       const userRepository = AppDataSource.getRepository(User);
       const settingsRepository = AppDataSource.getRepository(UserSettings);
+
+      // Check if user is already logged in (Linking account mode)
+      if (req.session.userId) {
+        const currentUser = await userRepository.findOne({ where: { id: req.session.userId } });
+        if (currentUser) {
+          currentUser.plexId = plexUser.id;
+          currentUser.plexToken = encryptForUser(currentUser.id, token);
+          currentUser.thumb = plexUser.thumb; // Update thumb from Plex? Optional.
+
+          await userRepository.save(currentUser);
+
+          (req.session as any).plexId = plexUser.id;
+          logger.info(`Linked Plex account ${plexUser.username} to user ${currentUser.username}`);
+
+          return res.json({
+            authenticated: true,
+            linked: true,
+            user: {
+              id: currentUser.id,
+              username: currentUser.username,
+              email: currentUser.email,
+              thumb: currentUser.thumb
+            }
+          });
+        }
+      }
+
+      // Legacy/Plex-only login flow (Create new user if not exists)
 
       let user = await userRepository.findOne({ where: { plexId: plexUser.id } });
 
@@ -341,6 +505,10 @@ router.get('/plex/pin/:id', async (req: Request, res: Response, next: NextFuncti
       logger.info(`User authenticated: ${user.username} (${user.plexId})`);
 
       // Attempt to sync Plex servers for this user in the background
+      // Attempt to sync Plex servers for this user in the background -> ONLY if not manual config
+      // But now we prefer manual config or explicitly requested sync.
+      // We'll keep this auto-sync for the "Plex-only" login path for backward compatibility or ease of use,
+      // but standard login does NOT trigger this.
       (async () => {
         try {
           await normalizeAndPersistServers(user.id, (req.query.clientId as string) || (req.body.clientId as string) || 'web');
@@ -434,6 +602,45 @@ router.get('/validate', requireAuth, async (req: AuthenticatedRequest, res: Resp
   });
 });
 
+// Change Password
+router.post('/password', requireAuth, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!newPassword) {
+      throw new AppError('New password is required', 400);
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({
+      where: { id: req.user!.id },
+      select: ['id', 'password']
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // specific check for admin user first login? No, standard flow.
+    if (user.password) {
+      if (!currentPassword) {
+        throw new AppError('Current password is required', 400);
+      }
+      const match = await bcrypt.compare(currentPassword, user.password);
+      if (!match) {
+        throw new AppError('Invalid current password', 401);
+      }
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.hasPassword = true;
+    await userRepository.save(user);
+
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Logout
 router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
   // Capture cookie attributes to correctly clear the cookie
@@ -505,6 +712,11 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
 
     if (!user) {
       throw new AppError('User not found', 404);
+    }
+
+    if (!user.plexToken) {
+      // No Plex token, so no servers to fetch from Plex.tv
+      return res.json([]);
     }
 
     const accountToken = isEncrypted(user.plexToken)

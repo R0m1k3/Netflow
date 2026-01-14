@@ -9,8 +9,8 @@ import Library from './routes/Library';
 import Details from './routes/Details';
 import Person from './routes/Person';
 import Player from './routes/Player';
-import Settings from './routes/Settings';
-import Login from './routes/Login';
+import SettingsPage from './pages/SettingsPage';
+import LoginPage from './pages/LoginPage';
 import NewPopular from './routes/NewPopular';
 import MyList from './routes/MyList';
 import Search from './routes/Search';
@@ -25,8 +25,8 @@ const router = createBrowserRouter([
       { path: 'details/:id', element: <Details /> },
       { path: 'person/:id', element: <Person /> },
       { path: 'player/:id', element: <Player /> },
-      { path: 'settings', element: <Settings /> },
-      { path: 'login', element: <Login /> },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: 'login', element: <LoginPage /> },
       { path: 'new-popular', element: <NewPopular /> },
       { path: 'my-list', element: <MyList /> },
       { path: 'search', element: <Search /> },

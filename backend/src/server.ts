@@ -24,7 +24,11 @@ import tmdbRoutes from './api/tmdb';
 import plexRoutes from './api/plex';
 import traktRoutes from './api/trakt';
 import plextvRoutes from './api/plextv';
+import { settingsRouter } from './api/settings';
 import { errorHandler } from './middleware/errorHandler';
+// Import dependencies for seeding
+import bcrypt from 'bcrypt';
+import { User, UserSettings } from './db/entities';
 import { requestLogger } from './middleware/requestLogger';
 
 const serverLogger = logger.child({ component: 'server' });
@@ -120,6 +124,7 @@ async function startServer() {
     app.use('/api/plex', plexRoutes);
     app.use('/api/trakt', traktRoutes);
     app.use('/api/plextv', plextvRoutes);
+    app.use('/api/settings', settingsRouter);
 
     // 404 handler
     // Serve static files from frontend
@@ -139,8 +144,43 @@ async function startServer() {
       res.sendFile(path.join(frontendDist, 'index.html'));
     });
 
-    // Error handling middleware (must be last)
-    app.use(errorHandler);
+    // Seed default admin user
+    try {
+      if (AppDataSource.isInitialized) {
+        const userRepository = AppDataSource.getRepository(User);
+        const count = await userRepository.count();
+        if (count === 0) {
+          const hashedPassword = await bcrypt.hash('admin', 10);
+          const admin = userRepository.create({
+            username: 'admin',
+            email: 'admin@local.host',
+            password: hashedPassword,
+            hasPassword: true,
+            // Create empty settings
+            settings: new UserSettings()
+          });
+          await userRepository.save(admin);
+
+          // Initialize settings
+          const settingsRepository = AppDataSource.getRepository(UserSettings);
+          const settings = settingsRepository.create({
+            userId: admin.id,
+            preferences: {
+              language: 'en',
+              autoPlay: true,
+              quality: 'auto',
+              subtitles: false,
+              theme: 'dark',
+            },
+          });
+          await settingsRepository.save(settings);
+
+          serverLogger.info('Default admin user created (admin/admin)');
+        }
+      }
+    } catch (err) {
+      serverLogger.error('Failed to seed default user', err);
+    }
 
     // Start server
     app.listen(PORT, HOST, () => {
@@ -150,23 +190,28 @@ async function startServer() {
       serverLogger.info(`🔐 Session store: TypeORM/SQLite`);
     });
 
-    // Graceful shutdown
-    process.on('SIGTERM', async () => {
-      serverLogger.info('SIGTERM signal received: closing server');
-      await AppDataSource.destroy();
-      process.exit(0);
-    });
+    // Error handling middleware (must be last)
+    app.use(errorHandler);
 
-    process.on('SIGINT', async () => {
-      serverLogger.info('SIGINT signal received: closing server');
-      await AppDataSource.destroy();
-      process.exit(0);
-    });
+  });
 
-  } catch (error) {
-    serverLogger.error('Failed to start server:', error);
-    process.exit(1);
-  }
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    serverLogger.info('SIGTERM signal received: closing server');
+    await AppDataSource.destroy();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    serverLogger.info('SIGINT signal received: closing server');
+    await AppDataSource.destroy();
+    process.exit(0);
+  });
+
+} catch (error) {
+  serverLogger.error('Failed to start server:', error);
+  process.exit(1);
+}
 }
 
 // Start the server

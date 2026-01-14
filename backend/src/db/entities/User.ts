@@ -6,15 +6,18 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'integer', unique: true })
+  @Column({ type: 'integer', unique: true, nullable: true })
   @Index()
-  plexId!: number;
+  plexId?: number;
 
   @Column({ type: 'varchar', length: 255 })
   username!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
   email?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+  password?: string;
 
   @Column({ type: 'text', nullable: true })
   thumb?: string;
@@ -22,8 +25,18 @@ export class User {
   @Column({ type: 'text', nullable: true })
   title?: string;
 
-  @Column({ type: 'text', select: false })
-  plexToken!: string;
+  @Column({ type: 'text', nullable: true, select: false })
+  plexToken?: string;
+
+  // Manual configuration for Plex (Host, Port, Token)
+  @Column({ type: 'json', nullable: true, select: false })
+  plexConfig?: {
+    host: string;
+    port: number;
+    protocol: 'http' | 'https';
+    token: string;
+    manual: boolean; // Flag to indicate if this config should override auto-discovery
+  };
 
   @Column({ type: 'boolean', default: false })
   hasPassword!: boolean;

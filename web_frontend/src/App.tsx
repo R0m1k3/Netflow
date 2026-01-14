@@ -2,6 +2,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import TopNav from '@/components/TopNav';
 import GlobalToast from '@/components/GlobalToast';
+import { useAuth } from '@/services/auth';
 
 export default function App() {
   const location = useLocation();
@@ -10,6 +11,19 @@ export default function App() {
   const isDetailsRoute = location.pathname.includes('/details/');
   const isHome = location.pathname === '/';
   const isAuthRoute = location.pathname.startsWith('/login');
+  const isSetupRoute = location.pathname.startsWith('/setup');
+
+  const { isAuthenticated, isLoading, checkAuth } = useAuth();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isAuthRoute) {
+      navigate('/login', { state: { from: location }, replace: true });
+    }
+  }, [isLoading, isAuthenticated, isAuthRoute, navigate, location]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -29,6 +43,10 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate, location]);
+
+  if (isLoading) {
+    return <div className="min-h-screen app-bg-fixed bg-black flex items-center justify-center text-zinc-500">Chargement...</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

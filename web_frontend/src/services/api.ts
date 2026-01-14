@@ -47,6 +47,18 @@ class ApiClient {
     }
   }
 
+  public async get(path: string, options?: RequestInit) {
+    return this.request(path, { ...options, method: 'GET' });
+  }
+
+  public async post(path: string, body?: any, options?: RequestInit) {
+    return this.request(path, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
   // Auth endpoints
   async createPlexPin(clientId?: string) {
     return this.request('/auth/plex/pin', {
@@ -55,8 +67,10 @@ class ApiClient {
     });
   }
 
-  async checkPlexPin(pinId: number, clientId: string) {
-    return this.request(`/auth/plex/pin/${pinId}?clientId=${clientId}`);
+  async checkPlexPin(pinId: number, clientId: string, retrieveToken = false) {
+    let url = `/auth/plex/pin/${pinId}?clientId=${clientId}`;
+    if (retrieveToken) url += '&retrieve_token=1';
+    return this.request(url);
   }
 
   async getSession() {
@@ -150,6 +164,7 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient();
+export default apiClient;
 
 // Export resolved bases for other services to consume
 export const API_BASE_URL: string = API_BASE; // e.g., '/api' or 'https://api.example.com/api'
