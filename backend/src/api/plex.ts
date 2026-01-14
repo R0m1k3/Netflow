@@ -469,7 +469,12 @@ router.get('/library/:id/all',
         }
       });
 
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json({ MediaContainer: { Metadata: [] } });
+      }
       const container = await client.getLibraryContents(id, offset, limit, extraParams);
 
       res.json(container);
@@ -488,7 +493,12 @@ router.get('/library/:id/:directory',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { id, directory } = req.params;
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json({ MediaContainer: { Directory: [] } });
+      }
       const mc = await client.getLibrarySecondary(id, directory);
       res.json(mc);
     } catch (error: any) {
@@ -506,7 +516,12 @@ router.get('/library/:id/collections',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json({ MediaContainer: { Metadata: [] } });
+      }
       const mc = await client.getLibraryCollections(id);
       res.json(mc);
     } catch (error: any) {
@@ -527,7 +542,12 @@ router.get('/dir/*',
       if (!path.startsWith('/library/')) {
         throw new AppError('Only /library paths are allowed', 400);
       }
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json({ MediaContainer: { Metadata: [] } });
+      }
       const mc = await client.getDir(path, req.query as any);
       res.json(mc);
     } catch (error: any) {
