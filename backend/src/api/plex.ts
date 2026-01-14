@@ -63,7 +63,14 @@ router.get('/ratings/:ratingKey',
     try {
       const { ratingKey } = req.params;
       if (!ratingKey) throw new AppError('ratingKey is required', 400);
-      const client = await getPlexClient(req.user!.id);
+
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json({ imdb: null, rottenTomatoes: null });
+      }
+
       const meta: any = await client.getMetadata(String(ratingKey));
       const m = meta as any;
 
@@ -428,7 +435,12 @@ router.post('/servers/current',
 router.get('/libraries',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json({ MediaContainer: { Directory: [] } });
+      }
       const libraries = await client.getLibraries();
       res.json(libraries);
     } catch (error: any) {
@@ -537,7 +549,15 @@ router.get('/metadata/:id',
     try {
       const { id } = req.params;
 
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        // Return empty metadata object or appropriate error structure
+        // Since this is specific item fetch, maybe throwing 404 is cleaner but empty prevents crash
+        return res.status(404).json({ error: 'Configs missing' });
+      }
+
       const includeExtras = req.query.includeExtras === '1' || req.query.includeExtras === 'true';
       const includeExternalMedia = req.query.includeExternalMedia === '1' || req.query.includeExternalMedia === 'true';
       const includeChildren = req.query.includeChildren === '1' || req.query.includeChildren === 'true';
@@ -580,7 +600,15 @@ router.get('/search',
         throw new AppError('Query parameter is required', 400);
       }
 
-      const client = await getPlexClient(req.user!.id);
+
+
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json([]);
+      }
+
       const results = typeof type === 'number' ? await client.searchTyped(query, type) : await client.search(query);
 
       res.json(results);
@@ -601,7 +629,14 @@ router.get('/findByGuid',
       const guid = String(req.query.guid || '');
       const type = req.query.type ? parseInt(String(req.query.type), 10) as 1 | 2 : undefined;
       if (!guid) throw new AppError('guid is required', 400);
-      const client = await getPlexClient(req.user!.id);
+
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e: any) {
+        return res.json({ MediaContainer: { Metadata: [] } });
+      }
+
       const mc = await client.findByGuid(guid, type);
       res.json(mc);
     } catch (error: any) {
@@ -618,7 +653,12 @@ router.get('/findByGuid',
 router.get('/ondeck',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json([]);
+      }
       const onDeck = await client.getOnDeck();
 
       res.json(onDeck);
@@ -639,7 +679,13 @@ router.get('/ondeck/:showKey',
       const { showKey } = req.params;
       if (!showKey) throw new AppError('Show key is required', 400);
 
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json({ MediaContainer: { Metadata: [] } });
+      }
+
       const onDeck = await client.getOnDeck();
 
       // Filter for episodes belonging to this show
@@ -675,7 +721,12 @@ router.get('/ondeck/:showKey',
 router.get('/continue',
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const client = await getPlexClient(req.user!.id);
+      let client;
+      try {
+        client = await getPlexClient(req.user!.id);
+      } catch (e) {
+        return res.json([]);
+      }
       const continueWatching = await client.getContinueWatching();
 
       res.json(continueWatching);
