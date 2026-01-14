@@ -39,7 +39,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 # Create directories for DB and caches
-RUN mkdir -p /app/config/db && mkdir -p /app/cache/images
+RUN mkdir -p /app/backend/data && mkdir -p /app/cache/images
 
 # Copy backend artifacts
 COPY --from=backend-builder /app/backend/dist ./backend/dist
