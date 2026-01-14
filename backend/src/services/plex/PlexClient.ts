@@ -388,7 +388,10 @@ export class PlexClient {
       );
       const meta = data?.MediaContainer?.Metadata || [];
       if (meta.length > 0) return data.MediaContainer;
-    } catch { }
+    } catch (e) {
+      // Global search failed or not supported, continue to fallback
+      logger.debug(`Global findByGuid failed for ${guid}`, { error: e });
+    }
 
     // Fallback: iterate sections (optionally filtering by type)
     try {
@@ -412,9 +415,14 @@ export class PlexClient {
           );
           const meta = data?.MediaContainer?.Metadata || [];
           if (meta.length > 0) return data.MediaContainer;
-        } catch { }
+        } catch (e) {
+          // Section search failed, continue to next section
+          logger.debug(`Section findByGuid failed for section ${s.key} guid ${guid}`, { error: e });
+        }
       }
-    } catch { }
+    } catch (e) {
+      logger.warn(`Failed to list sections for findByGuid fallback`, { error: e });
+    }
 
     return { Metadata: [] };
   }

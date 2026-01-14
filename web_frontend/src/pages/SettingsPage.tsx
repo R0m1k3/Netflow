@@ -168,9 +168,10 @@ export default function SettingsPage() {
 
     const scanPlexServers = async () => {
         try {
-            const servers = await api.plexServers(); // This usually gets cached servers or fetches new
+            const servers = await api.getServers();
+            console.log('Discovered servers:', servers);
             setPlexServers(servers);
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error('Failed to scan servers:', e); }
     };
 
     const handleSelectServerConnection = (server: any, connection: any) => {
