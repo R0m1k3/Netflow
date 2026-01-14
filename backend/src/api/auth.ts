@@ -680,13 +680,22 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
     }
   } catch { }
 
-  req.session.destroy((err) => {
-    if (err) {
-      logger.error('Failed to destroy session:', err);
-      return next(new AppError('Failed to logout', 500));
-    }
+  // Force-clear cookies immediately to give user feedback
+  try { res.clearCookie('plex.sid', cookieOpts); } catch { }
+  try { res.clearCookie('connect.sid', cookieOpts); } catch { }
 
-    try { res.clearCookie('plex.sid', cookieOpts); } catch { }
+  // Attempt to destroy session in DB, but don't block response indefinitely
+  const destroyPromise = new Promise<void>((resolve) => {
+    req.session.destroy((err) => {
+      if (err) logger.error('Failed to destroy session in DB:', err);
+      resolve();
+    });
+  });
+
+  // Wait max 1s for DB, otherwise just send success (DB will eventually expire it)
+  const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 1000));
+
+  Promise.race([destroyPromise, timeoutPromise]).then(() => {
     res.json({ success: true });
   });
 });
@@ -749,6 +758,8 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
     });
 
     if (!user) {
+      // Session is valid but user is gone. Destroy session to force logout.
+      req.session.destroy(() => { });
       throw new AppError('User not found', 401);
     }
 

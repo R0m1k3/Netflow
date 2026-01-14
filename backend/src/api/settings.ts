@@ -178,7 +178,8 @@ router.post('/test/plex', requireAuth, async (req: Request, res: Response) => {
     try {
         const { host, port, protocol, token } = req.body;
         if (!host || !port || !token) {
-            return res.status(400).json({ error: 'Missing parameters' });
+            logger.warn('Plex test missing parameters', { host: !!host, port: !!port, token: !!token });
+            return res.status(400).json({ error: 'Missing parameters', details: `Host: ${!!host}, Port: ${!!port}, Token: ${!!token}` });
         }
 
         // Simple test: try to fetch identity or server info
