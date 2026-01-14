@@ -25,28 +25,7 @@ export default function App() {
   // Pre-load settings when authenticated to ensure localStorage is populated
   useEffect(() => {
     if (isAuthenticated) {
-      // 1. Load Plex Settings
-      api.get('/settings/plex').then(res => {
-        // Handle both response formats seen in SettingsPage
-        const data = res.value || res; // Handle Promise.allSettled style or direct
-        const cfg = data.config || (data.configured ? data.config : null);
 
-        if (cfg) {
-          console.log('[App] Pre-loaded Plex settings', cfg);
-          saveSettings({
-            plexBaseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
-            plexToken: cfg.token,
-            plexServer: {
-              name: 'Manual',
-              clientIdentifier: 'manual',
-              baseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
-              token: cfg.token
-            }
-          });
-          // Dispatch event to update listeners
-          window.dispatchEvent(new Event('plex-server-changed'));
-        }
-      }).catch(e => console.error('[App] Failed to pre-load settings', e));
 
       // 2. Load Trakt Status (Fix for configuration persistence)
       api.getTraktStatus().then(res => {
