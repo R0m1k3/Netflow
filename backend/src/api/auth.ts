@@ -725,7 +725,9 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
         // Build baseUrl from preferredUri or host/port/protocol
         let baseUrl = server.preferredUri;
         if (!baseUrl && server.host) {
-          baseUrl = `${server.protocol || 'https'}://${server.host}:${server.port || 32400}`;
+          // Default to http if not specified, to avoid https://...:80 errors unless explicitly requested
+          const proto = server.protocol || 'http';
+          baseUrl = `${proto}://${server.host}:${server.port || 32400}`;
         }
 
         return {
@@ -800,7 +802,7 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
 
       res.json(servers);
     } catch (axiosError: any) {
-      logger.warn('Failed to fetch servers from Plex.tv', {
+      logger.warn('Failed to fetch servers from Plex.tv for fallback', {
         status: axiosError?.response?.status,
         message: axiosError?.message
       });
@@ -809,7 +811,11 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
     }
 
 
-  } catch (error) {
+  } catch (error: any) {
+    // If it's already an AppError (e.g. 404), pass it through
+    if (error instanceof AppError) {
+      return next(error);
+    }
     logger.error('Failed to get Plex servers:', error);
     next(new AppError('Failed to get servers', 500));
   }
