@@ -323,11 +323,28 @@ router.post('/plex/pin', async (req: Request, res: Response, next: NextFunction)
   try {
     const clientId = req.body.clientId || crypto.randomUUID();
 
-    const response = await axios.post(
-      `${PLEX_TV_URL}/api/v2/pins`,
-      {},
-      { headers: getPlexHeaders(clientId) }
-    );
+    let response: any;
+    try {
+      response = await axios.post(
+        `${PLEX_TV_URL}/api/v2/pins`,
+        {},
+        {
+          headers: getPlexHeaders(clientId),
+          timeout: 15000, // 15s timeout for external call
+        }
+      );
+    } catch (axiosError: any) {
+      logger.error('Plex PIN creation failed', {
+        message: axiosError?.message,
+        code: axiosError?.code,
+        status: axiosError?.response?.status,
+      });
+      // Return a more helpful error instead of generic 500
+      return res.status(502).json({
+        error: 'Failed to connect to Plex.tv',
+        details: axiosError?.message || 'Network error',
+      });
+    }
 
     const authUrl = `https://app.plex.tv/auth#?` +
       `clientID=${encodeURIComponent(clientId)}` +
