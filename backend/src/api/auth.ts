@@ -749,7 +749,7 @@ router.get('/servers', requireAuth, async (req: AuthenticatedRequest, res: Respo
     });
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError('User not found', 401);
     }
 
     if (!user.plexToken) {

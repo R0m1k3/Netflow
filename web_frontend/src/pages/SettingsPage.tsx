@@ -280,6 +280,50 @@ export default function SettingsPage() {
         } catch (e: any) { toast.error(e.response?.data?.message || 'Erreur'); }
     };
 
+    // --- TMDB HANDLERS ---
+    const [tmdbKey, setTmdbKey] = useState('');
+    const [tmdbKeyInfo, setTmdbKeyInfo] = useState<any>(null);
+
+    const loadTmdbInfo = async () => {
+        try {
+            const info = await api.getTmdbKeyInfo();
+            setTmdbKeyInfo(info);
+            // We don't get the key back if it's custom, just whether it exists
+        } catch (e) { console.error(e); }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'tmdb') loadTmdbInfo();
+    }, [activeTab]);
+
+    const handleSaveTmdb = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!tmdbKey) return;
+        setSaving(true);
+        try {
+            const res = await api.validateTmdbKey(tmdbKey);
+            if (res.valid) {
+                toast.success('Clé API validée et sauvegardée');
+                setTmdbKey('');
+                loadTmdbInfo();
+            } else {
+                toast.error('Clé API invalide');
+            }
+        } catch (e) { toast.error('Erreur sauvegarde'); }
+        finally { setSaving(false); }
+    };
+
+    const handleRemoveTmdb = async () => {
+        if (!confirm('Utiliser la clé par défaut ?')) return;
+        setSaving(true);
+        try {
+            await api.removeTmdbKey();
+            toast.success('Clé supprimée');
+            loadTmdbInfo();
+        } catch (e) { toast.error('Erreur suppression'); }
+        finally { setSaving(false); }
+    };
+
     if (loading) return <div className="p-8 text-center text-zinc-400">Chargement...</div>;
 
     const TabButton = ({ id, label, icon }: any) => (
@@ -306,6 +350,7 @@ export default function SettingsPage() {
                 <div className="md:w-64 flex flex-col gap-2 shrink-0">
                     <TabButton id="general" label="Général" icon={<span className="text-lg">⚙️</span>} />
                     <TabButton id="plex" label="Plex" icon={<span className="text-lg">🎬</span>} />
+                    <TabButton id="tmdb" label="TMDB" icon={<span className="text-lg">🎥</span>} />
                     <TabButton id="trakt" label="Trakt" icon={<span className="text-lg">📅</span>} />
                     <TabButton id="security" label="Sécurité" icon={<span className="text-lg">🔒</span>} />
                 </div>
@@ -471,6 +516,72 @@ export default function SettingsPage() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    )}
+
+                    {/* TMDB TAB */}
+                    {activeTab === 'tmdb' && (
+                        <div className="space-y-6 animate-fade-in">
+                            <h2 className="text-2xl font-bold text-white mb-6">Configuration TMDB</h2>
+                            <p className="text-zinc-400 mb-6">Utilisez votre propre clé API TMDB pour augmenter les limites.</p>
+
+                            <div className="bg-black/40 p-6 rounded-xl border border-white/5 max-w-xl">
+                                {tmdbKeyInfo && (
+                                    <div className="mb-6 space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-zinc-400">Statut:</span>
+                                            <span className={tmdbKeyInfo.hasCustomKey ? "text-green-500 font-bold" : "text-yellow-500"}>
+                                                {tmdbKeyInfo.hasCustomKey ? "Clé Personnalisée Active" : "Clé par défaut (Limitée)"}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-zinc-400">Requêtes aujourd'hui:</span>
+                                            <span className="text-white font-mono">{tmdbKeyInfo.stats?.dailyRequests || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-zinc-400">Rate Limit:</span>
+                                            <span className="text-white font-mono">{tmdbKeyInfo.rateLimit?.requests} req / {tmdbKeyInfo.rateLimit?.window}s</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleSaveTmdb} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-zinc-400 mb-1">Clé API (v3)</label>
+                                        <input
+                                            type="text"
+                                            value={tmdbKey}
+                                            onChange={(e) => setTmdbKey(e.target.value)}
+                                            placeholder="Entrez votre clé API TMDB..."
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-red-500"
+                                        />
+                                        <p className="text-xs text-zinc-500 mt-2">
+                                            Vous pouvez obtenir une clé gratuitement sur <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer" className="text-red-400 hover:underline">themoviedb.org</a>
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-2">
+                                        <button
+                                            type="submit"
+                                            disabled={saving || !tmdbKey}
+                                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded transition-colors disabled:opacity-50"
+                                        >
+                                            {saving ? 'Validation...' : 'Valider & Sauvegarder'}
+                                        </button>
+                                        {tmdbKeyInfo?.hasCustomKey && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveTmdb}
+                                                disabled={saving}
+                                                className="px-4 bg-zinc-800 hover:bg-red-900/50 text-white rounded transition-colors"
+                                                title="Supprimer la clé personnalisée"
+                                            >
+                                                🗑️
+                                            </button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     )}
 

@@ -201,6 +201,22 @@ class ApiClient {
       body: JSON.stringify(config)
     });
   }
+
+  // TMDB Settings
+  async getTmdbKeyInfo() {
+    return this.request('/tmdb/key-info');
+  }
+
+  async validateTmdbKey(apiKey: string) {
+    return this.request('/tmdb/validate-key', {
+      method: 'POST',
+      body: JSON.stringify({ apiKey })
+    });
+  }
+
+  async removeTmdbKey() {
+    return this.request('/tmdb/key', { method: 'DELETE' });
+  }
 }
 
 export const apiClient = new ApiClient();

@@ -263,7 +263,7 @@ export class PlexClient {
    */
   async search(query: string): Promise<PlexMetadata[]> {
     const data = await this.cachedRequest<any>(
-      `/search?query=${encodeURIComponent(query)}`,
+      `/search?query=${encodeURIComponent(query)}&includeGuids=1`,
       `${this.server.id}:search:${query}`,
       300 // 5 minutes cache
     );
@@ -277,6 +277,7 @@ export class PlexClient {
   async searchTyped(query: string, type?: 1 | 2): Promise<PlexMetadata[]> {
     const params = new URLSearchParams({ query });
     if (type) params.set('type', String(type));
+    params.set('includeGuids', '1');
     const key = `${this.server.id}:search:${type || 'all'}:${query}`;
     const data = await this.cachedRequest<any>(`/search?${params.toString()}`, key, 300);
     return data.MediaContainer.Metadata || [];
@@ -381,6 +382,7 @@ export class PlexClient {
     try {
       const params = new URLSearchParams({ guid });
       if (type) params.set('type', String(type));
+      params.set('includeGuids', '1');
       const data = await this.cachedRequest<any>(
         `/library/all?${params.toString()}`,
         `${this.server.id}:guid:${guid}:${type || 0}:global`,

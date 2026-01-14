@@ -77,8 +77,9 @@ export async function plexBackendDir(path: string, params?: Record<string, any>)
   const p = path.startsWith('/') ? path.slice(1) : path;
 
   // Validate ratingKey - skip requests with suspicious low ratingKeys (likely corrupted data)
+  // Validate ratingKey - skip requests with suspicious low ratingKeys (likely corrupted data)
   const ratingKeyMatch = path.match(/\/library\/metadata\/(\d+)/);
-  if (ratingKeyMatch && parseInt(ratingKeyMatch[1], 10) < 10) {
+  if (ratingKeyMatch && parseInt(ratingKeyMatch[1], 10) < 1) {
     console.warn('[plexBackendDir] skipping request with invalid low ratingKey:', ratingKeyMatch[1]);
     return { MediaContainer: { Metadata: [], Directory: [] } } as any;
   }
