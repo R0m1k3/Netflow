@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '@/services/api';
+import { saveSettings, loadSettings } from '@/state/settings';
 
 function classNames(...classes: string[]) {
     return classes.filter(Boolean).join(' ');
@@ -57,12 +58,35 @@ export default function SettingsPage() {
         setLoading(true);
 
         // Load Plex settings (Critical)
-        api.get('/settings/plex').then(res => {
-            console.log('Loaded Plex settings:', res);
-            if (res.config) {
-                setConfig(prev => ({ ...prev, ...res.config, manual: true }));
-            } else if (res.configured) {
-                setConfig({ ...res.config, manual: true });
+        api.get('/settings/plex').then(plexRes => {
+            console.log('Loaded Plex settings:', plexRes);
+            if (plexRes.value.config) {
+                const cfg = plexRes.value.config;
+                setConfig(prev => ({ ...prev, ...cfg, manual: true }));
+                // Sync to localStorage for other components (Library.tsx)
+                saveSettings({
+                    plexBaseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
+                    plexToken: cfg.token,
+                    plexServer: {
+                        name: 'Manual',
+                        clientIdentifier: 'manual',
+                        baseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
+                        token: cfg.token
+                    }
+                });
+            } else if (plexRes.value.configured) {
+                const cfg = plexRes.value.config;
+                setConfig({ ...cfg, manual: true });
+                saveSettings({
+                    plexBaseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
+                    plexToken: cfg.token,
+                    plexServer: {
+                        name: 'Manual',
+                        clientIdentifier: 'manual',
+                        baseUrl: `${cfg.protocol}://${cfg.host}:${cfg.port}`,
+                        token: cfg.token
+                    }
+                });
             }
         }).catch(err => {
             console.error('Failed to load Plex settings', err);
@@ -94,6 +118,18 @@ export default function SettingsPage() {
         setSaving(true);
         try {
             await api.post('/settings/plex', config);
+            // Sync to localStorage
+            saveSettings({
+                plexBaseUrl: `${config.protocol}://${config.host}:${config.port}`,
+                plexToken: config.token,
+                plexServer: {
+                    name: 'Manual',
+                    clientIdentifier: 'manual',
+                    baseUrl: `${config.protocol}://${config.host}:${config.port}`,
+                    token: config.token
+                }
+            });
+            window.dispatchEvent(new Event('plex-server-changed'));
             toast.success('Configuration Plex sauvegardée');
             await scanPlexServers(); // Trigger sync and update UI
         } catch (error) {

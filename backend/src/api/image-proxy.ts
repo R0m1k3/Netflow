@@ -49,6 +49,7 @@ router.get('/proxy', async (req: Request, res: Response, next: NextFunction) => 
     try {
       new URL(imageUrl);
     } catch {
+      logger.warn(`Invalid image URL: ${imageUrl}`);
       throw new AppError('Invalid image URL', 400);
     }
 
@@ -250,7 +251,9 @@ router.get('/plex', requireAuth, async (req: AuthenticatedRequest, res: Response
 
   } catch (error: any) {
     logger.error('Failed to proxy Plex image:', error);
-    next(new AppError('Failed to fetch Plex image', 500));
+    if (!res.headersSent) {
+      next(new AppError('Failed to fetch Plex image', 500));
+    }
   }
 });
 
