@@ -26,15 +26,15 @@ export const useAuth = create<AuthState>((set) => ({
 
     login: async (identifier: string, password: string) => {
         const res = await api.post('/auth/login', { identifier, password });
-        if (res.data.authenticated) {
-            set({ user: res.data.user, isAuthenticated: true });
+        if (res.authenticated) {
+            set({ user: res.user, isAuthenticated: true });
         }
     },
 
     register: async (email: string, password: string, username: string) => {
         const res = await api.post('/auth/register', { email, password, username });
-        if (res.data.success) {
-            set({ user: res.data.user, isAuthenticated: true });
+        if (res.success) {
+            set({ user: res.user, isAuthenticated: true });
         }
     },
 
@@ -51,8 +51,8 @@ export const useAuth = create<AuthState>((set) => ({
     checkAuth: async () => {
         try {
             const res = await api.get('/auth/session');
-            if (res.data.authenticated) {
-                set({ user: res.data.user, isAuthenticated: true });
+            if (res.authenticated) {
+                set({ user: res.user, isAuthenticated: true });
             } else {
                 set({ user: null, isAuthenticated: false });
             }
